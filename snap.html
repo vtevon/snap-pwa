@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snapchat Archive</title>
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root { --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Avenir Next', -apple-system, sans-serif; }
+        body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+
+        #app-container { width: 100%; max-width: 428px; height: 100%; max-height: 926px; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        @media (min-width: 429px) { #app-container { height: 90vh; border-radius: 40px; } }
+
+        /* --- ÉCRAN DE CHARGEMENT PRINCIPAL --- */
+        #loading-screen { flex: 1; background-color: var(--snap-yellow); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; text-align: center; z-index: 1000;}
+        .spinner { border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--snap-black); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-top: 20px;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- UI PRINCIPALE --- */
+        #main-ui { display: none; flex-direction: column; height: 100%; position: relative; padding-top: 86px; padding-bottom: 86px; box-sizing: border-box; }
+        .view { flex: 1; overflow-y: auto; background-color: var(--snap-white); display: none; flex-direction: column; position: relative; width: 100%;}
+        
+        /* --- EN-TÊTE SNAPCHAT (HAUT) --- */
+        .top-nav {
+            position: absolute; top: 0; left: 0; width: 100%; background: var(--snap-black);
+            display: flex; justify-content: center; align-items: center; 
+            height: 86px; padding-top: 15px;
+            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .top-nav-title { color: var(--snap-yellow); font-size: 20px; font-weight: 900; letter-spacing: 2px; margin: 0; }
+
+        /* --- NAVIGATION BAS --- */
+        .bottom-nav { 
+            position: absolute; bottom: 0; left: 0; width: 100%; background: var(--snap-black); 
+            display: flex; justify-content: space-around; align-items: flex-start; 
+            padding-top: 16px; height: 86px; 
+            border-top-left-radius: 40px; border-top-right-radius: 40px; 
+            z-index: 100; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
+        }
+        .nav-item { color: #555; font-size: 16px; font-weight: 900; letter-spacing: 1px; cursor: pointer; transition: 0.2s; text-transform: uppercase;}
+        .nav-item.active { color: var(--snap-yellow); }
+
+        /* --- CHAT LISTE --- */
+        .sticky-chat-header { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px;}
+        .chat-tabs { display: flex; padding: 10px 20px; gap: 10px; }
+        .chat-tab { flex: 1; text-align: center; padding: 8px; border-radius: 15px; background: var(--snap-gray); font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .chat-tab.active { background: var(--snap-black); color: var(--snap-yellow); }
+        .chat-list { padding: 0 10px; padding-bottom: 20px;}
+        .chat-item { display: flex; align-items: center; padding: 15px 10px; border-bottom: 1px solid var(--snap-gray); cursor: pointer; }
+        .chat-name { font-weight: bold; font-size: 18px; color: var(--snap-black); }
+        .chat-meta { color: #888; font-size: 14px; font-weight: bold; }
+        .search-bar { font-family: inherit; font-size: 15px; font-weight: 500; color: var(--snap-black); padding: 10px 16px; border: none; border-radius: 20px; background: var(--snap-gray); outline: none; -webkit-appearance: none; }
+        .search-bar::placeholder { color: #999; font-weight: 500; }
+        .search-bar:focus { background: #e8e8e8; }
+
+        /* --- CONVERSATION --- */
+        .conv-header { display: flex; align-items: center; padding: 0 20px; height: 86px; background: var(--snap-black); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 10;}
+        .back-btn { font-size: 26px; margin-right: 15px; cursor: pointer; color: var(--snap-yellow); font-weight: 900; }
+        #conv-title { color: var(--snap-yellow); font-weight: 900; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
+        .sort-btn { font-size: 20px; cursor: pointer; margin-left: 10px; background: transparent; display: flex; justify-content: center; align-items: center; color: var(--snap-yellow);}
+        
+        .conv-filters { display: flex; padding: 10px 20px; gap: 10px; border-bottom: 1px solid var(--snap-gray); flex-shrink: 0;}
+        .conv-filter { flex: 1; background: var(--snap-gray); border-radius: 15px; padding: 8px; font-weight: bold; color: #888; cursor: pointer; transition: 0.2s; text-align: center; line-height: 1.2;}
+        .conv-filter span { font-size: 11px; font-weight: normal; color: #999;}
+        .conv-filter.active { background: var(--snap-black); color: var(--snap-yellow); }
+        .conv-filter.active span { color: var(--snap-yellow); font-weight: bold; }
+        
+        #chat-loading-overlay { position: absolute; top: 164px; left: 0; width: 100%; height: calc(100% - 164px); background: rgba(255,255,255,0.8); z-index: 50; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        #chat-scroll-loader { text-align: center; padding: 10px; color: var(--snap-black); font-size: 20px; display: none; font-weight: bold;}
+        
+        #conv-scroll-area { flex: 1; overflow-y: auto; display: block; position: relative; }
+        
+        .text-container { display: flex; flex-direction: column; padding: 15px 10px; width: 100%; box-sizing: border-box;}
+        
+        .msg-row { display: flex; flex-direction: column; width: 100%; margin-bottom: 15px; border-radius: 10px; transition: background 0.5s;}
+        .msg-row.me { align-items: flex-end; }
+        .msg-row.them { align-items: flex-start; }
+        .msg-bubble { padding: 12px 16px; max-width: 85%; font-weight: 500; word-wrap: break-word; }
+        .msg-row.them .msg-bubble { background: var(--snap-gray); border-radius: 20px 20px 20px 4px; margin-left: 10px; }
+        .msg-row.me .msg-bubble { background: #E6F3FF; border-radius: 20px 20px 4px 20px; margin-right: 10px; }
+        .msg-date { font-size: 11px; color: #888; margin: 0 15px 4px 15px; font-weight: bold; }
+        
+        .msg-media { max-width: 100%; max-height: 350px; border-radius: 10px; margin-top: 5px; cursor: pointer; background: #eee; min-height: 50px; display: block; }
+        
+        .custom-audio { display: flex; align-items: center; background: rgba(0,0,0,0.08); padding: 8px 12px; border-radius: 20px; gap: 10px; cursor: pointer; min-width: 200px; margin-top: 5px;}
+        .ca-play { width: 30px; height: 30px; border-radius: 50%; background: var(--snap-black); color: var(--snap-white); display: flex; justify-content: center; align-items: center; font-size: 14px; flex-shrink: 0;}
+        .ca-progress-bg { flex: 1; height: 6px; background: rgba(0,0,0,0.15); border-radius: 3px; position: relative; overflow: hidden; }
+        .ca-progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--snap-black); width: 0%; pointer-events: none;}
+        .ca-time { font-size: 11px; font-weight: bold; color: var(--snap-black); min-width: 30px; white-space: nowrap; text-align: right;}
+
+        /* --- GRILLES MÉDIAS & MEMORIES --- */
+        .memories-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 2px !important; padding: 2px !important; width: 100% !important; align-content: flex-start !important; }
+        .memory-thumb { aspect-ratio: 9/16; background-color: var(--snap-gray); position: relative; overflow: hidden; cursor: pointer; }
+        .lazy-media { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2; }
+        .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
+        
+        #scroll-track { position: absolute; right: 0; top: 0; bottom: 0; width: 40px; z-index: 50; touch-action: none;}
+        #scroll-thumb { position: absolute; right: 2px; top: 0; width: 8px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
+
+        /* --- VISIONNEUSE --- */
+        #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; display: none; flex-direction: column; }
+        #viewer-media { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; padding-top: 80px; padding-bottom: 80px; }
+        #viewer-media img, #viewer-media video { max-width: 100%; max-height: 100%; object-fit: contain; }
+        #viewer-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; z-index: 201;}
+        
+        .viewer-header-dynamic { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; background: linear-gradient(rgba(0,0,0,0.8), transparent); color: white; display: flex; align-items: flex-start; z-index: 202; pointer-events: none;}
+        
+        .viewer-date-container { position: absolute; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; align-items: center; pointer-events: none; height: 45px;}
+        .viewer-date-bubble { background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; backdrop-filter: blur(5px); color: white;}
+        
+        .viewer-btn { background: rgba(255,255,255,0.25); border: none; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 22px; cursor: pointer; backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; pointer-events: auto;}
+        
+        .nav-zone { position: absolute; top: 20%; bottom: 20%; width: 25%; z-index: 201; display: flex; align-items: center; cursor: pointer; }
+        .nav-zone.left { left: 0; justify-content: flex-start; padding-left: 10px; }
+        .nav-zone.right { right: 0; justify-content: flex-end; padding-right: 10px; }
+        .nav-arrow { background: rgba(0,0,0,0.3); color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; backdrop-filter: blur(4px); pointer-events: none; opacity: 0; transition: opacity 0.2s;}
+        .nav-zone:active .nav-arrow { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <!-- ÉCRAN DE CHARGEMENT DB AVEC BOUTON DE SECOURS -->
+        <div id="loading-screen">
+            <h1 style="font-size: 50px; margin-bottom: 10px;">👻</h1>
+            <h2 style="font-weight: 900;">Connexion...</h2>
+            <p>Ouverture de la base de données locale.</p>
+            <div class="spinner"></div>
+            <p id="init-log" style="margin-top: 10px; font-weight: bold; font-size: 14px;"></p>
+            
+            <button type="button" id="setup-btn" class="upload-btn" onclick="document.getElementById('folder-input').click()" style="display:none; background: var(--snap-black); color: var(--snap-white); font-weight: bold; padding: 15px 30px; border-radius: 30px; margin-top: 30px; cursor: pointer; border: none;">
+                Sélectionner le dossier Archive
+                <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none;">
+            </button>
+
+            <!-- BOUTON HARD RESET EN CAS DE PLANTAGE -->
+            <button onclick="resetDB()" style="margin-top: 40px; background: transparent; color: #888; border: 1px solid #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold;">
+                Forcer la réinitialisation 🔄
+            </button>
+        </div>
+
+        <div id="main-ui">
+            
+            <div class="top-nav">
+                <div class="top-nav-title">SNAPCHAT</div>
+            </div>
+
+            <!-- VUE CHAT -->
+            <div id="view-chat" class="view">
+                <div class="sticky-chat-header">
+                    <div class="chat-tabs">
+                        <div class="chat-tab active" id="tab-amis" onclick="Chat.switchTab('amis')">Amis</div>
+                        <div class="chat-tab" id="tab-groupes" onclick="Chat.switchTab('groupes')">Groupes</div>
+                    </div>
+                    <!-- Barre de recherche avec le bouton Emoji Réglages à droite -->
+                    <div style="display: flex; align-items: center; padding: 0 20px 10px; gap: 15px;">
+                        <input type="text" class="search-bar" id="chat-search" placeholder="Nom, mot, date (ex: 2015-05-29)..." oninput="Chat.onSearchInput()" style="margin: 0; flex: 1;">
+                        <div onclick="resetDB()" title="Changer de dossier" style="cursor: pointer; font-size: 26px; padding-bottom: 4px;">⚙️</div>
+                    </div>
+                </div>
+                <div class="chat-list" id="chat-list"></div>
+            </div>
+
+            <!-- VUE CONVERSATION (Prend 100% de l'espace) -->
+            <div id="view-conversation" class="view">
+                <div class="conv-header">
+                    <div class="back-btn" onclick="UI.switchTab('chat')">‹</div>
+                    <div id="conv-title" style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</div>
+                    <div class="sort-btn" id="conv-sort-btn" onclick="Chat.toggleSort()">⬇️</div>
+                </div>
+                <div class="conv-filters">
+                    <div class="conv-filter active" id="f-tout" onclick="Chat.setFilter('tout')">Tout<br><span id="c-count-tout">(0)</span></div>
+                    <div class="conv-filter" id="f-medias" onclick="Chat.setFilter('medias')">Médias<br><span id="c-count-med">(0)</span></div>
+                    <div class="conv-filter" id="f-audios" onclick="Chat.setFilter('audios')">Audios<br><span id="c-count-aud">(0)</span></div>
+                </div>
+                
+                <div id="chat-loading-overlay">
+                    <div class="spinner"></div>
+                    <div style="margin-top: 10px; font-weight: bold; color: var(--snap-black);">Chargement...</div>
+                </div>
+
+                <div id="conv-scroll-area">
+                    <div id="chat-scroll-loader">⚙️</div>
+                    <div id="conv-inner"></div>
+                </div>
+            </div>
+
+            <!-- VUE MEMORIES -->
+            <div id="view-memories" class="view active">
+                <div id="scroll-track"><div id="scroll-thumb"></div></div>
+                <div id="memories-scroll-area" style="height: 100%; overflow-y: auto;">
+                    <div class="memories-grid" id="memories-grid"></div>
+                </div>
+            </div>
+
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="UI.switchTab('chat')" id="nav-chat">CHAT</div>
+                <div class="nav-item active" onclick="UI.switchTab('memories')" id="nav-memories">MEMORIES</div>
+            </div>
+            
+            <!-- VISIONNEUSE PLEIN ECRAN -->
+            <div id="viewer">
+                <div class="viewer-header-dynamic" id="viewer-header-dynamic"></div>
+                <div class="nav-zone left" onclick="Viewer.prev()"><div class="nav-arrow">‹</div></div>
+                <div id="viewer-media"></div>
+                <div class="nav-zone right" onclick="Viewer.next()"><div class="nav-arrow">›</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const VideoDebugger = {
+            handleError: (videoEl, key) => {
+                const err = videoEl.error;
+                const code = err ? err.code : 'Inconnu';
+                const msg = err ? err.message : 'Format non supporté ou fichier corrompu';
+                videoEl.outerHTML = `<div style="background:#333; color:#FFFC00; padding:15px; border-radius:10px; font-size:12px; text-align:center; max-width: 100%; margin-top:5px;">
+                    ⚠️ <b>Vidéo Impossible à lire (Code ${code})</b><br>${msg}<br><br>
+                    <button onclick="VideoDebugger.forceDownload('${key}')" style="background:#FFFC00; color:#000; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">⬇️ Télécharger le fichier brut</button>
+                </div>`;
+            },
+            forceDownload: async (key) => {
+                const blob = await getMediaFromDB(key);
+                if(blob) {
+                    const url = URLManager.create(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = key;
+                    a.click();
+                } else {
+                    alert("Le fichier est introuvable dans la base de données.");
+                }
+            }
+        };
+
+        const State = {
+            db: null, allMediaKeys: [], friends: {}, chats: {}, groups: [], friendsList: [], myUsername: null,
+            memories: [], memoriesRendered: 0, 
+            mediaIndex: { chatsMap: {} }, 
+            lazyFiles: [], 
+            currentChat: null, chatFilter: 'tout', currentFilteredMessages: [], chatMediasContext: [],
+            chatRange: { start: 0, end: 0 }, 
+            chatSortOrder: 'bottom_up',
+            isFetchingChat: false 
+        };
+
+        const URLManager = {
+            activeUrls: new Set(),
+            create: (blob) => { const url = URL.createObjectURL(blob); URLManager.activeUrls.add(url); return url; }
+        };
+
+        function getMediaFromDB(key) {
+            return new Promise((resolve) => {
+                try {
+                    const tx = State.db.transaction('media_files', 'readonly');
+                    const req = tx.objectStore('media_files').get(key);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                } catch(e) { resolve(null); }
+            });
+        }
+
+        const LazyMediaObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const mediaKey = el.getAttribute('data-media-key');
+                    if (mediaKey && !el.src && !el.dataset.loading) {
+                        el.dataset.loading = "true";
+                        getMediaFromDB(mediaKey).then(blob => {
+                            if (blob) {
+                                const url = URLManager.create(blob);
+                                if (el.tagName === 'VIDEO') {
+                                    el.src = url + "#t=0.001";
+                                } else {
+                                    el.src = url;
+                                }
+                            }
+                        });
+                    }
+                    observer.unobserve(el);
+                }
+            });
+        }, { rootMargin: '300px' });
+
+        function resetDB() {
+            if(confirm("Veux-tu effacer la base de données actuelle pour importer un nouveau dossier ?")) {
+                if (State.db) { State.db.close(); }
+                const req = indexedDB.deleteDatabase("SnapArchiveDB");
+                req.onsuccess = () => { window.location.reload(); };
+                req.onerror = () => alert("Erreur lors de la suppression. Recharge la page manuellement.");
+                req.onblocked = () => { window.location.reload(); };
+            }
+        }
+
+        // INIT SYSTEM (Passage à la version 2 pour forcer la recréation si corrompue)
+        const dbReq = indexedDB.open("SnapArchiveDB", 2);
+        
+        dbReq.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('json_data')) db.createObjectStore('json_data');
+            if (!db.objectStoreNames.contains('media_files')) db.createObjectStore('media_files');
+        };
+        
+        dbReq.onsuccess = async (e) => {
+            State.db = e.target.result;
+            
+            try {
+                const tx = State.db.transaction('json_data', 'readonly');
+                const store = tx.objectStore('json_data');
+                const checkReq = store.get('friends');
+                
+                checkReq.onsuccess = async () => {
+                    if (!checkReq.result) {
+                        document.getElementById('loading-screen').querySelector('p').innerText = "Aucune donnée trouvée. Importe ton archive.";
+                        document.querySelector('.spinner').style.display = 'none';
+                        document.getElementById('setup-btn').style.display = 'inline-block';
+                    } else {
+                        initApp();
+                    }
+                };
+            } catch(err) {
+                // Fallback sécurité si la base est cassée
+                document.getElementById('loading-screen').querySelector('p').innerText = "Erreur de lecture de la base. Veuillez Forcer la réinitialisation.";
+                document.querySelector('.spinner').style.display = 'none';
+            }
+        };
+
+        document.getElementById('folder-input').addEventListener('change', async (event) => {
+            const files = event.target.files;
+            document.getElementById('setup-btn').style.display = 'none';
+            document.querySelector('.spinner').style.display = 'block';
+            const logEl = document.getElementById('init-log');
+            logEl.innerText = "Injection des fichiers dans le navigateur...";
+            
+            const mediaToSave = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const path = file.webkitRelativePath.toLowerCase();
+                const name = file.name;
+
+                if (path.includes('json/friends.json')) await saveJSON('friends', JSON.parse(await file.text()));
+                if (path.includes('json/chat_history.json')) await saveJSON('chats', JSON.parse(await file.text()));
+                if (path.includes('json/memories_history.json')) await saveJSON('memories', JSON.parse(await file.text()));
+
+                if (name.match(/\.(mp4|mov|m4a|wav|mp3|aac|jpg|jpeg|png)$/i)) {
+                    if (path.includes('/memories/') || path.includes('/chat_media/')) {
+                        let cleanKey = name;
+                        if (path.includes('/chat_media/')) {
+                            const extMatch = name.match(/\.([a-z0-9]+)$/i);
+                            const ext = extMatch ? extMatch[1].toLowerCase() : '';
+                            const matchDate = name.match(/^\d{4}-\d{2}-\d{2}_(.*)\./);
+                            let base = matchDate ? matchDate[1] : name.split('.')[0];
+                            base = base.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
+                            cleanKey = ext ? `${base}.${ext}` : base;
+                        }
+                        mediaToSave.push({ key: cleanKey, file: file });
+                    }
+                }
+                if (i % 500 === 0) { logEl.innerText = `Analyse... ${i}/${files.length}`; await new Promise(r => setTimeout(r, 0)); }
+            }
+
+            for (let i = 0; i < mediaToSave.length; i++) {
+                const item = mediaToSave[i];
+                await saveMedia(item.key, item.file);
+                if (i % 50 === 0) { logEl.innerText = `Sauvegarde... ${i}/${mediaToSave.length}`; await new Promise(r => setTimeout(r, 0)); }
+            }
+            
+            window.location.reload();
+        });
+
+        function saveJSON(key, data) {
+            return new Promise((resolve) => { const req = State.db.transaction('json_data', 'readwrite').objectStore('json_data').put(data, key); req.onsuccess = resolve; });
+        }
+        function saveMedia(key, file) {
+            return new Promise((resolve) => { const req = State.db.transaction('media_files', 'readwrite').objectStore('media_files').put(file, key); req.onsuccess = resolve; });
+        }
+
+        async function initApp() {
+            const logEl = document.getElementById('init-log');
+            logEl.innerText = "Lecture des historiques JSON...";
+            
+            const getJSON = (storeName) => new Promise(res => {
+                const req = State.db.transaction('json_data', 'readonly').objectStore('json_data').get(storeName);
+                req.onsuccess = () => res(req.result);
+            });
+
+            const rawFriends = await getJSON('friends') || {};
+            const rawChats = await getJSON('chats') || {};
+            const rawMemories = await getJSON('memories') || {};
+
+            for (const cat in rawFriends) {
+                if (Array.isArray(rawFriends[cat])) {
+                    rawFriends[cat].forEach(f => { if (f.Username) State.friends[f.Username.toLowerCase()] = f["Display Name"] || f.Username; });
+                }
+            }
+
+            logEl.innerText = "Indexation des médias...";
+            State.allMediaKeys = await new Promise(r => {
+                const req = State.db.transaction('media_files', 'readonly').objectStore('media_files').getAllKeys();
+                req.onsuccess = () => r(req.result);
+            });
+
+            const memFilesByDate = {};
+            State.allMediaKeys.forEach(key => {
+                const match = key.match(/(\d{4}-\d{2}-\d{2})_(.+)-(main|overlay)\./i);
+                if (match) {
+                    const date = match[1]; const type = match[3].toLowerCase();
+                    if (!memFilesByDate[date]) memFilesByDate[date] = [];
+                    let group = memFilesByDate[date].find(g => g.id === match[2]);
+                    if (!group) { group = { id: match[2], keys: {} }; memFilesByDate[date].push(group); }
+                    group.keys[type] = key;
+                } else {
+                    let mediaId = key;
+                    const matchDate = key.match(/^\d{4}-\d{2}-\d{2}_(.*)\./);
+                    if (matchDate) mediaId = matchDate[1]; else mediaId = key.split('.')[0];
+                    const cleanKey = mediaId.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
+                    State.mediaIndex.chatsMap[cleanKey] = key;
+                }
+            });
+
+            let memList = rawMemories["Saved Media"] || rawMemories["Saved Memories"] || rawMemories["Memories"] || [];
+            const jsonByDate = {};
+            memList.forEach(mem => {
+                const d = mem.Date.split(' ')[0];
+                if (!jsonByDate[d]) jsonByDate[d] = [];
+                jsonByDate[d].push(mem);
+            });
+
+            for (const d in memFilesByDate) {
+                const fGroups = memFilesByDate[d];
+                const jList = jsonByDate[d] || [];
+                fGroups.forEach((grp, i) => {
+                    const jsonMem = jList[i] || { Date: d + " 12:00:00 UTC", Location: "" };
+                    State.memories.push({ json: jsonMem, mainKey: grp.keys.main, overlayKey: grp.keys.overlay });
+                });
+            }
+            State.memories.sort((a, b) => new Date(b.json.Date.replace(' UTC', 'Z')) - new Date(a.json.Date.replace(' UTC', 'Z')));
+
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            for (const key in rawChats) {
+                if (!uuidRegex.test(key)) {
+                    const msgMe = rawChats[key].find(m => m.From && m.From.toLowerCase() !== key.toLowerCase());
+                    if (msgMe) { State.myUsername = msgMe.From.toLowerCase(); break; }
+                }
+            }
+
+            for (const key in rawChats) {
+                let isGroup = uuidRegex.test(key) || rawChats[key].some(m => m["Conversation Title"]);
+                rawChats[key].sort((a, b) => new Date(a.Created.replace(' UTC', 'Z')) - new Date(b.Created.replace(' UTC', 'Z')));
+                
+                let mCount = 0, medCount = 0, audCount = 0;
+                
+                const validMsgs = [];
+                rawChats[key].forEach(m => {
+                    const isAudio = m["Media Type"] && (m["Media Type"].includes("AUDIO") || m["Media Type"].includes("NOTE") || m["Media Type"].includes("VOICE"));
+                    const isMedia = m["Media Type"] && (m["Media Type"].includes("MEDIA") || m["Media Type"].includes("VIDEO") || m["Media Type"].includes("SNAP"));
+                    const hasText = m.Content && m.Content.trim().length > 0;
+                    
+                    let keep = false;
+                    if (hasText) keep = true;
+                    if ((isAudio || isMedia) && m["Media IDs"] && findChatMediaKey(m["Media IDs"])) keep = true;
+                    
+                    if(keep) {
+                        m.originalIndex = validMsgs.length;
+                        validMsgs.push(m);
+                        mCount++;
+                        if (isMedia) medCount++;
+                        if (isAudio) audCount++;
+                    }
+                });
+
+                const meta = { id: key, messages: validMsgs, name: State.friends[key] || key, mCount, medCount, audCount };
+                if (isGroup) {
+                    meta.name = rawChats[key].find(m => m["Conversation Title"])?.["Conversation Title"] || "Groupe Inconnu";
+                    State.groups.push(meta);
+                } else State.friendsList.push(meta);
+            }
+            State.friendsList.sort((a, b) => b.messages.length - a.messages.length);
+            State.groups.sort((a, b) => b.messages.length - a.messages.length);
+
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'flex';
+            
+            Memories.render(); Chat.renderList();
+        }
+
+        function findChatMediaKey(mediaIdStr) {
+            if (!mediaIdStr) return null;
+            const targetClean = mediaIdStr.split("|")[0].toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20); 
+            return State.mediaIndex.chatsMap[targetClean] || null;
+        }
+
+        const Util = {
+            formatTime: (seconds) => {
+                if (!isFinite(seconds) || seconds < 0) return '0:00';
+                const s = Math.floor(seconds);
+                return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+            },
+            formatDate: (dateStr, format) => {
+                if(!dateStr) return "";
+                try {
+                    const dt = new Date(dateStr.replace(' UTC', 'Z').replace(' ', 'T'));
+                    if(isNaN(dt.getTime())) return dateStr;
+                    if (format === 'short-year') return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(dt);
+                    return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(dt);
+                } catch(e) { return dateStr; }
+            },
+            getDisplayName: (username) => {
+                if(!username) return "Moi";
+                return State.friends[username.toLowerCase()] || username;
+            },
+            escapeHTML: (str) => {
+                if(!str) return "";
+                return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+            }
+        };
+
+        const Memories = {
+            render: () => {
+                const grid = document.getElementById('memories-grid');
+                const limit = Math.min(State.memoriesRendered + 90, State.memories.length);
+
+                for (let i = State.memoriesRendered; i < limit; i++) {
+                    const item = State.memories[i];
+                    State.lazyFiles.push(item.mainKey); const idxMain = State.lazyFiles.length - 1;
+                    const isVideo = item.mainKey.match(/\.(mp4|mov)$/i);
+                    let overHtml = '';
+                    if (item.overlayKey) {
+                        State.lazyFiles.push(item.overlayKey); const idxOver = State.lazyFiles.length - 1;
+                        overHtml = `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-lazy-idx="${idxOver}">`;
+                    }
+                    
+                    const thumb = document.createElement('div');
+                    thumb.className = 'memory-thumb';
+                    thumb.onclick = () => Viewer.open(i, 'memories');
+                    
+                    // Bloque la lecture vidéo en miniature
+                    thumb.innerHTML = `
+                        ${isVideo ? `<video class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}">`}
+                        ${overHtml}
+                        <div class="memory-date-badge">${Util.formatDate(item.json.Date, 'short-year')}</div>
+                    `;
+                    grid.appendChild(thumb);
+                }
+                State.memoriesRendered = limit;
+                document.querySelectorAll('#memories-grid .lazy-media:not([src])').forEach(el => LazyMediaObserver.observe(el));
+            }
+        };
+
+        const memView = document.getElementById('memories-scroll-area');
+        const scrollTrack = document.getElementById('scroll-track');
+        const scrollThumb = document.getElementById('scroll-thumb');
+
+        memView.addEventListener('scroll', () => {
+            if (memView.scrollTop + memView.clientHeight >= memView.scrollHeight - 600) Memories.render(); 
+            const ratio = memView.scrollTop / (memView.scrollHeight - memView.clientHeight);
+            const maxTop = scrollTrack.clientHeight - scrollThumb.clientHeight;
+            scrollThumb.style.top = `${ratio * maxTop}px`;
+        });
+
+        scrollTrack.addEventListener('touchmove', (e) => {
+            e.preventDefault(); 
+            const rect = scrollTrack.getBoundingClientRect();
+            let y = Math.max(0, Math.min(e.touches[0].clientY - rect.top, rect.height - scrollThumb.clientHeight));
+            const ratio = y / (rect.height - scrollThumb.clientHeight);
+            memView.scrollTop = ratio * (memView.scrollHeight - memView.clientHeight);
+        }, { passive: false });
+
+        const AudioDurationObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const mediaKey = el.getAttribute('data-media-key');
+                    if (mediaKey && !el.dataset.durLoading) {
+                        el.dataset.durLoading = "true";
+                        getMediaFromDB(mediaKey).then(blob => {
+                            if (!blob) return;
+                            const probe = new Audio();
+                            probe.preload = 'metadata';
+                            probe.src = URLManager.create(blob);
+                            probe.addEventListener('loadedmetadata', () => {
+                                if (isFinite(probe.duration) && probe.duration > 0) {
+                                    el.dataset.duration = probe.duration;
+                                    if (AudioEngine.currentContainerId !== el.id) {
+                                        const timeEl = el.querySelector('.ca-time');
+                                        if (timeEl) timeEl.innerText = Util.formatTime(probe.duration);
+                                    }
+                                }
+                            });
+                        });
+                    }
+                    observer.unobserve(el);
+                }
+            });
+        }, { rootMargin: '300px' });
+
+        const AudioEngine = {
+            audio: new Audio(), currentContainerId: null,
+            play: async (containerId, mediaKey) => {
+                const el = document.getElementById(containerId);
+                if (AudioEngine.currentContainerId === containerId) {
+                    if (AudioEngine.audio.paused) AudioEngine.audio.play(); else AudioEngine.audio.pause();
+                    return;
+                }
+                if (AudioEngine.currentContainerId) {
+                    const oldEl = document.getElementById(AudioEngine.currentContainerId);
+                    if(oldEl) {
+                        oldEl.querySelector('.ca-play').innerText = '▶';
+                        oldEl.querySelector('.ca-progress-fill').style.width = '0%';
+                        const oldDur = parseFloat(oldEl.dataset.duration);
+                        oldEl.querySelector('.ca-time').innerText = isFinite(oldDur) ? Util.formatTime(oldDur) : '0:00';
+                    }
+                }
+                AudioEngine.currentContainerId = containerId;
+                
+                const blob = await getMediaFromDB(mediaKey);
+                if(!blob) return alert("Audio introuvable.");
+
+                AudioEngine.audio.src = URLManager.create(blob);
+                AudioEngine.audio.currentTime = 0;
+                AudioEngine.audio.play();
+                el.querySelector('.ca-play').innerText = '⏸';
+                const knownDur = parseFloat(el.dataset.duration);
+                el.querySelector('.ca-time').innerText = isFinite(knownDur) ? `0:00 / ${Util.formatTime(knownDur)}` : '0:00';
+                
+                AudioEngine.audio.ontimeupdate = () => {
+                    if (AudioEngine.currentContainerId !== containerId) return;
+                    const nativeDur = AudioEngine.audio.duration;
+                    const dur = (isFinite(nativeDur) && nativeDur > 0) ? nativeDur : parseFloat(el.dataset.duration);
+                    if (isFinite(dur) && dur > 0) el.dataset.duration = dur;
+                    const pct = (isFinite(dur) && dur > 0) ? (AudioEngine.audio.currentTime / dur) * 100 : 0;
+                    el.querySelector('.ca-progress-fill').style.width = (pct || 0) + '%';
+                    const currentStr = Util.formatTime(AudioEngine.audio.currentTime);
+                    el.querySelector('.ca-time').innerText = (isFinite(dur) && dur > 0) ? `${currentStr} / ${Util.formatTime(dur)}` : currentStr;
+                };
+                AudioEngine.audio.onended = () => {
+                    el.querySelector('.ca-play').innerText = '▶';
+                    el.querySelector('.ca-progress-fill').style.width = '0%';
+                    const dur = parseFloat(el.dataset.duration);
+                    el.querySelector('.ca-time').innerText = isFinite(dur) ? Util.formatTime(dur) : '0:00';
+                    AudioEngine.currentContainerId = null;
+                };
+            }
+        };
+
+        let chatActiveTab = 'amis';
+        let searchTimeout;
+        const Chat = {
+            switchTab: (tab) => { chatActiveTab = tab; document.querySelectorAll('.chat-tab').forEach(e => e.classList.remove('active')); document.getElementById(`tab-${tab}`).classList.add('active'); Chat.renderList(); },
+            
+            onSearchInput: () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => Chat.renderList(), 300); },
+
+            renderList: () => {
+                const search = document.getElementById('chat-search').value.toLowerCase();
+                const source = chatActiveTab === 'amis' ? State.friendsList : State.groups;
+                
+                let html = '';
+                source.forEach(c => {
+                    let msgIndex = -1; let matchText = "";
+                    if (search) {
+                        const nameMatch = c.name.toLowerCase().includes(search);
+                        for(let i = c.messages.length - 1; i >= 0; i--) {
+                            const m = c.messages[i];
+                            if ((m.Content && m.Content.toLowerCase().includes(search)) || (m.Created && m.Created.toLowerCase().includes(search))) { msgIndex = i; break; }
+                        }
+                        if (!nameMatch && msgIndex === -1) return;
+                        if (msgIndex !== -1) {
+                            const rawText = c.messages[msgIndex].Content || c.messages[msgIndex].Created;
+                            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(${escapedSearch})`, 'gi');
+                            matchText = `<div style="font-size:13px; color:#666; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">... ${Util.escapeHTML(rawText).replace(regex, '<span style="background:var(--snap-yellow); color:black; font-weight:bold;">$1</span>')} ...</div>`;
+                        }
+                    }
+                    html += `<div class="chat-item" onclick="Chat.openConv('${c.id}', ${msgIndex})">
+                        <div class="chat-info" style="display:flex; flex-direction:column; width:100%;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                <div class="chat-name">${c.name}</div>
+                                <div class="chat-meta">${c.mCount} msgs • ${c.medCount} médias</div>
+                            </div>
+                            ${matchText}
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('chat-list').innerHTML = html;
+            },
+            
+            openConv: (id, targetMsgIndex = -1) => {
+                State.currentChat = (chatActiveTab === 'amis' ? State.friendsList : State.groups).find(c => c.id === id);
+                document.getElementById('conv-title').innerText = State.currentChat.name;
+                
+                document.getElementById('c-count-tout').innerText = `(${State.currentChat.mCount})`;
+                document.getElementById('c-count-med').innerText = `(${State.currentChat.medCount})`;
+                document.getElementById('c-count-aud').innerText = `(${State.currentChat.audCount})`;
+                
+                State.chatSortOrder = 'bottom_up'; document.getElementById('conv-sort-btn').innerText = '⬇️';
+                
+                UI.switchTab('conversation');
+                
+                Chat.setFilter('tout', targetMsgIndex);
+            },
+            
+            toggleSort: () => {
+                State.chatSortOrder = State.chatSortOrder === 'bottom_up' ? 'top_down' : 'bottom_up';
+                document.getElementById('conv-sort-btn').innerText = State.chatSortOrder === 'bottom_up' ? '⬇️' : '⬆️';
+                Chat.setFilter(State.chatFilter);
+            },
+            
+            setFilter: (filter, targetMsgIndex = -1) => {
+                document.getElementById('chat-loading-overlay').style.display = 'flex';
+                
+                setTimeout(() => {
+                    State.chatFilter = filter; 
+                    
+                    let validMsgs = State.currentChat.messages;
+                    if (filter === 'medias') State.currentFilteredMessages = validMsgs.filter(m => m["Media Type"] && (m["Media Type"].includes("MEDIA") || m["Media Type"].includes("VIDEO") || m["Media Type"].includes("SNAP")));
+                    else if (filter === 'audios') State.currentFilteredMessages = validMsgs.filter(m => m["Media Type"] && (m["Media Type"].includes("AUDIO") || m["Media Type"].includes("NOTE") || m["Media Type"].includes("VOICE")));
+                    else State.currentFilteredMessages = validMsgs;
+
+                    document.querySelectorAll('.conv-filter').forEach(e => e.classList.remove('active')); document.getElementById(`f-${filter}`).classList.add('active');
+                    
+                    const len = State.currentFilteredMessages.length;
+                    
+                    let filteredTargetIndex = -1;
+                    if (targetMsgIndex !== -1) {
+                        filteredTargetIndex = State.currentFilteredMessages.findIndex(m => m.originalIndex === targetMsgIndex);
+                    }
+
+                    if (filteredTargetIndex !== -1 && filter === 'tout') {
+                        State.chatRange.start = Math.max(0, filteredTargetIndex - 25);
+                        State.chatRange.end = Math.min(len, filteredTargetIndex + 50);
+                    } else {
+                        if (State.chatSortOrder === 'bottom_up') {
+                            State.chatRange.end = len;
+                            State.chatRange.start = Math.max(0, len - 80);
+                        } else {
+                            State.chatRange.start = 0;
+                            State.chatRange.end = Math.min(len, 80);
+                        }
+                    }
+                    
+                    Chat.renderDOM('init', targetMsgIndex);
+                    document.getElementById('chat-loading-overlay').style.display = 'none';
+                }, 10);
+            },
+            
+            buildHTML: async (startIdx, endIdx) => {
+                const chunk = State.currentFilteredMessages.slice(startIdx, endIdx);
+                let html = '';
+                
+                if (State.chatFilter === 'medias') {
+                    html += '<div class="memories-grid">';
+                    for (const m of chunk) {
+                        const mediaKey = findChatMediaKey(m["Media IDs"]);
+                        if (mediaKey) {
+                            const index = State.currentFilteredMessages.indexOf(m);
+                            const dateOnly = Util.formatDate(m.Created, 'short-year');
+                            const isVid = mediaKey.match(/\.(mp4|mov)$/i);
+                            State.lazyFiles.push(mediaKey); const lazyIdx = State.lazyFiles.length - 1;
+                            
+                            html += `<div class="memory-thumb" id="msg-${m.originalIndex}" onclick="Viewer.open(${index}, 'chat')">
+                                ${isVid ? `<video class="lazy-media" data-media-key="${mediaKey}" data-lazy-idx="${lazyIdx}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${mediaKey}" data-lazy-idx="${lazyIdx}">`}
+                                <div class="memory-date-badge">${dateOnly}</div>
+                            </div>`;
+                        }
+                    }
+                    html += '</div>';
+                } else {
+                    html += '<div class="text-container">';
+                    for (const m of chunk) {
+                        const isMe = !m.From || (State.myUsername && m.From.toLowerCase() === State.myUsername);
+                        const sender = isMe ? "Moi" : Util.getDisplayName(m.From);
+                        const rowClass = isMe ? "me" : "them";
+                        
+                        const isAudio = m["Media Type"] && (m["Media Type"].includes("AUDIO") || m["Media Type"].includes("NOTE") || m["Media Type"].includes("VOICE"));
+                        const isMedia = m["Media Type"] && (m["Media Type"].includes("MEDIA") || m["Media Type"].includes("VIDEO") || m["Media Type"].includes("SNAP"));
+                        
+                        let msgHtml = m.Content ? Util.escapeHTML(m.Content) : "";
+                        
+                        if ((isAudio || isMedia) && m["Media IDs"]) {
+                            const mediaKey = findChatMediaKey(m["Media IDs"]);
+                            if (mediaKey) {
+                                if (isAudio) {
+                                    State.lazyFiles.push(mediaKey); const lazyIdx = State.lazyFiles.length - 1;
+                                    const audioId = `audio-${m.originalIndex}`;
+                                    msgHtml += `<div class="custom-audio" id="${audioId}" data-media-key="${mediaKey}" onclick="AudioEngine.play('${audioId}', '${mediaKey}')">
+                                        <div class="ca-play">▶</div><div class="ca-progress-bg"><div class="ca-progress-fill"></div></div><div class="ca-time">--:--</div>
+                                    </div>`;
+                                } else {
+                                    const blob = await getMediaFromDB(mediaKey);
+                                    const url = blob ? URLManager.create(blob) : '';
+                                    const isVid = mediaKey.match(/\.(mp4|mov)$/i);
+                                    
+                                    // VIDEO PLEINEMENT FONCTIONNELLE DANS LE CHAT TEXTE AVEC LECTEUR ET DEBUG
+                                    msgHtml += isVid 
+                                        ? `<video class="msg-media" src="${url}" controls preload="metadata" playsinline onerror="VideoDebugger.handleError(this, '${mediaKey}')"></video>` 
+                                        : `<img class="msg-media" src="${url}" onclick="Viewer.openDirect(this.src, '${m.Created}', '${m.Location || ''}')">`;
+                                }
+                            }
+                        }
+                        
+                        if (!msgHtml.trim() && !isMedia && !isAudio) continue; 
+                        
+                        html += `<div class="msg-row ${rowClass}" id="msg-${m.originalIndex}"><div class="msg-date">${sender} • ${Util.formatDate(m.Created)}</div><div class="msg-bubble">${msgHtml}</div></div>`;
+                    }
+                    html += '</div>';
+                }
+                return html;
+            },
+
+            renderDOM: async (mode, targetMsgIndex = -1) => {
+                const scrollArea = document.getElementById('conv-scroll-area');
+                const inner = document.getElementById('conv-inner');
+                
+                State.chatMediasContext = [];
+                const fullChunk = State.currentFilteredMessages.slice(State.chatRange.start, State.chatRange.end);
+                fullChunk.forEach(m => {
+                    const isMedia = m["Media Type"] && (m["Media Type"].includes("MEDIA") || m["Media Type"].includes("VIDEO") || m["Media Type"].includes("SNAP"));
+                    if (isMedia || State.chatFilter === 'medias') {
+                        const key = findChatMediaKey(m["Media IDs"]);
+                        if (key) State.chatMediasContext.push({ json: m, mainKey: key, overlayKey: null });
+                        else State.chatMediasContext.push(null);
+                    } else {
+                        State.chatMediasContext.push(null);
+                    }
+                });
+
+                if (State.currentFilteredMessages.length === 0) {
+                    inner.innerHTML = `<div style="text-align:center; padding:40px 20px; color:#888; font-weight:bold; font-size:14px;">Aucun historique de messages valides.</div>`;
+                    return;
+                }
+
+                if (mode !== 'init') document.getElementById('chat-scroll-loader').style.display = 'block';
+
+                const html = await Chat.buildHTML(State.chatRange.start, State.chatRange.end);
+                
+                let anchorMsg = null;
+                let anchorOffset = 0;
+                if (mode !== 'init') {
+                    const children = State.chatFilter === 'medias' ? inner.querySelector('.memories-grid')?.children : inner.querySelector('.text-container')?.children;
+                    if (children) {
+                        for (const child of children) {
+                            if (child.offsetTop >= scrollArea.scrollTop) {
+                                anchorMsg = child.id;
+                                anchorOffset = child.offsetTop - scrollArea.scrollTop;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (mode === 'init') {
+                    inner.innerHTML = html;
+                    if (targetMsgIndex !== -1) {
+                        setTimeout(() => {
+                            const el = document.getElementById(`msg-${targetMsgIndex}`);
+                            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.backgroundColor = 'rgba(255, 252, 0, 0.4)'; setTimeout(() => el.style.backgroundColor = 'transparent', 1500); }
+                        }, 50);
+                    } else if (State.chatSortOrder === 'bottom_up') {
+                        setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 50);
+                    } else {
+                        scrollArea.scrollTop = 0;
+                    }
+                } else {
+                    inner.innerHTML = html;
+                    if (anchorMsg) {
+                        const newAnchor = document.getElementById(anchorMsg);
+                        if (newAnchor) scrollArea.scrollTop = newAnchor.offsetTop - anchorOffset;
+                    }
+                }
+                
+                document.getElementById('chat-scroll-loader').style.display = 'none';
+                document.querySelectorAll('#conv-inner .lazy-media:not([src])').forEach(el => LazyMediaObserver.observe(el));
+                document.querySelectorAll('#conv-inner .custom-audio[data-media-key]').forEach(el => AudioDurationObserver.observe(el));
+            }
+        };
+
+        document.getElementById('conv-scroll-area').addEventListener('scroll', async (e) => {
+            if (State.isFetchingChat) return; 
+            const v = e.target;
+            const len = State.currentFilteredMessages.length;
+            
+            if (v.scrollTop < 200 && State.chatRange.start > 0) {
+                State.isFetchingChat = true;
+                const oldStart = State.chatRange.start;
+                State.chatRange.start = Math.max(0, oldStart - 50);
+                await Chat.renderDOM('prepend');
+                State.isFetchingChat = false;
+            } else if (v.scrollTop + v.clientHeight > v.scrollHeight - 200 && State.chatRange.end < len) {
+                State.isFetchingChat = true;
+                const oldEnd = State.chatRange.end;
+                State.chatRange.end = Math.min(len, oldEnd + 50);
+                await Chat.renderDOM('append');
+                State.isFetchingChat = false;
+            }
+        });
+
+        const UI = {
+            switchTab: (tabId) => {
+                document.querySelectorAll('.view').forEach(v => {
+                    v.classList.remove('active');
+                    v.style.display = 'none';
+                });
+                document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+                
+                const targetView = document.getElementById(`view-${tabId}`);
+                targetView.classList.add('active');
+                
+                if (document.getElementById(`nav-${tabId}`)) document.getElementById(`nav-${tabId}`).classList.add('active');
+                
+                if (tabId === 'conversation') {
+                    document.querySelector('.top-nav').style.display = 'none';
+                    document.querySelector('.bottom-nav').style.display = 'none';
+                    document.getElementById('main-ui').style.paddingTop = '0';
+                    document.getElementById('main-ui').style.paddingBottom = '0';
+                    targetView.style.display = 'flex';
+                } else {
+                    document.querySelector('.top-nav').style.display = 'flex';
+                    document.querySelector('.bottom-nav').style.display = 'flex';
+                    document.getElementById('main-ui').style.paddingTop = '86px';
+                    document.getElementById('main-ui').style.paddingBottom = '86px';
+                    targetView.style.display = 'block';
+                }
+            }
+        };
+
+        const Viewer = {
+            contextType: 'memories', currentIndex: 0,
+            open: (index, type) => { Viewer.contextType = type; Viewer.currentIndex = index; Viewer.renderCurrent(); document.getElementById('viewer').style.display = 'flex'; },
+            
+            openDirect: (url, dateStr, locStr) => {
+                document.getElementById('viewer-media').innerHTML = `<img src="${url}">`;
+                Viewer.buildHeader(dateStr, locStr);
+                document.getElementById('viewer').style.display = 'flex';
+                document.querySelector('.nav-zone.left').style.display = 'none'; document.querySelector('.nav-zone.right').style.display = 'none';
+                document.getElementById('viewer-download').onclick = () => { const a = document.createElement('a'); a.href = url; a.download = 'Snapchat_Image.jpg'; a.click(); };
+            },
+
+            buildHeader: (dateStr, locStr) => {
+                let locBtn = "";
+                if (locStr) {
+                    const gpsMatch = locStr.match(/([-?\d.]+),\s*([-?\d.]+)/);
+                    if(gpsMatch) locBtn = `<div class="viewer-btn btn-map" style="position:absolute; right:77px; pointer-events:auto;" onclick="window.open('https://maps.google.com/?q=${gpsMatch[1]},${gpsMatch[2]}', '_blank')">📍</div>`;
+                }
+                
+                document.getElementById('viewer-header-dynamic').innerHTML = `
+                    <button class="viewer-btn" style="position:absolute; left:20px; top:20px; pointer-events:auto;" onclick="Viewer.close()">✕</button>
+                    <div class="viewer-date-container" style="position:absolute; left:50%; transform:translateX(-50%); top:20px; height:45px; display:flex; justify-content:center; align-items:center; pointer-events:none;">
+                        <div class="viewer-date-bubble">${Util.formatDate(dateStr)}</div>
+                    </div>
+                    <div class="viewer-actions" style="position:absolute; right:20px; top:20px; height:45px; display:flex; align-items:center; pointer-events:none;">
+                        ${locBtn}
+                        <button class="viewer-btn btn-download" id="viewer-download" style="position:absolute; right:0; pointer-events:auto;">⬇️</button>
+                    </div>
+                `;
+            },
+
+            renderCurrent: async () => {
+                const list = Viewer.contextType === 'memories' ? State.memories : State.chatMediasContext;
+                if (!list[Viewer.currentIndex] || list[Viewer.currentIndex] === null) return;
+                
+                const item = list[Viewer.currentIndex];
+                let mainKey, overlayKey, dateStr, locStr;
+
+                if (Viewer.contextType === 'memories') {
+                    mainKey = item.mainKey; overlayKey = item.overlayKey; dateStr = item.json.Date; locStr = item.json.Location;
+                } else {
+                    mainKey = item.mainKey; overlayKey = null; dateStr = item.json.Created; locStr = item.json.Location;
+                }
+
+                if(!mainKey) return;
+                
+                const mainFile = await getMediaFromDB(mainKey);
+                const overlayFile = overlayKey ? await getMediaFromDB(overlayKey) : null;
+                
+                const container = document.getElementById('viewer-media');
+                const url = URLManager.create(mainFile);
+                const isVideo = mainKey.match(/\.(mp4|mov)$/i);
+                
+                container.innerHTML = isVideo ? `<video src="${url}" controls autoplay playsinline style="max-width:100%; max-height:100%;" onerror="VideoDebugger.handleError(this, '${mainKey}')"></video>` : `<img src="${url}">`;
+                if (overlayFile) container.innerHTML += `<img src="${URLManager.create(overlayFile)}" id="viewer-overlay">`;
+                
+                Viewer.buildHeader(dateStr, locStr);
+                
+                document.querySelector('.nav-zone.left').style.display = Viewer.currentIndex > 0 ? 'flex' : 'none';
+                document.querySelector('.nav-zone.right').style.display = Viewer.currentIndex < list.length - 1 ? 'flex' : 'none';
+                
+                document.getElementById('viewer-download').onclick = async () => {
+                    const dateObj = new Date(dateStr.replace(' UTC', 'Z').replace(' ', 'T'));
+                    let dateFmt = dateStr.split(' ')[0];
+                    if (!isNaN(dateObj.getTime())) {
+                        dateFmt = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}_${String(dateObj.getHours()).padStart(2,'0')}h${String(dateObj.getMinutes()).padStart(2,'0')}m`;
+                    }
+                    const cleanOrigName = mainFile.name.split('/').pop() || 'media.jpg';
+                    const dlName = `Snapchat_${dateFmt}_${cleanOrigName}`;
+
+                    if (isVideo || !overlayFile) {
+                        const link = document.createElement('a'); link.href = url; link.download = dlName; link.click(); return;
+                    }
+                    
+                    const wantOverlay = confirm("Ce média possède un filtre/texte.\nVeux-tu l'incruster sur l'image finale ?\n\n[OK] = Fusionner en 1 image\n[Annuler] = Exporter la photo brute");
+                    if (!wantOverlay) { const link = document.createElement('a'); link.href = url; link.download = dlName; link.click(); return; }
+
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    const baseImg = new Image(); const overImg = new Image();
+                    baseImg.src = url; overImg.src = URLManager.create(overlayFile);
+                    await new Promise(r => baseImg.onload = r); await new Promise(r => overImg.onload = r);
+                    canvas.width = baseImg.width; canvas.height = baseImg.height;
+                    ctx.drawImage(baseImg, 0, 0); ctx.drawImage(overImg, 0, 0, canvas.width, canvas.height);
+                    const link = document.createElement('a'); link.download = `Snapchat_Fusion_${dateFmt}_${cleanOrigName}`; link.href = canvas.toDataURL('image/jpeg', 0.95); link.click();
+                };
+            },
+            next: (e) => { 
+                if (e) e.stopPropagation(); 
+                const max = Viewer.contextType === 'memories' ? State.memories.length : State.currentFilteredMessages.length; 
+                let nextIdx = Viewer.currentIndex + 1;
+                if (Viewer.contextType === 'chat') {
+                    while (nextIdx < max && State.chatMediasContext[nextIdx] === null) nextIdx++;
+                }
+                if (nextIdx < max) { Viewer.currentIndex = nextIdx; Viewer.renderCurrent(); } 
+            },
+            prev: (e) => { 
+                if (e) e.stopPropagation(); 
+                let prevIdx = Viewer.currentIndex - 1;
+                if (Viewer.contextType === 'chat') {
+                    while (prevIdx >= 0 && State.chatMediasContext[prevIdx] === null) prevIdx--;
+                }
+                if (prevIdx >= 0) { Viewer.currentIndex = prevIdx; Viewer.renderCurrent(); } 
+            },
+            close: () => { document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; }
+        };
+
+        window.UI = UI; window.Viewer = Viewer; window.Chat = Chat; window.Memories = Memories; window.AudioEngine = AudioEngine; window.VideoDebugger = VideoDebugger;
+    </script>
+</body>
+</html>

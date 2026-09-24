@@ -1,0 +1,16 @@
+{
+  "name": "Snap Archive",
+  "short_name": "Snapchat",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFFC00",
+  "theme_color": "#FFFC00",
+  "icons": [
+    {
+      "src": "img/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
