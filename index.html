@@ -8,7 +8,16 @@
         /* --- VARIABLES & RESET --- */
         :root { --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Avenir Next', -apple-system, sans-serif; }
+        html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
         body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+
+        /* --- VERROUILLAGE PORTRAIT (iPhone) --- */
+        #orientation-lock { display: none; position: fixed; inset: 0; background: #000; color: var(--snap-yellow); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; font-weight: 900; font-size: 18px; line-height: 1.5; }
+        @media (orientation: landscape) {
+            #orientation-lock { display: flex; }
+            #app-container { display: none !important; }
+        }
 
         #app-container { width: 100%; max-width: 428px; height: 100%; max-height: 926px; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
         @media (min-width: 429px) { #app-container { height: 90vh; border-radius: 40px; } }
@@ -19,15 +28,15 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* --- UI PRINCIPALE --- */
-        #main-ui { display: none; flex-direction: column; height: 100%; position: relative; padding-top: 86px; padding-bottom: 86px; box-sizing: border-box; }
+        #main-ui { display: none; flex-direction: column; height: 100%; position: relative; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
         .view { flex: 1; overflow-y: auto; background-color: var(--snap-white); display: none; flex-direction: column; position: relative; width: 100%;}
         
         /* --- EN-TÊTE SNAPCHAT (HAUT) --- */
         .top-nav {
             position: absolute; top: 0; left: 0; width: 100%; background: var(--snap-black);
             display: flex; justify-content: center; align-items: center; 
-            height: 86px; padding-top: 15px;
-            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            height: 66px; padding-top: 8px;
+            border-bottom-left-radius: 28px; border-bottom-right-radius: 28px;
             z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
         .top-nav-title { color: var(--snap-yellow); font-size: 20px; font-weight: 900; letter-spacing: 2px; margin: 0; }
@@ -36,15 +45,16 @@
         .bottom-nav { 
             position: absolute; bottom: 0; left: 0; width: 100%; background: var(--snap-black); 
             display: flex; justify-content: space-around; align-items: flex-start; 
-            padding-top: 16px; height: 86px; 
-            border-top-left-radius: 40px; border-top-right-radius: 40px; 
+            padding-top: 8px; height: 60px; 
+            border-top-left-radius: 28px; border-top-right-radius: 28px; 
             z-index: 100; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
         }
         .nav-item { color: #555; font-size: 16px; font-weight: 900; letter-spacing: 1px; cursor: pointer; transition: 0.2s; text-transform: uppercase;}
         .nav-item.active { color: var(--snap-yellow); }
 
         /* --- CHAT LISTE --- */
-        .sticky-chat-header { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px;}
+        #view-chat { padding-top: 66px; padding-bottom: 60px; }
+        .sticky-chat-header { position: sticky; top: 66px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px;}
         .chat-tabs { display: flex; padding: 10px 20px; gap: 10px; }
         .chat-tab { flex: 1; text-align: center; padding: 8px; border-radius: 15px; background: var(--snap-gray); font-weight: bold; cursor: pointer; transition: 0.2s;}
         .chat-tab.active { background: var(--snap-black); color: var(--snap-yellow); }
@@ -57,10 +67,10 @@
         .search-bar:focus { background: #e8e8e8; }
 
         /* --- CONVERSATION --- */
-        .conv-header { display: flex; align-items: center; padding: 0 20px; height: 86px; background: var(--snap-black); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 10;}
+        .conv-header { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 86px; background: var(--snap-black); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 10;}
         .back-btn { font-size: 26px; margin-right: 15px; cursor: pointer; color: var(--snap-yellow); font-weight: 900; }
-        #conv-title { color: var(--snap-yellow); font-weight: 900; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
-        .sort-btn { font-size: 20px; cursor: pointer; margin-left: 10px; background: transparent; display: flex; justify-content: center; align-items: center; color: var(--snap-yellow);}
+        #conv-title { position: absolute; left: 50%; transform: translateX(-50%); max-width: 60%; color: var(--snap-yellow); font-weight: 900; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sort-btn { font-size: 24px; cursor: pointer; margin-left: 10px; padding: 8px; background: transparent; display: flex; justify-content: center; align-items: center; color: var(--snap-yellow);}
         
         .conv-filters { display: flex; padding: 10px 20px; gap: 10px; border-bottom: 1px solid var(--snap-gray); flex-shrink: 0;}
         .conv-filter { flex: 1; background: var(--snap-gray); border-radius: 15px; padding: 8px; font-weight: bold; color: #888; cursor: pointer; transition: 0.2s; text-align: center; line-height: 1.2;}
@@ -78,9 +88,9 @@
         .msg-row { display: flex; flex-direction: column; width: 100%; margin-bottom: 15px; border-radius: 10px; transition: background 0.5s;}
         .msg-row.me { align-items: flex-end; }
         .msg-row.them { align-items: flex-start; }
-        .msg-bubble { padding: 12px 16px; max-width: 85%; font-weight: 500; word-wrap: break-word; }
+        .msg-bubble { padding: 9px 16px; max-width: 85%; font-weight: 500; word-wrap: break-word; }
         .msg-row.them .msg-bubble { background: var(--snap-gray); border-radius: 20px 20px 20px 4px; margin-left: 10px; }
-        .msg-row.me .msg-bubble { background: #E6F3FF; border-radius: 20px 20px 4px 20px; margin-right: 10px; }
+        .msg-row.me .msg-bubble { background: rgba(255, 252, 0, 0.18); border-radius: 20px 20px 4px 20px; margin-right: 10px; }
         .msg-date { font-size: 11px; color: #888; margin: 0 15px 4px 15px; font-weight: bold; }
         
         .msg-media { max-width: 100%; max-height: 350px; border-radius: 10px; margin-top: 5px; cursor: pointer; background: #eee; min-height: 50px; display: block; }
@@ -98,7 +108,8 @@
         .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2; }
         .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
         
-        #scroll-track { position: absolute; right: 0; top: 0; bottom: 0; width: 40px; z-index: 50; touch-action: none;}
+        #scroll-track { position: absolute; right: 0; top: 66px; bottom: 60px; width: 40px; z-index: 50; touch-action: none;}
+        #memories-scroll-area { padding-top: 66px; padding-bottom: 60px; }
         #scroll-thumb { position: absolute; right: 2px; top: 0; width: 8px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
 
         /* --- VISIONNEUSE --- */
@@ -113,6 +124,9 @@
         .viewer-date-bubble { background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; backdrop-filter: blur(5px); color: white;}
         
         .viewer-btn { background: rgba(255,255,255,0.25); border: none; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 22px; cursor: pointer; backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; pointer-events: auto;}
+        .viewer-actions-pill { display: flex; align-items: center; height: 45px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border-radius: 25px; overflow: hidden; pointer-events: auto; }
+        .pill-icon-btn { width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .pill-divider { width: 1px; height: 22px; background: rgba(255,255,255,0.4); }
         
         .nav-zone { position: absolute; top: 20%; bottom: 20%; width: 25%; z-index: 201; display: flex; align-items: center; cursor: pointer; }
         .nav-zone.left { left: 0; justify-content: flex-start; padding-left: 10px; }
@@ -122,6 +136,8 @@
     </style>
 </head>
 <body>
+
+    <div id="orientation-lock">🔄<br>Tourne ton téléphone<br>en mode portrait</div>
 
     <div id="app-container">
         
@@ -136,11 +152,6 @@
             <button type="button" id="setup-btn" class="upload-btn" onclick="document.getElementById('folder-input').click()" style="display:none; background: var(--snap-black); color: var(--snap-white); font-weight: bold; padding: 15px 30px; border-radius: 30px; margin-top: 30px; cursor: pointer; border: none;">
                 Sélectionner le dossier Archive
                 <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none;">
-            </button>
-
-            <!-- BOUTON HARD RESET EN CAS DE PLANTAGE -->
-            <button onclick="resetDB()" style="margin-top: 40px; background: transparent; color: #888; border: 1px solid #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold;">
-                Forcer la réinitialisation 🔄
             </button>
         </div>
 
@@ -160,7 +171,7 @@
                     <!-- Barre de recherche avec le bouton Emoji Réglages à droite -->
                     <div style="display: flex; align-items: center; padding: 0 20px 10px; gap: 15px;">
                         <input type="text" class="search-bar" id="chat-search" placeholder="Nom, mot, date (ex: 2015-05-29)..." oninput="Chat.onSearchInput()" style="margin: 0; flex: 1;">
-                        <div onclick="resetDB()" title="Changer de dossier" style="cursor: pointer; font-size: 26px; padding-bottom: 4px;">⚙️</div>
+                        <div onclick="resetDB()" title="Changer de dossier" style="cursor: pointer; font-size: 26px; padding-bottom: 4px; color: var(--snap-black);">⚙</div>
                     </div>
                 </div>
                 <div class="chat-list" id="chat-list"></div>
@@ -170,8 +181,8 @@
             <div id="view-conversation" class="view">
                 <div class="conv-header">
                     <div class="back-btn" onclick="UI.switchTab('chat')">‹</div>
-                    <div id="conv-title" style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</div>
-                    <div class="sort-btn" id="conv-sort-btn" onclick="Chat.toggleSort()">⬇️</div>
+                    <div id="conv-title">Nom</div>
+                    <div class="sort-btn" id="conv-sort-btn" onclick="Chat.toggleSort()">▾</div>
                 </div>
                 <div class="conv-filters">
                     <div class="conv-filter active" id="f-tout" onclick="Chat.setFilter('tout')">Tout<br><span id="c-count-tout">(0)</span></div>
@@ -221,7 +232,7 @@
                 const msg = err ? err.message : 'Format non supporté ou fichier corrompu';
                 videoEl.outerHTML = `<div style="background:#333; color:#FFFC00; padding:15px; border-radius:10px; font-size:12px; text-align:center; max-width: 100%; margin-top:5px;">
                     ⚠️ <b>Vidéo Impossible à lire (Code ${code})</b><br>${msg}<br><br>
-                    <button onclick="VideoDebugger.forceDownload('${key}')" style="background:#FFFC00; color:#000; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">⬇️ Télécharger le fichier brut</button>
+                    <button onclick="VideoDebugger.forceDownload('${key}')" style="background:#FFFC00; color:#000; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">Télécharger le fichier brut</button>
                 </div>`;
             },
             forceDownload: async (key) => {
@@ -236,6 +247,12 @@
                     alert("Le fichier est introuvable dans la base de données.");
                 }
             }
+        };
+
+        const ICONS = {
+            settings: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
+            chevronDown: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
+            chevronUp: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`
         };
 
         const State = {
@@ -326,7 +343,7 @@
                 };
             } catch(err) {
                 // Fallback sécurité si la base est cassée
-                document.getElementById('loading-screen').querySelector('p').innerText = "Erreur de lecture de la base. Veuillez Forcer la réinitialisation.";
+                document.getElementById('loading-screen').querySelector('p').innerText = "Erreur de lecture de la base. Recharge la page ou efface les données du site dans les réglages du navigateur.";
                 document.querySelector('.spinner').style.display = 'none';
             }
         };
@@ -518,6 +535,17 @@
             escapeHTML: (str) => {
                 if(!str) return "";
                 return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+            },
+            linkify: (escapedText) => {
+                if (!escapedText) return "";
+                const urlRegex = /((https?:\/\/|www\.)[^\s<]+)/gi;
+                return escapedText.replace(urlRegex, (match) => {
+                    let trailing = '';
+                    const trailingMatch = match.match(/[.,!?;:)]+$/);
+                    if (trailingMatch) { trailing = trailingMatch[0]; match = match.slice(0, -trailing.length); }
+                    const href = /^https?:\/\//i.test(match) ? match : `http://${match}`;
+                    return `<a href="${href}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${match}</a>${trailing}`;
+                });
             }
         };
 
@@ -698,7 +726,7 @@
                 document.getElementById('c-count-med').innerText = `(${State.currentChat.medCount})`;
                 document.getElementById('c-count-aud').innerText = `(${State.currentChat.audCount})`;
                 
-                State.chatSortOrder = 'bottom_up'; document.getElementById('conv-sort-btn').innerText = '⬇️';
+                State.chatSortOrder = 'bottom_up'; document.getElementById('conv-sort-btn').innerText = '▾';
                 
                 UI.switchTab('conversation');
                 
@@ -707,7 +735,7 @@
             
             toggleSort: () => {
                 State.chatSortOrder = State.chatSortOrder === 'bottom_up' ? 'top_down' : 'bottom_up';
-                document.getElementById('conv-sort-btn').innerText = State.chatSortOrder === 'bottom_up' ? '⬇️' : '⬆️';
+                document.getElementById('conv-sort-btn').innerText = State.chatSortOrder === 'bottom_up' ? '▾' : '▴';
                 Chat.setFilter(State.chatFilter);
             },
             
@@ -780,7 +808,7 @@
                         const isAudio = m["Media Type"] && (m["Media Type"].includes("AUDIO") || m["Media Type"].includes("NOTE") || m["Media Type"].includes("VOICE"));
                         const isMedia = m["Media Type"] && (m["Media Type"].includes("MEDIA") || m["Media Type"].includes("VIDEO") || m["Media Type"].includes("SNAP"));
                         
-                        let msgHtml = m.Content ? Util.escapeHTML(m.Content) : "";
+                        let msgHtml = m.Content ? Util.linkify(Util.escapeHTML(m.Content)) : "";
                         
                         if ((isAudio || isMedia) && m["Media IDs"]) {
                             const mediaKey = findChatMediaKey(m["Media IDs"]);
@@ -806,7 +834,7 @@
                         
                         if (!msgHtml.trim() && !isMedia && !isAudio) continue; 
                         
-                        html += `<div class="msg-row ${rowClass}" id="msg-${m.originalIndex}"><div class="msg-date">${sender} • ${Util.formatDate(m.Created)}</div><div class="msg-bubble">${msgHtml}</div></div>`;
+                        html += `<div class="msg-row ${rowClass}" id="msg-${m.originalIndex}"><div class="msg-date">${sender} • ${Util.formatDate(m.Created)}</div><div class="msg-bubble" data-raw-text="${m.Content ? Util.escapeHTML(m.Content) : ''}">${msgHtml}</div></div>`;
                     }
                     html += '</div>';
                 }
@@ -922,12 +950,116 @@
                 } else {
                     document.querySelector('.top-nav').style.display = 'flex';
                     document.querySelector('.bottom-nav').style.display = 'flex';
-                    document.getElementById('main-ui').style.paddingTop = '86px';
-                    document.getElementById('main-ui').style.paddingBottom = '86px';
                     targetView.style.display = 'block';
                 }
             }
         };
+
+        // --- NAVIGATION PAR GLISSEMENT (SWIPE) ---
+        (function() {
+            let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+            const SWIPE_MIN_DISTANCE = 70;   // px, distance horizontale minimale
+            const SWIPE_MAX_OFFAXIS = 60;    // px, tolérance verticale (pour ne pas gêner le scroll)
+            const SWIPE_MAX_TIME = 600;      // ms
+
+            const container = document.getElementById('app-container');
+
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                touchStartTime = Date.now();
+            }, { passive: true });
+
+            container.addEventListener('touchend', (e) => {
+                if (document.getElementById('viewer').style.display === 'flex') return; // pas pendant la visionneuse
+                if (Date.now() - touchStartTime > SWIPE_MAX_TIME) return;
+
+                const touch = e.changedTouches[0];
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
+
+                if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE || Math.abs(deltaY) > SWIPE_MAX_OFFAXIS) return;
+
+                if (document.getElementById('view-conversation').classList.contains('active')) {
+                    UI.switchTab('chat'); // glisser (dans n'importe quel sens) quitte la conversation
+                    return;
+                }
+
+                const activeNav = document.querySelector('.nav-item.active');
+                if (!activeNav) return;
+                if (deltaX < 0 && activeNav.id === 'nav-chat') UI.switchTab('memories');       // glisser à gauche
+                else if (deltaX > 0 && activeNav.id === 'nav-memories') UI.switchTab('chat');   // glisser à droite
+            }, { passive: true });
+        })();
+
+        // --- APPUI LONG POUR COPIER UN MESSAGE ---
+        (function() {
+            let pressTimer = null, pressTarget = null, startX = 0, startY = 0;
+            const LONG_PRESS_MS = 500;
+            const MOVE_TOLERANCE = 10;
+
+            function showCopyToast() {
+                let toast = document.getElementById('copy-toast');
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'copy-toast';
+                    toast.style.cssText = 'position:fixed; bottom:110px; left:50%; transform:translateX(-50%); background:rgba(17,17,17,0.9); color:var(--snap-yellow); padding:10px 22px; border-radius:20px; font-weight:bold; font-size:14px; z-index:500; pointer-events:none; opacity:0; transition:opacity 0.25s;';
+                    document.body.appendChild(toast);
+                }
+                toast.innerText = 'Copié !';
+                toast.style.opacity = '1';
+                clearTimeout(toast._hideTimeout);
+                toast._hideTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 1200);
+            }
+
+            function fallbackCopy(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); showCopyToast(); } catch(e) {}
+                document.body.removeChild(ta);
+            }
+
+            function copyBubble(bubble) {
+                const text = bubble.dataset.rawText || '';
+                if (!text.trim()) return;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(showCopyToast).catch(() => fallbackCopy(text));
+                } else {
+                    fallbackCopy(text);
+                }
+            }
+
+            function clearPress() { clearTimeout(pressTimer); pressTimer = null; pressTarget = null; }
+
+            const convScroll = document.getElementById('conv-scroll-area');
+
+            convScroll.addEventListener('touchstart', (e) => {
+                const bubble = e.target.closest('.msg-bubble');
+                if (!bubble) return;
+                pressTarget = bubble;
+                startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+                pressTimer = setTimeout(() => {
+                    if (pressTarget) {
+                        if (navigator.vibrate) navigator.vibrate(15);
+                        copyBubble(pressTarget);
+                    }
+                    pressTimer = null;
+                }, LONG_PRESS_MS);
+            }, { passive: true });
+
+            convScroll.addEventListener('touchmove', (e) => {
+                if (!pressTimer) return;
+                const dx = Math.abs(e.touches[0].clientX - startX), dy = Math.abs(e.touches[0].clientY - startY);
+                if (dx > MOVE_TOLERANCE || dy > MOVE_TOLERANCE) clearPress();
+            }, { passive: true });
+
+            convScroll.addEventListener('touchend', clearPress, { passive: true });
+            convScroll.addEventListener('touchcancel', clearPress, { passive: true });
+        })();
 
         const Viewer = {
             contextType: 'memories', currentIndex: 0,
@@ -942,10 +1074,12 @@
             },
 
             buildHeader: (dateStr, locStr) => {
-                let locBtn = "";
+                const mapIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>';
+                const downloadIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.59l3.3-3.3 1.42 1.42L12 17.41l-4.71-4.7 1.41-1.42 3.3 3.3V3h2zM5 19h14v2H5z"/></svg>';
+                let mapBtn = "";
                 if (locStr) {
                     const gpsMatch = locStr.match(/([-?\d.]+),\s*([-?\d.]+)/);
-                    if(gpsMatch) locBtn = `<div class="viewer-btn btn-map" style="position:absolute; right:77px; pointer-events:auto;" onclick="window.open('https://maps.google.com/?q=${gpsMatch[1]},${gpsMatch[2]}', '_blank')">📍</div>`;
+                    if(gpsMatch) mapBtn = `<div class="pill-icon-btn" onclick="window.open('https://maps.google.com/?q=${gpsMatch[1]},${gpsMatch[2]}', '_blank')">${mapIcon}</div><div class="pill-divider"></div>`;
                 }
                 
                 document.getElementById('viewer-header-dynamic').innerHTML = `
@@ -953,9 +1087,9 @@
                     <div class="viewer-date-container" style="position:absolute; left:50%; transform:translateX(-50%); top:20px; height:45px; display:flex; justify-content:center; align-items:center; pointer-events:none;">
                         <div class="viewer-date-bubble">${Util.formatDate(dateStr)}</div>
                     </div>
-                    <div class="viewer-actions" style="position:absolute; right:20px; top:20px; height:45px; display:flex; align-items:center; pointer-events:none;">
-                        ${locBtn}
-                        <button class="viewer-btn btn-download" id="viewer-download" style="position:absolute; right:0; pointer-events:auto;">⬇️</button>
+                    <div class="viewer-actions-pill" style="position:absolute; right:20px; top:20px;">
+                        ${mapBtn}
+                        <div class="pill-icon-btn" id="viewer-download">${downloadIcon}</div>
                     </div>
                 `;
             },
@@ -1003,7 +1137,7 @@
                         const link = document.createElement('a'); link.href = url; link.download = dlName; link.click(); return;
                     }
                     
-                    const wantOverlay = confirm("Ce média possède un filtre/texte.\nVeux-tu l'incruster sur l'image finale ?\n\n[OK] = Fusionner en 1 image\n[Annuler] = Exporter la photo brute");
+                    const wantOverlay = confirm("Télécharger avec le filtre/texte (OK) ou sans (Annuler) ?");
                     if (!wantOverlay) { const link = document.createElement('a'); link.href = url; link.download = dlName; link.click(); return; }
 
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
