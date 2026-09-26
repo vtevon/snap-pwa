@@ -35,8 +35,8 @@
         .top-nav {
             position: absolute; top: 0; left: 0; width: 100%; background: var(--snap-black);
             display: flex; justify-content: center; align-items: center; 
-            height: 66px; padding-top: 8px;
-            border-bottom-left-radius: 28px; border-bottom-right-radius: 28px;
+            height: 54px; padding-top: 6px;
+            border-bottom-left-radius: 22px; border-bottom-right-radius: 22px;
             z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
         .top-nav-title { color: var(--snap-yellow); font-size: 20px; font-weight: 900; letter-spacing: 2px; margin: 0; }
@@ -45,16 +45,17 @@
         .bottom-nav { 
             position: absolute; bottom: 0; left: 0; width: 100%; background: var(--snap-black); 
             display: flex; justify-content: space-around; align-items: flex-start; 
-            padding-top: 8px; height: 60px; 
-            border-top-left-radius: 28px; border-top-right-radius: 28px; 
+            padding-top: 12px; height: 78px; 
+            border-top-left-radius: 40px; border-top-right-radius: 40px; 
             z-index: 100; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
         }
         .nav-item { color: #555; font-size: 16px; font-weight: 900; letter-spacing: 1px; cursor: pointer; transition: 0.2s; text-transform: uppercase;}
         .nav-item.active { color: var(--snap-yellow); }
 
         /* --- CHAT LISTE --- */
-        #view-chat { padding-top: 66px; padding-bottom: 60px; }
-        .sticky-chat-header { position: sticky; top: 66px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px;}
+        #view-chat { display: flex; flex-direction: column; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+        .sticky-chat-header { margin-top: 54px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px; flex-shrink: 0; }
+        #chat-list-scroll-area { flex: 1; overflow-y: auto; padding-bottom: 78px; }
         .chat-tabs { display: flex; padding: 10px 20px; gap: 10px; }
         .chat-tab { flex: 1; text-align: center; padding: 8px; border-radius: 15px; background: var(--snap-gray); font-weight: bold; cursor: pointer; transition: 0.2s;}
         .chat-tab.active { background: var(--snap-black); color: var(--snap-yellow); }
@@ -94,6 +95,11 @@
         .msg-date { font-size: 11px; color: #888; margin: 0 15px 4px 15px; font-weight: bold; }
         
         .msg-media { max-width: 100%; max-height: 350px; border-radius: 10px; margin-top: 5px; cursor: pointer; background: #eee; min-height: 50px; display: block; }
+        .video-wrapper { position: relative; display: inline-block; max-width: 100%; cursor: pointer; }
+        .video-wrapper video.msg-media { margin-top: 5px; }
+        .video-play-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 54px; height: 54px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .video-progress-bg { position: absolute; bottom: 10px; left: 8px; right: 8px; height: 4px; background: rgba(255,255,255,0.4); border-radius: 2px; overflow: hidden; pointer-events: none; }
+        .video-progress-fill { height: 100%; width: 0%; background: var(--snap-yellow); }
         
         .custom-audio { display: flex; align-items: center; background: rgba(0,0,0,0.08); padding: 8px 12px; border-radius: 20px; gap: 10px; cursor: pointer; min-width: 200px; margin-top: 5px;}
         .ca-play { width: 30px; height: 30px; border-radius: 50%; background: var(--snap-black); color: var(--snap-white); display: flex; justify-content: center; align-items: center; font-size: 14px; flex-shrink: 0;}
@@ -108,8 +114,8 @@
         .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2; }
         .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
         
-        #scroll-track { position: absolute; right: 0; top: 66px; bottom: 60px; width: 40px; z-index: 50; touch-action: none;}
-        #memories-scroll-area { padding-top: 66px; padding-bottom: 60px; }
+        #scroll-track { position: absolute; right: 0; top: 54px; bottom: 78px; width: 40px; z-index: 50; touch-action: none;}
+        #memories-scroll-area { padding-top: 54px; padding-bottom: 78px; }
         #scroll-thumb { position: absolute; right: 2px; top: 0; width: 8px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
 
         /* --- VISIONNEUSE --- */
@@ -171,10 +177,12 @@
                     <!-- Barre de recherche avec le bouton Emoji Réglages à droite -->
                     <div style="display: flex; align-items: center; padding: 0 20px 10px; gap: 15px;">
                         <input type="text" class="search-bar" id="chat-search" placeholder="Nom, mot, date (ex: 2015-05-29)..." oninput="Chat.onSearchInput()" style="margin: 0; flex: 1;">
-                        <div onclick="resetDB()" title="Changer de dossier" style="cursor: pointer; font-size: 26px; padding-bottom: 4px; color: var(--snap-black);">⚙</div>
+                        <div onclick="resetDB()" title="Changer de dossier" style="cursor: pointer; font-size: 26px; padding-bottom: 4px; color: var(--snap-black);">⚙︎</div>
                     </div>
                 </div>
-                <div class="chat-list" id="chat-list"></div>
+                <div id="chat-list-scroll-area">
+                    <div class="chat-list" id="chat-list"></div>
+                </div>
             </div>
 
             <!-- VUE CONVERSATION (Prend 100% de l'espace) -->
@@ -230,7 +238,8 @@
                 const err = videoEl.error;
                 const code = err ? err.code : 'Inconnu';
                 const msg = err ? err.message : 'Format non supporté ou fichier corrompu';
-                videoEl.outerHTML = `<div style="background:#333; color:#FFFC00; padding:15px; border-radius:10px; font-size:12px; text-align:center; max-width: 100%; margin-top:5px;">
+                const target = videoEl.closest('.video-wrapper') || videoEl;
+                target.outerHTML = `<div style="background:#333; color:#FFFC00; padding:15px; border-radius:10px; font-size:12px; text-align:center; max-width: 100%; margin-top:5px;">
                     ⚠️ <b>Vidéo Impossible à lire (Code ${code})</b><br>${msg}<br><br>
                     <button onclick="VideoDebugger.forceDownload('${key}')" style="background:#FFFC00; color:#000; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">Télécharger le fichier brut</button>
                 </div>`;
@@ -246,6 +255,39 @@
                 } else {
                     alert("Le fichier est introuvable dans la base de données.");
                 }
+            }
+        };
+
+        const VideoPlayer = {
+            toggle: (wrapper) => {
+                const video = wrapper.querySelector('video');
+                const overlay = wrapper.querySelector('.video-play-overlay');
+                if (!video) return;
+                if (video.paused) {
+                    document.querySelectorAll('video').forEach(v => { if (v !== video && !v.paused) v.pause(); });
+                    if (AudioEngine.currentContainerId) stopAllMedia();
+                    video.play();
+                    if (overlay) overlay.style.display = 'none';
+                } else {
+                    video.pause();
+                    if (overlay) overlay.style.display = 'flex';
+                }
+            },
+            updateProgress: (video) => {
+                const wrapper = video.closest('.video-wrapper');
+                if (!wrapper) return;
+                const fill = wrapper.querySelector('.video-progress-fill');
+                if (fill && isFinite(video.duration) && video.duration > 0) {
+                    fill.style.width = ((video.currentTime / video.duration) * 100) + '%';
+                }
+            },
+            onEnded: (video) => {
+                const wrapper = video.closest('.video-wrapper');
+                if (!wrapper) return;
+                const overlay = wrapper.querySelector('.video-play-overlay');
+                const fill = wrapper.querySelector('.video-progress-fill');
+                if (overlay) overlay.style.display = 'flex';
+                if (fill) fill.style.width = '0%';
             }
         };
 
@@ -677,6 +719,28 @@
             }
         };
 
+        function stopAllMedia() {
+            if (AudioEngine.currentContainerId) {
+                const el = document.getElementById(AudioEngine.currentContainerId);
+                if (el) {
+                    const playBtn = el.querySelector('.ca-play');
+                    const fill = el.querySelector('.ca-progress-fill');
+                    const timeEl = el.querySelector('.ca-time');
+                    if (playBtn) playBtn.innerText = '▶';
+                    if (fill) fill.style.width = '0%';
+                    if (timeEl) {
+                        const dur = parseFloat(el.dataset.duration);
+                        timeEl.innerText = isFinite(dur) ? Util.formatTime(dur) : '0:00';
+                    }
+                }
+                AudioEngine.audio.pause();
+                AudioEngine.currentContainerId = null;
+            }
+            document.querySelectorAll('video').forEach(v => { if (!v.paused) v.pause(); });
+        }
+
+        document.addEventListener('visibilitychange', () => { if (document.hidden) stopAllMedia(); });
+
         let chatActiveTab = 'amis';
         let searchTimeout;
         const Chat = {
@@ -826,7 +890,7 @@
                                     
                                     // VIDEO PLEINEMENT FONCTIONNELLE DANS LE CHAT TEXTE AVEC LECTEUR ET DEBUG
                                     msgHtml += isVid 
-                                        ? `<video class="msg-media" src="${url}" controls preload="metadata" playsinline onerror="VideoDebugger.handleError(this, '${mediaKey}')"></video>` 
+                                        ? `<div class="video-wrapper" onclick="VideoPlayer.toggle(this)"><video class="msg-media" src="${url}" preload="metadata" playsinline ontimeupdate="VideoPlayer.updateProgress(this)" onended="VideoPlayer.onEnded(this)" onerror="VideoDebugger.handleError(this, '${mediaKey}')"></video><div class="video-play-overlay">▶</div><div class="video-progress-bg"><div class="video-progress-fill"></div></div></div>` 
                                         : `<img class="msg-media" src="${url}" onclick="Viewer.openDirect(this.src, '${m.Created}', '${m.Location || ''}')">`;
                                 }
                             }
@@ -930,6 +994,7 @@
 
         const UI = {
             switchTab: (tabId) => {
+                stopAllMedia();
                 document.querySelectorAll('.view').forEach(v => {
                     v.classList.remove('active');
                     v.style.display = 'none';
@@ -938,19 +1003,16 @@
                 
                 const targetView = document.getElementById(`view-${tabId}`);
                 targetView.classList.add('active');
+                targetView.style.display = 'flex';
                 
                 if (document.getElementById(`nav-${tabId}`)) document.getElementById(`nav-${tabId}`).classList.add('active');
                 
                 if (tabId === 'conversation') {
                     document.querySelector('.top-nav').style.display = 'none';
                     document.querySelector('.bottom-nav').style.display = 'none';
-                    document.getElementById('main-ui').style.paddingTop = '0';
-                    document.getElementById('main-ui').style.paddingBottom = '0';
-                    targetView.style.display = 'flex';
                 } else {
                     document.querySelector('.top-nav').style.display = 'flex';
                     document.querySelector('.bottom-nav').style.display = 'flex';
-                    targetView.style.display = 'block';
                 }
             }
         };
@@ -972,12 +1034,19 @@
             }, { passive: true });
 
             container.addEventListener('touchend', (e) => {
-                if (document.getElementById('viewer').style.display === 'flex') return; // pas pendant la visionneuse
                 if (Date.now() - touchStartTime > SWIPE_MAX_TIME) return;
 
                 const touch = e.changedTouches[0];
                 const deltaX = touch.clientX - touchStartX;
                 const deltaY = touch.clientY - touchStartY;
+
+                if (document.getElementById('viewer').style.display === 'flex') {
+                    // Visionneuse ouverte : glisser vers le haut OU le bas la ferme
+                    if (Math.abs(deltaY) >= SWIPE_MIN_DISTANCE && Math.abs(deltaX) <= SWIPE_MAX_OFFAXIS) {
+                        Viewer.close();
+                    }
+                    return;
+                }
 
                 if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE || Math.abs(deltaY) > SWIPE_MAX_OFFAXIS) return;
 
@@ -1116,7 +1185,7 @@
                 const url = URLManager.create(mainFile);
                 const isVideo = mainKey.match(/\.(mp4|mov)$/i);
                 
-                container.innerHTML = isVideo ? `<video src="${url}" controls autoplay playsinline style="max-width:100%; max-height:100%;" onerror="VideoDebugger.handleError(this, '${mainKey}')"></video>` : `<img src="${url}">`;
+                container.innerHTML = isVideo ? `<div class="video-wrapper" style="max-width:100%; max-height:100%;" onclick="VideoPlayer.toggle(this)"><video src="${url}" autoplay playsinline style="max-width:100%; max-height:100%;" ontimeupdate="VideoPlayer.updateProgress(this)" onended="VideoPlayer.onEnded(this)" onerror="VideoDebugger.handleError(this, '${mainKey}')"></video><div class="video-play-overlay" style="display:none;">▶</div><div class="video-progress-bg"><div class="video-progress-fill"></div></div></div>` : `<img src="${url}">`;
                 if (overlayFile) container.innerHTML += `<img src="${URLManager.create(overlayFile)}" id="viewer-overlay">`;
                 
                 Viewer.buildHeader(dateStr, locStr);
@@ -1166,7 +1235,7 @@
                 }
                 if (prevIdx >= 0) { Viewer.currentIndex = prevIdx; Viewer.renderCurrent(); } 
             },
-            close: () => { document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; }
+            close: () => { stopAllMedia(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; }
         };
 
         window.UI = UI; window.Viewer = Viewer; window.Chat = Chat; window.Memories = Memories; window.AudioEngine = AudioEngine; window.VideoDebugger = VideoDebugger;
