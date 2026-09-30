@@ -12,14 +12,15 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Avenir Next', -apple-system, sans-serif; }
         html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
-        body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-
-        /* --- VERROUILLAGE PORTRAIT (iPhone) --- */
-        #orientation-lock { display: none; position: fixed; inset: 0; background: #000; color: var(--snap-yellow); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; font-weight: 900; font-size: 18px; line-height: 1.5; }
-        @media (orientation: landscape) {
-            #orientation-lock { display: flex; }
-            #app-container { display: none !important; }
+        html { height: 100%; overflow: hidden; overscroll-behavior: none; }
+        body {
+            background-color: #000; display: flex; justify-content: center; align-items: center;
+            position: fixed; inset: 0; height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: none;
         }
+
+        /* --- RESTE VERTICAL, MÊME SI LE TÉLÉPHONE EST TENU À L'HORIZONTALE --- */
+        /* Pas de rotation ni de message "tourne ton téléphone" : l'app garde sa forme verticale et se
+           centre simplement à l'écran (comme sur un téléphone), quelle que soit l'orientation physique. */
 
         #app-container { width: 100%; max-width: 428px; height: 100%; max-height: 926px; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
         @media (min-width: 429px) { #app-container { height: 90vh; border-radius: 40px; } }
@@ -31,7 +32,7 @@
 
         /* --- UI PRINCIPALE --- */
         #main-ui { display: none; flex-direction: column; height: 100%; position: relative; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
-        .view { flex: 1; overflow-y: auto; background-color: var(--snap-white); display: none; flex-direction: column; position: relative; width: 100%;}
+        .view { flex: 1; overflow: hidden; background-color: var(--snap-white); display: none; flex-direction: column; position: relative; width: 100%;}
         
         /* --- EN-TÊTE SNAPCHAT (HAUT) --- */
         .top-nav {
@@ -56,10 +57,23 @@
 
         /* --- CHAT LISTE --- */
         #view-chat { display: flex; flex-direction: column; overflow: hidden; padding-top: 0; padding-bottom: 0; }
-        .sticky-chat-header { margin-top: calc(54px + env(safe-area-inset-top, 0px)); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px; flex-shrink: 0; }
-        #chat-list-scroll-area { flex: 1; overflow-y: auto; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+        .sticky-chat-header { margin-top: calc(54px + env(safe-area-inset-top, 0px)); background: rgba(255, 255, 255, 0.98); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px; flex-shrink: 0; }
+        #chat-list-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
         #view-map { display: flex; flex-direction: column; overflow: hidden; }
-        #map-scroll-area { flex: 1; overflow-y: auto; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+        #view-map .chat-tabs { gap: 6px; padding: 0 12px; align-items: center; }
+        .city-hide { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #e5e5e5; color: #666; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; }
+        #view-map .chat-tab { padding: 8px 2px; font-size: 12.5px; white-space: nowrap; }
+        #map-cities-list { margin-top: 12px; display: none; }
+        .tl-btn { width: 28px; height: 28px; flex: none; border-radius: 50%; border: none; background: var(--snap-black); color: var(--snap-yellow); font-size: 15px; font-weight: bold; line-height: 1; cursor: pointer; padding: 0; }
+        .tl-speed { width: auto; min-width: 34px; padding: 0 8px; border-radius: 14px; font-size: 12px; }
+        #tl-range { accent-color: #111; height: 22px; margin: 0; }
+        /* Avec le lecteur affiché, la carte est ajustée à l'écran pour que carte + lecteur ne dépassent pas */
+        #map-wrap.tl-on #leaflet-map { height: calc(100vh - 290px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); height: calc(100dvh - 290px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 240px; }
+        .city-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin-bottom: 6px; background: var(--snap-gray); border-radius: 12px; cursor: pointer; }
+        .city-row .city-name { font-weight: bold; font-size: 14px; }
+        .city-row .city-meta { font-size: 11px; color: #888; margin-top: 2px; }
+        .city-row .city-badge { background: var(--snap-black); color: var(--snap-yellow); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+        #map-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
         #leaflet-map { width: 100%; height: 62vh; border-radius: 14px; background: #dceefb; }
         .meta-icon { vertical-align: -2px; opacity: 0.65; }
         #leaflet-map .memory-marker { background: var(--snap-yellow); border: 2px solid var(--snap-black); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
@@ -138,7 +152,7 @@
         #chat-loading-overlay { position: absolute; top: calc(164px + env(safe-area-inset-top, 0px)); left: 0; width: 100%; height: calc(100% - 164px - env(safe-area-inset-top, 0px)); background: rgba(255,255,255,0.8); z-index: 50; display: none; justify-content: center; align-items: center; flex-direction: column; }
         #chat-scroll-loader { text-align: center; padding: 10px; color: var(--snap-black); font-size: 20px; display: none; font-weight: bold;}
         
-        #conv-scroll-area { flex: 1; overflow-y: auto; display: block; position: relative; }
+        #conv-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: block; position: relative; }
         
         .text-container { display: flex; flex-direction: column; padding: 15px 10px; width: 100%; box-sizing: border-box;}
         
@@ -172,13 +186,14 @@
         .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
         
         #scroll-track { position: absolute; right: 0; top: calc(54px + env(safe-area-inset-top, 0px)); bottom: calc(78px + env(safe-area-inset-bottom, 0px)); width: 40px; z-index: 50; touch-action: none;}
-        #memories-scroll-area { padding-top: calc(54px + env(safe-area-inset-top, 0px)); padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+        #memories-scroll-area { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-top: calc(54px + env(safe-area-inset-top, 0px)); padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
         #scroll-thumb { position: absolute; right: 2px; top: 0; width: 8px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
 
         /* --- VISIONNEUSE --- */
         #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; }
         #viewer-media { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; padding-top: 80px; padding-bottom: 80px; }
-        #viewer-media img, #viewer-media video { max-width: 100%; max-height: 100%; object-fit: contain; }
+        #viewer-media img, #viewer-media video { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
+        #viewer-zoomable { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; touch-action: none; }
         #viewer-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; z-index: 201;}
         
         .viewer-header-dynamic { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; background: linear-gradient(rgba(0,0,0,0.8), transparent); color: white; display: flex; align-items: flex-start; z-index: 202; pointer-events: none;}
@@ -199,8 +214,6 @@
     </style>
 </head>
 <body>
-
-    <div id="orientation-lock">🔄<br>Tourne ton téléphone<br>en mode portrait</div>
 
     <div id="app-container">
         
@@ -270,24 +283,39 @@
             <!-- VUE MEMORIES -->
             <div id="view-memories" class="view">
                 <div id="scroll-track"><div id="scroll-thumb"></div></div>
-                <div id="memories-scroll-area" style="height: 100%; overflow-y: auto;">
+                <div id="memories-scroll-area">
                     <div class="memories-grid" id="memories-grid"></div>
                 </div>
             </div>
 
             <!-- VUE MAP -->
             <div id="view-map" class="view">
-                <div class="sticky-chat-header" style="padding-bottom: 10px;">
+                <div class="sticky-chat-header" style="padding-top: 6px; padding-bottom: 6px;">
                     <div class="chat-tabs">
                         <div class="chat-tab active" id="map-tab-memories" onclick="MapView.switchTab('memories')">Memories</div>
-                        <div class="chat-tab" id="map-tab-trajet" onclick="MapView.switchTab('trajet')">Trajet</div>
+                        <div class="chat-tab" id="map-tab-localisation" onclick="MapView.switchTab('localisation')">Localisation</div>
                     </div>
                 </div>
                 <div id="map-scroll-area">
-                    <div id="map-wrap" style="padding: 15px; position: relative;">
+                    <div id="map-wrap" style="padding: 8px 12px 12px; position: relative;">
                         <div id="leaflet-map"></div>
-                        <div id="map-info" style="margin-top: 14px; text-align: center; color: #888; font-weight: bold; font-size: 13px;"></div>
+                        <div id="map-timeline" style="display:none; margin-top: 6px;">
+                            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">
+                                <div id="tl-place" style="flex:1; min-width:0; font-weight:800; font-size:14px; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</div>
+                                <div id="tl-date" style="flex:none; font-size:11px; color:#888; font-weight:700; white-space:nowrap;">—</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <button id="tl-prev" class="tl-btn" aria-label="Précédent">‹</button>
+                                <button id="tl-play" class="tl-btn" aria-label="Lecture">▶</button>
+                                <button id="tl-next" class="tl-btn" aria-label="Suivant">›</button>
+                                <button id="tl-speed" class="tl-btn tl-speed" aria-label="Vitesse de lecture">×1</button>
+                                <input type="range" id="tl-range" min="0" max="0" value="0" step="1" style="flex:1; min-width:0;">
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:9px; color:#aaa; font-weight:600; margin-top:0;"><span id="tl-min"></span><span id="tl-max"></span></div>
+                        </div>
+                        <div id="map-info" style="margin-top: 6px; text-align: center; color: #888; font-weight: bold; font-size: 13px;"></div>
                         <div id="map-offline-notice" style="display:none; margin-top: 4px; text-align: center; color: #d97706; font-size: 11px; font-weight: 600;">Pas de connexion : le fond de carte ne peut pas se charger (les tuiles viennent d'OpenStreetMap).</div>
+                        <div id="map-cities-list"></div>
                     </div>
                 </div>
             </div>
@@ -449,8 +477,8 @@
 
         const State = {
             db: null, allMediaKeys: [], friends: {}, chats: {}, groups: [], friendsList: [], myUsername: null,
-            memories: [], memoriesRendered: 0, locations: [], friendsInfo: {}, accountInfo: null,
-            modifications: { merges: {}, renames: {}, hiddenFriends: [], hiddenGroups: [] },
+            memories: [], memoriesRendered: 0, locations: [], areas: [], friendsInfo: {}, accountInfo: null,
+            modifications: { merges: {}, renames: {}, hiddenFriends: [], hiddenGroups: [], hiddenPostals: [] },
             sortMode: 'msgs_desc',
             mediaIndex: { chatsMap: {} }, 
             lazyFiles: [], 
@@ -846,6 +874,11 @@
             });
             State.locations.sort((a, b) => new Date(a.date.replace(' UTC', 'Z')) - new Date(b.date.replace(' UTC', 'Z')));
 
+            // Villes/zones visitées (json/location_history.json > "Areas you may have visited in the last two years").
+            State.areas = (rawLocations["Areas you may have visited in the last two years"] || [])
+                .filter(x => x && x["City"])
+                .map(x => ({ date: x["Time"] || null, city: x["City"], region: x["Region"] || '', postal: x["Postal Code"] || '' }));
+
             for (const cat in rawFriends) {
                 if (Array.isArray(rawFriends[cat])) {
                     rawFriends[cat].forEach(f => {
@@ -974,7 +1007,7 @@
             const savedMods = await getJSON('modifications');
             const legacyMerges = savedMods ? null : await getJSON('friendMerges'); // migration ancien format
             State.modifications = Object.assign(
-                { merges: {}, renames: {}, hiddenFriends: [], hiddenGroups: [] },
+                { merges: {}, renames: {}, hiddenFriends: [], hiddenGroups: [], hiddenPostals: [] },
                 savedMods || (legacyMerges ? { merges: legacyMerges } : {})
             );
             for (const secondary in State.modifications.merges) {
@@ -1479,7 +1512,18 @@
                             if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.backgroundColor = 'rgba(255, 252, 0, 0.4)'; setTimeout(() => el.style.backgroundColor = 'transparent', 1500); }
                         }, 50);
                     } else if (State.chatSortOrder === 'bottom_up') {
-                        setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 50);
+                        // Les médias (photos/vidéos) chargent après coup et augmentent la hauteur du contenu,
+                        // donc un seul scrollTop = scrollHeight trop tôt ne va pas jusqu'en bas. On reste
+                        // "collé" en bas tant que le contenu grandit, au lieu de miser sur des délais fixes
+                        // qui peuvent être trop courts sur un téléphone lent ou un réseau lent.
+                        scrollArea.scrollTop = scrollArea.scrollHeight;
+                        let pinned = true;
+                        const unpin = () => { pinned = false; };
+                        scrollArea.addEventListener('touchstart', unpin, { passive: true, once: true });
+                        scrollArea.addEventListener('wheel', unpin, { passive: true, once: true });
+                        const ro = new ResizeObserver(() => { if (pinned) scrollArea.scrollTop = scrollArea.scrollHeight; });
+                        ro.observe(inner);
+                        setTimeout(() => ro.disconnect(), 3000); // le temps que toutes les miniatures finissent de charger
                     } else {
                         scrollArea.scrollTop = 0;
                     }
@@ -1595,7 +1639,9 @@
 
             parseLatLng: (locStr) => {
                 if (!locStr) return null;
-                const m = locStr.match(/([-?\d.]+),\s*([-?\d.]+)/);
+                // Format avec précision : "44.77534 ± 39.66 meters, -0.63670 ± 39.66 meters"
+                const acc = String(locStr).match(/(-?\d+(?:\.\d+)?)\s*±[^,]*,\s*(-?\d+(?:\.\d+)?)/);
+                const m = acc || locStr.match(/([-?\d.]+),\s*([-?\d.]+)/);
                 if (!m) return null;
                 const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
                 if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
@@ -1627,70 +1673,527 @@
                 return points;
             },
 
+            // Villes reconnues hors-ligne (nom, lat, lng) : chaque point de localisation est rattaché à la ville la plus proche.
+            CITIES: [
+                ['Paris',48.8566,2.3522],['Marseille',43.2965,5.3698],['Lyon',45.764,4.8357],['Toulouse',43.6047,1.4442],['Nice',43.7102,7.262],
+                ['Nantes',47.2184,-1.5536],['Montpellier',43.6108,3.8767],['Strasbourg',48.5734,7.7521],['Bordeaux',44.8378,-0.5792],['Lille',50.6292,3.0573],
+                ['Rennes',48.1173,-1.6778],['Reims',49.2583,4.0317],['Le Havre',49.4944,0.1079],['Saint-Étienne',45.4397,4.3872],['Toulon',43.1242,5.928],
+                ['Grenoble',45.1885,5.7245],['Dijon',47.322,5.0415],['Angers',47.4784,-0.5632],['Nîmes',43.8367,4.3601],['Clermont-Ferrand',45.7772,3.087],
+                ['Le Mans',48.0061,0.1996],['Aix-en-Provence',43.5297,5.4474],['Brest',48.3904,-4.4861],['Tours',47.3941,0.6848],['Amiens',49.8942,2.2957],
+                ['Limoges',45.8336,1.2611],['Annecy',45.8992,6.1294],['Perpignan',42.6887,2.8948],['Metz',49.1193,6.1757],['Besançon',47.2378,6.0241],
+                ['Orléans',47.9029,1.9093],['Rouen',49.4432,1.0993],['Mulhouse',47.7508,7.3359],['Caen',49.1829,-0.3707],['Nancy',48.6921,6.1844],
+                ['Avignon',43.9493,4.8055],['Poitiers',46.5802,0.3404],['La Rochelle',46.1603,-1.1511],['Pau',43.2951,-0.3708],['Bayonne',43.4929,-1.4748],
+                ['Biarritz',43.4832,-1.5586],['Arcachon',44.6529,-1.1652],['Mérignac',44.8386,-0.6436],['Pessac',44.806,-0.6318],['Talence',44.8085,-0.5885],
+                ['Lacanau',45.0025,-1.1966],['Lège-Cap-Ferret',44.6318,-1.2472],['Andernos-les-Bains',44.7431,-1.1035],['Biscarrosse',44.3929,-1.1667],
+                ['Mimizan',44.2,-1.2333],['Cannes',43.5528,7.0174],['Antibes',43.5808,7.1239],['Ajaccio',41.9192,8.7386],['Bastia',42.6977,9.4502],
+                ['Lorient',47.7482,-3.3702],['Quimper',47.9961,-4.1024],['Saint-Malo',48.6493,-2.0257],['Cherbourg',49.6337,-1.6221],['Troyes',48.2973,4.0744],
+                ['Valence',44.9334,4.8924],['Chambéry',45.5646,5.9178],['Angoulême',45.6484,0.1562],['Niort',46.3237,-0.4588],['Bourges',47.0844,2.3964],
+                ['Dunkerque',51.0344,2.3768],['Calais',50.9513,1.8587],['Colmar',48.0794,7.3585],['Béziers',43.3442,3.2158],['Carcassonne',43.2130,2.3491],
+                ['Albi',43.9298,2.148],['Tarbes',43.2328,0.0781],['Lourdes',43.0946,-0.0455],['Agen',44.2033,0.6167],['Périgueux',45.1839,0.7211],
+                ['Brive-la-Gaillarde',45.1585,1.5332],['Royan',45.6273,-1.0286],['Mont-de-Marsan',43.8907,-0.4996],['Dax',43.7102,-1.0524],
+                ['Libourne',44.9167,-0.2437],['Saint-Nazaire',47.2735,-2.2137],['Vannes',47.6582,-2.7608],['Saint-Brieuc',48.5136,-2.7603],
+                ['Chartres',48.4469,1.4891],['Versailles',48.8014,2.1301],['Saint-Tropez',43.2727,6.6407],['Menton',43.7745,7.4975],['Chamonix',45.9237,6.8694],
+                ['Cognac',45.6953,-0.3292],['Sarlat-la-Canéda',44.8903,1.2166],['Bergerac',44.8516,0.4816],
+                ['Londres',51.5072,-0.1276],['Édimbourg',55.9533,-3.1883],['Dublin',53.3498,-6.2603],['Madrid',40.4168,-3.7038],['Barcelone',41.3874,2.1686],
+                ['Valence (ES)',39.4699,-0.3763],['Séville',37.3891,-5.9845],['Malaga',36.7213,-4.4214],['Bilbao',43.263,-2.935],['Saint-Sébastien',43.3183,-1.9812],
+                ['Palma',39.5696,2.6502],['Ibiza',38.9067,1.4206],['Lisbonne',38.7223,-9.1393],['Porto',41.1579,-8.6291],['Rome',41.9028,12.4964],
+                ['Milan',45.4642,9.19],['Venise',45.4408,12.3155],['Florence',43.7696,11.2558],['Naples',40.8518,14.2681],['Berlin',52.52,13.405],
+                ['Munich',48.1351,11.582],['Francfort',50.1109,8.6821],['Hambourg',53.5511,9.9937],['Amsterdam',52.3676,4.9041],['Bruxelles',50.8503,4.3517],
+                ['Bruges',51.2093,3.2247],['Luxembourg',49.6116,6.1319],['Genève',46.2044,6.1432],['Zurich',47.3769,8.5417],['Vienne',48.2082,16.3738],
+                ['Prague',50.0755,14.4378],['Budapest',47.4979,19.0402],['Varsovie',52.2297,21.0122],['Copenhague',55.6761,12.5683],['Stockholm',59.3293,18.0686],
+                ['Oslo',59.9139,10.7522],['Athènes',37.9838,23.7275],['Istanbul',41.0082,28.9784],['Marrakech',31.6295,-7.9811],['Casablanca',33.5731,-7.5898],
+                ['Tunis',36.8065,10.1815],['Alger',36.7538,3.0588],['Le Caire',30.0444,31.2357],['Dubaï',25.2048,55.2708],['New York',40.7128,-74.006],
+                ['Los Angeles',34.0522,-118.2437],['San Francisco',37.7749,-122.4194],['Miami',25.7617,-80.1918],['Las Vegas',36.1699,-115.1398],
+                ['Montréal',45.5017,-73.5673],['Toronto',43.6532,-79.3832],['Mexico',19.4326,-99.1332],['Rio de Janeiro',-22.9068,-43.1729],
+                ['São Paulo',-23.5505,-46.6333],['Buenos Aires',-34.6037,-58.3816],['Tokyo',35.6762,139.6503],['Kyoto',35.0116,135.7681],['Séoul',37.5665,126.978],
+                ['Bangkok',13.7563,100.5018],['Singapour',1.3521,103.8198],['Hong Kong',22.3193,114.1694],['Pékin',39.9042,116.4074],['Shanghai',31.2304,121.4737],
+                ['Sydney',-33.8688,151.2093],['Melbourne',-37.8136,144.9631]
+            ],
+            CITY_RADIUS_KM: 15,     // un point est rattaché à une ville s'il est à moins de ce rayon
+
+            // Regroupe les points par ville la plus proche (dans le rayon) : jours distincts, nb de points, 1re/dernière date.
+            getCityStats: (points) => {
+                const stats = new Map();
+                let unmatched = 0;
+                const R = MapView.CITY_RADIUS_KM;
+                const toRad = Math.PI / 180;
+                for (const p of points) {
+                    let best = -1, bestD = Infinity;
+                    const cosLat = Math.cos(p.lat * toRad);
+                    for (let i = 0; i < MapView.CITIES.length; i++) {
+                        const c = MapView.CITIES[i];
+                        const dy = (c[1] - p.lat) * 111.32;
+                        if (dy > R || dy < -R) continue;
+                        const dx = (c[2] - p.lng) * 111.32 * cosLat;
+                        const d = Math.sqrt(dx * dx + dy * dy);
+                        if (d < bestD) { bestD = d; best = i; }
+                    }
+                    if (best < 0 || bestD > R) { unmatched++; continue; }
+                    let st = stats.get(best);
+                    if (!st) {
+                        const c = MapView.CITIES[best];
+                        st = { name: c[0], label: c[0], lat: c[1], lng: c[2], points: 0, days: new Set(), first: null, last: null };
+                        stats.set(best, st);
+                    }
+                    st.points++;
+                    if (p.date) {
+                        st.days.add(String(p.date).slice(0, 10));
+                        const t = new Date(String(p.date).replace(' UTC', 'Z')).getTime();
+                        if (!isNaN(t)) {
+                            if (st.first === null || t < st.first) st.first = t;
+                            if (st.last === null || t > st.last) st.last = t;
+                        }
+                    }
+                }
+                const list = [...stats.values()].map(s => ({ ...s, dayCount: s.days.size || 1 }));
+                list.sort((a, b) => b.dayCount - a.dayCount || b.points - a.points);
+                return { list, unmatched };
+            },
+
+
+            // ---- Onglet Villes : données "Areas you may have visited" (nom de ville + région, sans coordonnées) ----
+            normName: (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''),
+
+            FR_REGIONS: ['iledefrance','paysdelaloire','grandest','normandie','auvergnerhonealpes','nouvelleaquitaine','occitanie','hautsdefrance','bretagne','provencealpescotedazur','bourgognefranchecomte','centrevaldeloire','corse'],
+
+            // "les sables-d'olonne" -> "Les Sables-d'Olonne" ; "Pays - De - La - Loire" -> "Pays-de-la-Loire"
+            prettyCity: (str) => {
+                const small = ['de','du','des','la','le','les','sur','sous','en','et','aux','au','d','l'];
+                return String(str).trim().replace(/\s+-\s+/g, '-').toLowerCase()
+                    .replace(/(^|[\s\-'’])([a-zà-öø-ÿ]+)/g, (m, sep, w, off) => (off > 0 && small.includes(w)) ? sep + w : sep + w.charAt(0).toUpperCase() + w.slice(1));
+            },
+
+            US_STATES: ['alabama','alaska','arizona','arkansas','california','colorado','connecticut','delaware','florida','georgia','hawaii','idaho','illinois','indiana','iowa','kansas','kentucky','louisiana','maine','maryland','massachusetts','michigan','minnesota','mississippi','missouri','montana','nebraska','nevada','newhampshire','newjersey','newmexico','newyork','northcarolina','northdakota','ohio','oklahoma','oregon','pennsylvania','rhodeisland','southcarolina','southdakota','tennessee','texas','utah','vermont','virginia','washington','westvirginia','wisconsin','wyoming','districtofcolumbia'],
+            CA_PROVINCES: ['quebec','ontario','britishcolumbia','alberta','manitoba','saskatchewan','novascotia','newbrunswick','newfoundlandandlabrador','princeedwardisland'],
+
+            // Pays déduit de la région (le fichier ne contient pas le pays), sinon du format du code postal.
+            countryInfo: (postal, usMajority) => {
+                const p = String(postal || '').trim().toUpperCase();
+                if (/^[A-Z]\d[A-Z]/.test(p)) return { cc: 'ca', label: 'Canada' };
+                if (/^\d{5}$/.test(p)) return usMajority ? { cc: 'us', label: 'États-Unis' } : { cc: 'fr', label: 'France' };
+                return { cc: '', label: '' };
+            },
+
+            geoCache: (() => { try { return JSON.parse(localStorage.getItem('villesGeoCachePostal') || '{}'); } catch (e) { return {}; } })(),
+            saveGeoCache: () => { try { localStorage.setItem('villesGeoCachePostal', JSON.stringify(MapView.geoCache)); } catch (e) {} },
+
+            // Recherche en ligne (Nominatim / OpenStreetMap) par code postal + pays ; repli sur ville + région. Résultat mis en cache.
+            // GPS intégrés (hors-ligne) des codes postaux : [lat, lng, lieu, approx]. approx=1 : position estimée (commune/quartier non identifié avec certitude).
+            POSTAL_GPS: {
+                fr: {'01270':[46.3833, 5.35, "Coligny"],'11200':[43.2, 2.7667, "Lézignan-Corbières"],'11480':[42.9833, 3.0, "La Palme"],'13700':[43.4167, 5.2167, "Marignane"],'13710':[43.4544, 5.5622, "Fuveau"],'13720':[43.3939, 5.5836, "La Bouilladisse"],'17240':[45.4833, -0.5667, "", 1],'19270':[45.2228, 1.5203, "Donzenac"],'21690':[47.35, 4.85, "", 1],'22000':[48.5136, -2.7603, "Saint-Brieuc"],'22140':[48.6247, -3.2967, "Bégard"],'22170':[48.55, -2.9667, "Châtelaudren-Plouagat"],'22190':[48.5347, -2.7667, "Plérin"],'22270':[48.4056, -2.3283, "Jugon-les-Lacs"],'22300':[48.7324, -3.4595, "Lannion"],'22400':[48.4681, -2.5186, "Lamballe"],'22480':[48.31, -3.17, "Saint-Nicolas-du-Pélem"],'22780':[48.62, -3.3, "", 1],'25640':[47.3625, 6.1486, "", 1],'28160':[48.2167, 1.1667, "Brou"],'29000':[47.9961, -4.1024, "Quimper"],'29200':[48.3904, -4.4861, "Brest"],'29280':[48.3819, -4.6203, "Plouzané"],'29400':[48.5106, -4.0656, "Landivisiau"],'29410':[48.5, -3.8667, "Pleyber-Christ"],'29490':[48.4372, -4.3956, "Guipavas"],'29620':[48.6208, -3.7222, "Lanmeur"],'29860':[48.5, -4.4333, "Plabennec"],'31000':[43.6047, 1.4442, "Toulouse"],'31150':[43.6772, 1.4064, "Fenouillet"],'33000':[44.8378, -0.5792, "Bordeaux"],'33115':[44.5878, -1.2158, "Pyla-sur-Mer"],'33120':[44.6529, -1.1652, "Arcachon"],'33130':[44.8083, -0.5489, "Bègles"],'33170':[44.7736, -0.6156, "Gradignan"],'33300':[44.8626, -0.5674, "Bordeaux"],'33400':[44.8085, -0.5885, "Talence"],'33600':[44.806, -0.6318, "Pessac"],'33680':[45.0025, -1.1966, "Lacanau"],'34270':[43.7833, 3.85, "Saint-Mathieu-de-Tréviers"],'35000':[48.1147, -1.6794, "Rennes"],'35200':[48.085, -1.68, "Rennes"],'35235':[48.15, -1.5667, "Thorigné-Fouillard"],'35290':[48.1875, -2.1911, "Saint-Méen-le-Grand"],'35310':[48.0764, -1.8497, "Mordelles"],'35360':[48.2, -2.05, "Montauban-de-Bretagne"],'35370':[48.05, -1.15, "Argentré-du-Plessis"],'35590':[48.15, -1.8, "", 1],'35700':[48.12, -1.635, "Rennes"],'35760':[48.15, -1.6833, "Saint-Grégoire"],'44000':[47.2184, -1.5536, "Nantes"],'44100':[47.205, -1.6, "Nantes"],'44200':[47.2, -1.545, "Nantes"],'44300':[47.25, -1.515, "Nantes"],'44980':[47.25, -1.4833, "Sainte-Luce-sur-Loire"],'45360':[47.65, 2.6, "", 1],'47130':[44.2667, 0.3833, "Port-Sainte-Marie"],'47400':[44.3917, 0.3083, "Tonneins"],'49000':[47.4784, -0.5632, "Angers"],'50000':[49.1156, -1.09, "Saint-Lô"],'50160':[49.0333, -0.9667, "Torigny-les-Villes"],'50440':[49.66, -1.84, "Beaumont-Hague"],'51400':[49.1333, 4.3667, "Mourmelon-le-Grand"],'52000':[48.1117, 5.1394, "Chaumont"],'53000':[48.07, -0.77, "Laval"],'53210':[48.05, -0.6833, "Argentré"],'54000':[48.6921, 6.1844, "Nancy"],'54120':[48.45, 6.75, "Baccarat"],'54250':[48.7333, 6.1667, "Champigneulles"],'54300':[48.5911, 6.4972, "Lunéville"],'54320':[48.7167, 6.15, "Maxéville"],'54390':[48.7667, 6.1333, "Frouard"],'56000':[47.6582, -2.7608, "Vannes"],'56880':[47.6333, -2.8167, "Ploeren"],'57500':[49.105, 6.71, "Saint-Avold"],'57530':[49.1133, 6.4333, "Courcelles-Chaussy"],'59000':[50.6292, 3.0573, "Lille"],'59264':[50.3908, 3.6408, "Onnaing"],'63190':[45.8333, 3.3667, "Lezoux"],'63400':[45.775, 3.0667, "Chamalières"],'66000':[42.6887, 2.8948, "Perpignan"],'66100':[42.68, 2.91, "Perpignan"],'66140':[42.7, 3.0333, "Canet-en-Roussillon"],'67000':[48.5734, 7.7521, "Strasbourg"],'67100':[48.55, 7.77, "Strasbourg"],'67170':[48.7333, 7.7167, "Brumath"],'67200':[48.58, 7.7, "Strasbourg"],'67260':[48.9333, 7.0833, "Sarre-Union"],'68040':[48.1167, 7.3167, "Ingersheim"],'68240':[48.1417, 7.2639, "Kaysersberg"],'68370':[48.1289, 7.1822, "Orbey"],'68650':[48.15, 7.1667, "Lapoutroie"],'69002':[45.7467, 4.8306, "Lyon"],'71390':[46.7136, 4.6931, "", 1],'72460':[48.0667, 0.4333, "", 1],'75010':[48.876, 2.36, "Paris"],'75015':[48.8422, 2.2929, "Paris"],'76100':[49.42, 1.09, "Rouen"],'76287':[49.4, 1.07, "", 1],'76530':[49.3536, 1.0128, "Grand-Couronne"],'77290':[48.98, 2.6167, "Mitry-Mory"],'77760':[48.2833, 2.55, "Larchant"],'82000':[44.0177, 1.3544, "Montauban"],'85300':[46.8433, -1.8778, "Challans"],'85500':[46.8681, -1.0197, "Les Herbiers"],'85710':[46.8967, -1.8367, "La Garnache"],'87190':[46.2167, 1.1667, "", 1],'89100':[48.1975, 3.2833, "Sens"],'91120':[48.7139, 2.2472, "Palaiseau"],'91190':[48.7, 2.1333, "Gif-sur-Yvette"],'91620':[48.6417, 2.2617, "La Ville-du-Bois"],'91640':[48.6333, 2.1167, "", 1],'94310':[48.7431, 2.3958, "Orly"],'94390':[48.7233, 2.3794, "Orly"]},
+                ca: {'G0A':[46.9, -71.5, "", 1],'G0C':[48.3, -66.0, "", 1],'G0L':[48.47, -67.43, "", 1],'G0S':[46.6, -71.2, "", 1],'G0T':[48.15, -69.7, "", 1],'G0Z':[50.0, -67.0, "", 1],'G1H':[46.84, -71.24, "Québec"],'G1J':[46.83, -71.238, "Québec"],'G1L':[46.838, -71.216, "Québec"],'G1M':[46.82, -71.19, "", 1],'G1N':[46.805, -71.22, "Québec"],'G1R':[46.81, -71.215, "Québec"],'G1S':[46.792, -71.245, "Québec"],'G1T':[46.788, -71.27, "Québec"],'G1V':[46.78, -71.28, "Québec"],'G1X':[46.76, -71.3, "", 1],'G2G':[46.76, -71.34, "", 1],'G3C':[46.83, -71.38, "", 1],'G3K':[46.9, -71.5, "", 1],'G4W':[48.85, -67.53, "Matane"],'G4X':[48.83, -64.48, "Gaspé"],'G5L':[48.45, -68.52, "Rimouski"],'G7A':[46.73, -71.3, "", 1],'H1V':[45.558, -73.548, "Montréal"],'H2J':[45.53, -73.58, "Montréal"],'H2L':[45.52, -73.555, "Montréal"],'H2W':[45.514, -73.577, "Montréal"],'H2X':[45.509, -73.57, "Montréal"],'H3B':[45.504, -73.568, "Montréal"],'H3H':[45.495, -73.58, "Montréal"],'H4W':[45.475, -73.665, "Côte-Saint-Luc"],'H4Y':[45.47, -73.74, "Montréal (aéroport)"],'H5B':[45.5015, -73.562, "Montréal"],'J0H':[45.5, -72.9, "", 1],'J0P':[45.45, -74.3, "", 1],'J0T':[46.2, -74.5, "", 1],'J0V':[45.6, -75.0, "", 1],'J1H':[45.4042, -71.8929, "Sherbrooke"],'J3G':[45.56, -73.2, "", 1],'J4H':[45.53, -73.515, "Longueuil"],'J4Z':[45.455, -73.45, "Brossard"],'J8E':[46.1185, -74.596, "Mont-Tremblant"],'K0E':[44.8, -75.5, "", 1],'K1P':[45.423, -75.7, "Ottawa"],'L1A':[43.95, -78.29, "", 1],'L1N':[43.8975, -78.9429, "Whitby"],'L4W':[43.63, -79.61, "Mississauga"],'L5A':[43.59, -79.61, "Mississauga"],'L6M':[43.45, -79.75, "Oakville"],'L8E':[43.22, -79.75, "Stoney Creek"],'M3C':[43.725, -79.34, "Toronto"],'M4M':[43.66, -79.34, "Toronto"],'M5J':[43.64, -79.38, "Toronto"]},
+                us: {'02134':[42.358, -71.129, "Boston (Allston)"],'02199':[42.347, -71.082, "Boston"],'07002':[40.6687, -74.1143, "Bayonne"],'10010':[40.739, -73.9825, "New York"],'10036':[40.759, -73.99, "New York"],'29928':[32.2163, -80.7526, "Hilton Head Island"]}
+            },
+
+            nomQueue: Promise.resolve(),
+            nomSlot: () => { const p = MapView.nomQueue.then(() => new Promise(r => setTimeout(r, 1100))); MapView.nomQueue = p; return p; },
+
+            // GET JSON avec délai maximum ; lève une erreur lisible (réseau bloqué, HTTP 4xx/5xx, délai dépassé).
+            fetchJSON: async (url, ms = 9000) => {
+                // Pas d'AbortController/signal : certains environnements (aperçu sandboxé) relaient fetch() via postMessage
+                // et échouent avec "The object can not be cloned" dès qu'on passe un objet non clonable. On appelle donc fetch(url) seul.
+                let timer;
+                const timeout = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('délai dépassé')), ms); });
+                try {
+                    const r = await Promise.race([fetch(url), timeout]);
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return await Promise.race([r.json(), timeout]);
+                } catch (e) {
+                    throw new Error((e && e.message) || 'réseau indisponible');
+                } finally { clearTimeout(timer); }
+            },
+
+            // Coordonnées d'un code postal : plusieurs services gratuits essayés l'un après l'autre jusqu'au premier qui répond.
+            geocodeCity: async (c) => {
+                const postal = c.postal.replace(/\s+/g, '');
+                const enc = encodeURIComponent(postal);
+                const errs = [];
+                const providers = [];
+
+                if (c.cc === 'fr') providers.push(['geo.api.gouv.fr', async () => {
+                    const j = await MapView.fetchJSON(`https://geo.api.gouv.fr/communes?codePostal=${enc}&fields=nom,centre,population&format=json`);
+                    const ok = j.filter(x => x.centre && x.centre.coordinates);
+                    if (!ok.length) return null;
+                    const lat = ok.reduce((t, x) => t + x.centre.coordinates[1], 0) / ok.length;
+                    const lng = ok.reduce((t, x) => t + x.centre.coordinates[0], 0) / ok.length;
+                    ok.sort((x, y) => (y.population || 0) - (x.population || 0));
+                    return [lat, lng, ok[0].nom];
+                }]);
+                if (c.cc) providers.push(['Zippopotam', async () => {
+                    const j = await MapView.fetchJSON(`https://api.zippopotam.us/${c.cc}/${enc}`);
+                    const p = (j.places || [])[0];
+                    return p ? [parseFloat(p.latitude), parseFloat(p.longitude), p['place name'] || ''] : null;
+                }]);
+                providers.push(['Open-Meteo', async () => {
+                    const cc = c.cc ? `&countryCode=${c.cc.toUpperCase()}` : '';
+                    const j = await MapView.fetchJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${enc}&count=10&language=fr&format=json${cc}`);
+                    const r = (j.results || []).find(x => (x.postcodes || []).some(p => String(p).toUpperCase().replace(/\s+/g, '').startsWith(postal.toUpperCase())));
+                    return r ? [r.latitude, r.longitude, r.name || ''] : null;
+                }]);
+                providers.push(['Nominatim', async () => {
+                    await MapView.nomSlot(); // 1 requête/seconde maximum
+                    const cc = c.cc ? `&countrycodes=${c.cc}` : '';
+                    const j = await MapView.fetchJSON(`https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&accept-language=fr${cc}&postalcode=${enc}`);
+                    if (!j.length) return null;
+                    const ad = j[0].address || {};
+                    return [parseFloat(j[0].lat), parseFloat(j[0].lon), ad.city || ad.town || ad.village || ad.municipality || ad.hamlet || ad.suburb || ad.county || ''];
+                }]);
+
+                let coords = null;
+                for (const [name, fn] of providers) {
+                    try {
+                        const r = await fn();
+                        if (r && isFinite(r[0]) && isFinite(r[1])) { coords = r; break; }
+                        errs.push(`${name} : code inconnu`);
+                    } catch (e) { errs.push(`${name} : ${e.message}`); }
+                }
+                if (!coords) { c.err = errs.join(' · '); MapView.lastGeoErr = c.err; return false; }
+                c.err = '';
+                MapView.geoCache[c.geoKey] = coords;
+                MapView.saveGeoCache();
+                c.lat = coords[0]; c.lng = coords[1];
+                if (coords[2]) c.label = `${c.postal} · ${coords[2]}`;
+                return true;
+            },
+
+            // Regroupe les zones visitées par code postal + pays (le nom de ville du fichier est ignoré : seul le code postal est fiable).
+            getAreaStats: () => {
+                const usStates = new Set(MapView.US_STATES);
+                const votes = {};   // code postal -> [entrées avec un État américain, total]
+                State.areas.forEach(a => {
+                    const p = String(a.postal || '').trim().toUpperCase();
+                    if (!p) return;
+                    const v = votes[p] || (votes[p] = [0, 0]);
+                    v[1]++;
+                    if (usStates.has(MapView.normName(a.region))) v[0]++;
+                });
+                const groups = new Map();
+                State.areas.forEach(a => {
+                    const postal = String(a.postal || '').trim().toUpperCase();
+                    if (!postal) return;
+                    const ci = MapView.countryInfo(postal, votes[postal][0] > votes[postal][1] / 2);
+                    const key = `${ci.cc}|${postal}`;
+                    let g = groups.get(key);
+                    if (!g) {
+                        g = { geoKey: key, postal, cc: ci.cc, country: ci.label, times: [],
+                              points: 0, days: new Set(), first: null, last: null, lat: null, lng: null };
+                        groups.set(key, g);
+                    }
+                    g.points++;
+                    if (a.date) {
+                        g.days.add(String(a.date).slice(0, 10));
+                        const t = new Date(String(a.date).replace(/\//g, '-').replace(' UTC', 'Z').replace(' ', 'T')).getTime();
+                        if (!isNaN(t)) {
+                            g.times.push(t);
+                            if (g.first === null || t < g.first) g.first = t;
+                            if (g.last === null || t > g.last) g.last = t;
+                        }
+                    }
+                });
+                const list = [...groups.values()].map(g => {
+                    const co = ((MapView.POSTAL_GPS[g.cc] || {})[g.postal]) || MapView.geoCache[g.geoKey];
+                    const place = co && co[2] ? co[2] : '';   // nom du lieu trouvé PAR le code postal (pas celui du fichier)
+                    return { ...g, label: place ? `${g.postal} · ${place}` : g.postal,
+                             lat: co ? co[0] : null, lng: co ? co[1] : null, approx: !!(co && co[3]), hidden: (State.modifications.hiddenPostals || []).includes(g.geoKey), dayCount: g.days.size || 1 };
+                });
+                list.sort((a, b) => b.dayCount - a.dayCount || b.points - a.points || a.postal.localeCompare(b.postal));
+                return list;
+            },
+
+            addCityMarker: (c, maxDays) => {
+                if (c.lat === null || c.marker) return;
+                const radius = 6 + 12 * Math.sqrt(c.dayCount / maxDays);
+                c.marker = L.circleMarker([c.lat, c.lng], {
+                    radius, color: '#111111', weight: 1.5, fillColor: '#FFFC00', fillOpacity: 0.85
+                }).addTo(MapView.layer);
+                c.shown = true;
+                c.marker.bindTooltip(() => { const d = c.cum !== undefined ? c.cum : c.dayCount; return `${c.label} · ${d} jour${d > 1 ? 's' : ''}`; });
+                c.marker.on('click', () => { if (c.onClick) c.onClick(c); else MapView.smoothTo(c.lat, c.lng); });
+            },
+
+            parseTime: (str) => str ? new Date(String(str).replace(/\//g, '-').replace(' UTC', 'Z').replace(' ', 'T')).getTime() : NaN,
+            fmtDateTime: (t) => new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            playTimer: null,
+
+            // Masquer / réafficher un code postal (clé = "pays|code") : mémorisé dans les modifications, exportable avec elles.
+            // Déplacement fluide vers un point, SANS changer le zoom : glissement doux s'il est proche,
+            // vol progressif (au même niveau de zoom) s'il est loin.
+            smoothTo: (lat, lng) => {
+                const map = MapView.map, ll = L.latLng(lat, lng);
+                if (map.getBounds().pad(-0.1).contains(ll)) map.panTo(ll, { animate: true, duration: 0.7, easeLinearity: 0.2 });
+                else map.flyTo(ll, map.getZoom(), { duration: 1.6 });
+            },
+
+            togglePostal: (key) => {
+                const m = State.modifications; m.hiddenPostals = m.hiddenPostals || [];
+                const i = m.hiddenPostals.indexOf(key);
+                if (i === -1) m.hiddenPostals.push(key); else m.hiddenPostals.splice(i, 1);
+                saveModifications();
+                MapView.afterPostalChange();
+            },
+            showAllPostals: () => { State.modifications.hiddenPostals = []; saveModifications(); MapView.afterPostalChange(); },
+            afterPostalChange: () => {
+                if (MapView.map && MapView.activeTab === 'localisation') MapView.render();
+                if (document.getElementById('settings-overlay').style.display === 'flex') Settings.render();
+            },
+            SPEEDS: [1, 2, 5, 10],   // ×1 = 1 position par seconde ... ×10 = 1 position toutes les 0,1 s
+            speedIdx: 0,
+            stopPlay: () => {
+                if (MapView.playTimer) { clearInterval(MapView.playTimer); MapView.playTimer = null; }
+                const b = document.getElementById('tl-play'); if (b) b.textContent = '▶';
+            },
+
+            fmtDay: (t) => t === null ? '' : new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
+
             render: () => {
                 MapView.ensureMap();
-
+                MapView.stopPlay();
                 MapView.layer.clearLayers();
                 MapView.memoryMarkers = [];
 
                 const infoEl = document.getElementById('map-info');
-                const isTrajet = MapView.activeTab === 'trajet';
-                let points = isTrajet ? MapView.getTrajetPoints() : MapView.getMemoryPoints();
+                const listEl = document.getElementById('map-cities-list');
+                const tlEl = document.getElementById('map-timeline');
+                listEl.style.display = 'none'; listEl.innerHTML = '';
+                tlEl.style.display = 'none';
+                document.getElementById('map-wrap').classList.remove('tl-on');
 
-                // Sous-échantillonnage si l'historique de position est très volumineux, pour garder la carte fluide.
-                const MAX_TRAJET_POINTS = 2500;
-                if (isTrajet && points.length > MAX_TRAJET_POINTS) {
-                    const step = Math.ceil(points.length / MAX_TRAJET_POINTS);
-                    points = points.filter((_, i) => i % step === 0);
-                }
-
-                if (points.length === 0) {
-                    infoEl.innerText = isTrajet
-                        ? "Aucune position trouvée dans tes messages."
-                        : "Aucune memory géolocalisée trouvée.";
-                    // Le conteneur peut avoir été caché (display:none) pendant l'onglet précédent.
-                    setTimeout(() => MapView.map.invalidateSize(), 0);
-                    return;
-                }
-                infoEl.innerText = `${points.length} point${points.length > 1 ? 's' : ''} géolocalisé${points.length > 1 ? 's' : ''}`;
-
-                if (isTrajet) {
-                    if (points.length > 1) {
-                        L.polyline(points.map(p => [p.lat, p.lng]), {
-                            color: '#111111', weight: 2.5, opacity: 0.7,
-                            renderer: MapView.canvasRenderer()
-                        }).addTo(MapView.layer);
-                    }
-                    points.forEach(p => {
-                        L.circleMarker([p.lat, p.lng], {
-                            radius: 4.5, color: '#111111', weight: 1.5,
-                            fillColor: '#FFFC00', fillOpacity: 1,
-                            renderer: MapView.canvasRenderer()
-                        }).addTo(MapView.layer);
-                    });
-                } else {
-                    points.forEach(p => {
-                        const marker = L.marker([p.lat, p.lng], {
-                            icon: MapView.memoryIcon(12) // petit carré le temps de calculer l'isolement
-                        }).addTo(MapView.layer);
-                        if (typeof p.memIndex === 'number') {
-                            // Ouvert par-dessus la carte : à la fermeture, on retombe naturellement sur la vue Map.
-                            marker.on('click', () => Viewer.open(p.memIndex, 'memories'));
-                        }
-                        MapView.memoryMarkers.push({ marker, latlng: L.latLng(p.lat, p.lng), memIndex: p.memIndex });
-                    });
-                }
+                const isMemories = MapView.activeTab === 'memories';
+                if (isMemories) MapView.renderMemories(infoEl); else MapView.renderLocalisation(infoEl, listEl, tlEl);
 
                 // Le conteneur peut avoir été caché (display:none) pendant l'onglet précédent : on attend que
-                // Leaflet ait recalculé sa taille réelle avant de mesurer les distances entre marqueurs, sinon
-                // le calcul d'isolement (rectangle vs petit carré) se base sur une taille de carte obsolète.
+                // Leaflet ait recalculé sa taille réelle avant de mesurer les distances entre marqueurs.
                 setTimeout(() => {
                     MapView.map.invalidateSize();
-                    if (!isTrajet) MapView.refreshMemorySizes();
+                    if (isMemories) MapView.refreshMemorySizes();
                 }, 0);
+                // Note : la carte s'ouvre toujours sur la France, l'utilisateur se déplace lui-même.
+            },
 
-                // Note : on ne recentre plus automatiquement sur l'ensemble des points -
-                // la carte s'ouvre toujours sur la France, l'utilisateur se déplace lui-même.
+            renderMemories: (infoEl) => {
+                const points = MapView.getMemoryPoints();
+                if (points.length === 0) { infoEl.innerText = "Aucune memory géolocalisée trouvée."; return; }
+                infoEl.innerText = `${points.length} point${points.length > 1 ? 's' : ''} géolocalisé${points.length > 1 ? 's' : ''}`;
+                points.forEach(p => {
+                    const marker = L.marker([p.lat, p.lng], {
+                        icon: MapView.memoryIcon(12) // petit carré le temps de calculer l'isolement
+                    }).addTo(MapView.layer);
+                    if (typeof p.memIndex === 'number') {
+                        // Ouvert par-dessus la carte : à la fermeture, on retombe naturellement sur la vue Map.
+                        marker.on('click', () => Viewer.open(p.memIndex, 'memories'));
+                    }
+                    MapView.memoryMarkers.push({ marker, latlng: L.latLng(p.lat, p.lng), memIndex: p.memIndex });
+                });
+            },
+
+            // Onglet Localisation : codes postaux visités (cercles + liste) et frise chronologique (date + lieu) avec curseur.
+            renderLocalisation: (infoEl, listEl, tlEl) => {
+                const usingAreas = State.areas.length > 0;
+                const gpsPoints = MapView.getTrajetPoints();   // positions GPS (location_history.json ou, à défaut, messages)
+                if (!usingAreas && gpsPoints.length === 0) { infoEl.innerText = "Aucune position trouvée dans tes données."; return; }
+
+                let list, unmatched = 0;
+                let hiddenCount = 0;
+                if (usingAreas) { const all = MapView.getAreaStats(); list = all.filter(c => !c.hidden); hiddenCount = all.length - list.length; }
+                else ({ list, unmatched } = MapView.getCityStats(gpsPoints)); // repli : rattachement des positions GPS aux villes connues
+                list.forEach((c, i) => { c.idx = i; });
+                const unit = usingAreas ? 'passage' : 'point';
+                const maxDays = list.length ? Math.max(...list.map(c => c.dayCount)) : 1;
+                const pl = (n, s1, sp) => `${n} ${n > 1 ? sp : s1}`;
+                const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+                const stillHere = () => MapView.activeTab === 'localisation';
+
+                // Jours distincts de passage par code postal (pour faire grossir les cercles au fil de la frise).
+                list.forEach(c => {
+                    if (!c.times) return;
+                    const ts = c.times.slice().sort((x, y) => x - y);
+                    const dt = []; let prev = '';
+                    ts.forEach(t => { const d = new Date(t).toISOString().slice(0, 10); if (d !== prev) { dt.push(t); prev = d; } });
+                    c.dayTimes = dt;
+                });
+
+                // ---- Frise : un événement par passage (zone) et par position GPS, triés par date ----
+                const events = [];
+                if (usingAreas) list.forEach((c, gi) => {
+                    if (c.lat === null || !c.times) return;
+                    c.times.forEach(t => events.push({ t, lat: c.lat, lng: c.lng, gi, label: c.label, kind: 'Zone', approx: c.approx }));
+                });
+                const nearestGroup = (lat, lng) => {
+                    let best = -1, bestD = 12; // km
+                    const cosLat = Math.cos(lat * Math.PI / 180);
+                    list.forEach((c, i) => {
+                        if (c.lat === null) return;
+                        const dy = (c.lat - lat) * 111.32; if (dy > bestD || dy < -bestD) return;
+                        const dx = (c.lng - lng) * 111.32 * cosLat;
+                        const d = Math.sqrt(dx * dx + dy * dy);
+                        if (d < bestD) { bestD = d; best = i; }
+                    });
+                    return best;
+                };
+                gpsPoints.forEach(p => {
+                    const t = MapView.parseTime(p.date);
+                    if (isNaN(t)) return;
+                    const gi = nearestGroup(p.lat, p.lng);
+                    events.push({ t, lat: p.lat, lng: p.lng, gi: usingAreas ? -1 : gi, kind: 'GPS',
+                                  label: gi >= 0 ? list[gi].label : `${p.lat.toFixed(3)}, ${p.lng.toFixed(3)}` });
+                });
+                events.sort((x, y) => x.t - y.t);
+                const lastIdx = {};
+                events.forEach((e, i) => { if (e.gi >= 0) lastIdx[e.gi] = i; });
+                const groupIdx = {};   // code postal -> indices de ses passages dans la frise (croissants)
+                events.forEach((e, i) => { if (e.gi >= 0) (groupIdx[e.gi] = groupIdx[e.gi] || []).push(i); });
+
+                // ---- Cercles des codes postaux ----
+                list.forEach(c => MapView.addCityMarker(c, maxDays));
+                const updateCircles = (t) => {
+                    list.forEach(c => {
+                        if (!c.marker || !c.dayTimes) return;
+                        let n = 0; while (n < c.dayTimes.length && c.dayTimes[n] <= t) n++;
+                        c.cum = n;
+                        if (n === 0) { if (c.shown) { MapView.layer.removeLayer(c.marker); c.shown = false; } }
+                        else {
+                            if (!c.shown) { MapView.layer.addLayer(c.marker); c.shown = true; }
+                            c.marker.setRadius(6 + 12 * Math.sqrt(n / maxDays));
+                        }
+                    });
+                };
+
+                // ---- Curseur + barre de défilement ----
+                let cur = 0;
+                const cursor = L.circleMarker([0, 0], { radius: 10, color: '#ffffff', weight: 3, fillColor: '#ef4444', fillOpacity: 1, interactive: false });
+                const rangeEl = document.getElementById('tl-range');
+                const show = (i, pan = true) => {
+                    if (!events.length) return;
+                    cur = Math.max(0, Math.min(events.length - 1, i));
+                    const e = events[cur];
+                    rangeEl.value = cur;
+                    document.getElementById('tl-place').textContent = e.label;
+                    document.getElementById('tl-date').textContent = MapView.fmtDateTime(e.t);
+                    if (usingAreas) updateCircles(e.t);
+                    cursor.setLatLng([e.lat, e.lng]);
+                    if (!MapView.layer.hasLayer(cursor)) cursor.addTo(MapView.layer);
+                    cursor.bringToFront();
+                    if (pan && !MapView.map.getBounds().pad(-0.15).contains([e.lat, e.lng])) MapView.smoothTo(e.lat, e.lng);
+                };
+
+                // Passage à retenir pour un lieu : le plus récent avant (ou à) la position actuelle du curseur, sinon le premier.
+                const jumpToGroup = (gi) => {
+                    const idxs = groupIdx[gi];
+                    if (!idxs || !idxs.length) return false;
+                    let pick = idxs[0];
+                    for (const i of idxs) { if (i <= cur) pick = i; else break; }
+                    show(pick, false);
+                    return true;
+                };
+                // Clic sur un cercle : la barre se cale sur ce lieu (date + ville), sans bouger ni zoomer la carte.
+                list.forEach((c, i) => { c.onClick = () => { MapView.stopPlay(); if (!jumpToGroup(i)) MapView.smoothTo(c.lat, c.lng); }; });
+
+                if (events.length) {
+                    tlEl.style.display = 'block';
+                    document.getElementById('map-wrap').classList.add('tl-on');
+                    rangeEl.min = 0; rangeEl.max = events.length - 1; rangeEl.step = 1;
+                    document.getElementById('tl-min').textContent = MapView.fmtDay(events[0].t);
+                    document.getElementById('tl-max').textContent = MapView.fmtDay(events[events.length - 1].t);
+                    rangeEl.oninput = () => { MapView.stopPlay(); show(+rangeEl.value); };
+                    document.getElementById('tl-prev').onclick = () => { MapView.stopPlay(); show(cur - 1); };
+                    document.getElementById('tl-next').onclick = () => { MapView.stopPlay(); show(cur + 1); };
+                    const playBtn = document.getElementById('tl-play');
+                    const speedBtn = document.getElementById('tl-speed');
+                    const startTimer = () => {
+                        if (MapView.playTimer) clearInterval(MapView.playTimer);
+                        MapView.playTimer = setInterval(() => {
+                            if (cur >= events.length - 1) { MapView.stopPlay(); return; }
+                            show(cur + 1);
+                        }, 1000 / MapView.SPEEDS[MapView.speedIdx]);
+                    };
+                    speedBtn.textContent = '×' + MapView.SPEEDS[MapView.speedIdx];
+                    speedBtn.onclick = () => {
+                        MapView.speedIdx = (MapView.speedIdx + 1) % MapView.SPEEDS.length;
+                        speedBtn.textContent = '×' + MapView.SPEEDS[MapView.speedIdx];
+                        if (MapView.playTimer) startTimer(); // change la vitesse en cours de lecture
+                    };
+                    playBtn.onclick = () => {
+                        if (MapView.playTimer) { MapView.stopPlay(); return; }
+                        if (cur >= events.length - 1) show(0);
+                        playBtn.textContent = '⏸';
+                        startTimer();
+                    };
+                    show(events.length - 1, false); // au départ : la position la plus récente, tous les lieux visibles
+                }
+
+                // ---- Infos + liste des codes postaux ----
+                const updateInfo = (extra) => {
+                    const placed = list.filter(c => c.lat !== null).length;
+                    const failed = list.filter(c => c.failed).length;
+                    const parts = [usingAreas ? pl(list.length, 'code postal', 'codes postaux') : pl(list.length, 'ville', 'villes')];
+                    if (usingAreas) parts.push(`${placed} placé${placed > 1 ? 's' : ''} sur la carte`);
+                    if (hiddenCount) parts.push(`${hiddenCount} masqué${hiddenCount > 1 ? 's' : ''}`);
+                    if (events.length) parts.push(pl(events.length, 'position', 'positions'));
+                    if (failed) parts.push(`${failed} introuvable${failed > 1 ? 's' : ''}${MapView.lastGeoErr ? ' (' + MapView.lastGeoErr.slice(0, 160) + ')' : ''}`);
+                    if (unmatched) parts.push(`${unmatched} point${unmatched > 1 ? 's' : ''} hors des villes connues`);
+                    if (extra) parts.push(extra);
+                    infoEl.innerText = parts.join(' · ');
+                };
+                updateInfo();
+
+                listEl.innerHTML = list.map((c, i) => {
+                    const range = c.first !== null ? `${MapView.fmtDay(c.first)}${c.last !== c.first ? ' → ' + MapView.fmtDay(c.last) : ''}` : '';
+                    const meta = [c.country, usingAreas ? '' : c.region, `${c.points} ${unit}${c.points > 1 ? 's' : ''}`, range].filter(Boolean).join(' · ');
+                    return `<div class="city-row" data-i="${i}">
+                        <div><div class="city-name">${esc(c.label)}</div><div class="city-meta">${esc(meta)}</div></div>
+                        <div style="display:flex; align-items:center; gap:8px;"><div class="city-badge">${c.dayCount} j</div>${usingAreas ? `<span class="city-hide" data-key="${c.geoKey}" title="Masquer ce code postal">×</span>` : ''}</div></div>`;
+                }).join('');
+                if (list.length) listEl.style.display = 'block';
+                listEl.querySelectorAll('.city-hide').forEach(b => { b.onclick = (ev) => { ev.stopPropagation(); MapView.togglePostal(b.dataset.key); }; });
+
+                const refreshLabel = (c) => {
+                    const el = listEl.querySelector(`.city-row[data-i="${c.idx}"] .city-name`);
+                    if (el) el.textContent = c.label;
+                };
+                const goTo = (c) => {
+                    document.getElementById('map-scroll-area').scrollTo({ top: 0, behavior: 'smooth' });
+                    MapView.smoothTo(c.lat, c.lng);
+                };
+                listEl.querySelectorAll('.city-row[data-i]').forEach(row => {
+                    row.onclick = async () => {
+                        const c = list[+row.dataset.i];
+                        if (c.lat === null) {
+                            infoEl.innerText = `Recherche de ${c.label}…`;
+                            const ok = await MapView.geocodeCity(c);
+                            if (!stillHere()) return;
+                            if (!ok) { infoEl.innerText = `Code postal ${c.label} introuvable. ${c.err || ''}`; return; }
+                            c.failed = false;
+                            refreshLabel(c);
+                            MapView.addCityMarker(c, maxDays);
+                            updateInfo();
+                        }
+                        MapView.stopPlay(); jumpToGroup(c.idx); // cale la barre sur ce lieu
+                        goTo(c);
+                    };
+                });
+
+                // Codes absents de la table intégrée : GPS recherché en ligne (cache), puis la frise est reconstruite.
+                const runId = MapView.placeRun = (MapView.placeRun || 0) + 1;
+                const todo = usingAreas ? list.filter(c => c.lat === null) : [];
+                if (todo.length) {
+                    let next = 0, done = 0, okCount = 0;
+                    const alive = () => MapView.placeRun === runId && stillHere();
+                    const worker = async () => {
+                        while (next < todo.length) {
+                            const c = todo[next++];
+                            if (!alive()) return;
+                            const ok = await MapView.geocodeCity(c);
+                            if (!alive()) return;
+                            if (ok) { okCount++; refreshLabel(c); MapView.addCityMarker(c, maxDays); } else { c.failed = true; }
+                            done++;
+                            updateInfo(done < todo.length ? `placement ${done}/${todo.length}…` : '');
+                        }
+                    };
+                    updateInfo(`placement 0/${todo.length}…`);
+                    Promise.all(Array.from({ length: Math.min(6, todo.length) }, worker)).then(() => {
+                        if (alive() && okCount) MapView.render(); else if (alive()) updateInfo();
+                    });
+                }
             },
 
             // Petit carré jaune uni (utilisé pendant le chargement, ou quand plusieurs memories sont trop proches).
@@ -1791,7 +2294,7 @@
                 Settings.render();
             },
 
-            expanded: { friends: false, groups: false, hidden: false, sort: false },
+            expanded: { friends: false, groups: false, hidden: false, sort: false, postal: false },
             toggle: (k) => { Settings.expanded[k] = !Settings.expanded[k]; Settings.render(); },
 
             // Un clic sur une conversation de la liste l'ouvre directement.
@@ -1830,6 +2333,13 @@
                     return `<div class="settings-row sub-row ${active ? 'active' : ''}" onclick="Settings.setSort('${c}')"><div><div>${l}</div><div class="sub">${msgs[dir]}</div></div><span class="sort-arrow ${active ? 'on' : ''}">${arrow(dir)}</span></div>`;
                 });
 
+                const postalAll = State.areas.length ? MapView.getAreaStats() : [];
+                const postalHidden = postalAll.filter(c => c.hidden).length;
+                const postalRows = postalAll.map(c => `<div class="settings-row sub-row" style="${c.hidden ? 'opacity:.55;' : ''}" onclick="MapView.togglePostal('${c.geoKey}')"><div><div>${Util.escapeHTML(c.label)}</div><div class="sub">${Util.escapeHTML([c.country, c.dayCount + ' j'].filter(Boolean).join(' · '))}</div></div>${c.hidden
+                    ? '<span style="color:var(--snap-yellow); background:var(--snap-black); padding:4px 10px; border-radius:12px; font-size:11px;">Afficher</span>'
+                    : '<span style="color:#666; background:var(--snap-gray); padding:4px 10px; border-radius:12px; font-size:11px;">Masquer</span>'}</div>`);
+                if (postalHidden) postalRows.unshift('<div class="settings-row sub-row" onclick="MapView.showAllPostals()"><span>Tout afficher</span></div>');
+                const postalSub = postalHidden ? `${postalHidden} masqué${postalHidden > 1 ? 's' : ''} / ${postalAll.length}` : `${postalAll.length}`;
                 document.getElementById('settings-title').innerText = 'Réglages';
                 body.innerHTML = `
                     <div class="settings-section">Listes</div>
@@ -1838,6 +2348,8 @@
                     ${Settings.accordion('hidden', 'Personnes masquées', hidden)}
                     <div class="settings-section">Affichage</div>
                     ${Settings.accordion('sort', 'Tri des chats', sortRows, curSort)}
+                    <div class="settings-section" id="settings-postal-anchor">Carte</div>
+                    ${Settings.accordion('postal', 'Codes postaux affichés', postalRows, postalSub)}
                     <div class="settings-section">Modifications</div>
                     ${ModsManager.settingsSectionHTML()}
                     <div class="settings-danger" onclick="resetDB()">Supprimer la base de données (importer un nouveau dossier)</div>`;
@@ -2020,6 +2532,7 @@
                     State.modifications.renames = { ...State.modifications.renames, ...(parsed.renames || {}) };
                     State.modifications.hiddenFriends = Array.from(new Set([...(State.modifications.hiddenFriends || []), ...(parsed.hiddenFriends || [])]));
                     State.modifications.hiddenGroups = Array.from(new Set([...(State.modifications.hiddenGroups || []), ...(parsed.hiddenGroups || [])]));
+                    State.modifications.hiddenPostals = Array.from(new Set([...(State.modifications.hiddenPostals || []), ...(parsed.hiddenPostals || [])]));
                     await saveModifications();
 
                     // Les renommages peuvent s'appliquer tout de suite sur la liste déjà chargée.
@@ -2038,7 +2551,7 @@
             },
 
             settingsSectionHTML: () => {
-                const hiddenCount = State.modifications.hiddenFriends.length + State.modifications.hiddenGroups.length;
+                const hiddenCount = State.modifications.hiddenFriends.length + State.modifications.hiddenGroups.length + (State.modifications.hiddenPostals || []).length;
                 const count = Object.keys(State.modifications.merges).length + Object.keys(State.modifications.renames).length + hiddenCount;
                 return `<div class="settings-row" style="cursor:default;"><span>Modifications <span class="sub">(${count})</span></span></div>
                     <div class="friend-info-merge-btn" onclick="ModsManager.exportJSON()">Exporter modifications.json</div>
@@ -2364,12 +2877,103 @@
             convScroll.addEventListener('touchcancel', clearPress, { passive: true });
         })();
 
+        // --- ZOOM / DÉPLACEMENT (pincer pour zoomer, double-tap, glisser une fois zoomé) ---
+        const ZoomPan = {
+            scale: 1, tx: 0, ty: 0,
+            pts: new Map(),
+            pinchStartDist: 0, pinchStartScale: 1,
+            panStart: null,
+            lastTapTime: 0, lastTapX: 0, lastTapY: 0,
+            MAX_SCALE: 4,
+
+            el: () => document.getElementById('viewer-zoomable'),
+
+            reset: () => { ZoomPan.scale = 1; ZoomPan.tx = 0; ZoomPan.ty = 0; ZoomPan.pts.clear(); ZoomPan.panStart = null; ZoomPan.apply(false); },
+
+            clampPan: () => {
+                const maxPan = 220 * (ZoomPan.scale - 1);
+                ZoomPan.tx = Math.max(-maxPan, Math.min(maxPan, ZoomPan.tx));
+                ZoomPan.ty = Math.max(-maxPan, Math.min(maxPan, ZoomPan.ty));
+            },
+
+            apply: (animate) => {
+                const el = ZoomPan.el();
+                if (!el) return;
+                el.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
+                el.style.transform = `translate(${ZoomPan.tx}px, ${ZoomPan.ty}px) scale(${ZoomPan.scale})`;
+                const zoomed = ZoomPan.scale > 1.01;
+                document.querySelectorAll('.nav-zone').forEach(z => z.style.visibility = zoomed ? 'hidden' : 'visible');
+            },
+
+            onDown: (e) => {
+                if (e.target.closest('.video-progress-hitarea')) return; // laisse la barre de lecture vidéo gérer son propre geste
+                ZoomPan.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (ZoomPan.pts.size === 2) {
+                    const [a, b] = [...ZoomPan.pts.values()];
+                    ZoomPan.pinchStartDist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+                    ZoomPan.pinchStartScale = ZoomPan.scale;
+                    ZoomPan.panStart = null;
+                } else if (ZoomPan.pts.size === 1 && ZoomPan.scale > 1.01) {
+                    ZoomPan.panStart = { x: e.clientX, y: e.clientY, tx: ZoomPan.tx, ty: ZoomPan.ty };
+                }
+            },
+
+            onMove: (e) => {
+                if (!ZoomPan.pts.has(e.pointerId)) return;
+                ZoomPan.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (ZoomPan.pts.size === 2) {
+                    const [a, b] = [...ZoomPan.pts.values()];
+                    const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+                    ZoomPan.scale = Math.max(1, Math.min(ZoomPan.MAX_SCALE, ZoomPan.pinchStartScale * (dist / ZoomPan.pinchStartDist)));
+                    ZoomPan.clampPan();
+                    ZoomPan.apply(false);
+                } else if (ZoomPan.panStart) {
+                    ZoomPan.tx = ZoomPan.panStart.tx + (e.clientX - ZoomPan.panStart.x);
+                    ZoomPan.ty = ZoomPan.panStart.ty + (e.clientY - ZoomPan.panStart.y);
+                    ZoomPan.clampPan();
+                    ZoomPan.apply(false);
+                }
+            },
+
+            onUp: (e) => {
+                const wasSingleTap = ZoomPan.pts.size === 1 && !ZoomPan.panStart;
+                ZoomPan.pts.delete(e.pointerId);
+                if (ZoomPan.pts.size < 2) ZoomPan.panStart = null;
+
+                if (ZoomPan.scale < 1.02) { ZoomPan.scale = 1; ZoomPan.tx = 0; ZoomPan.ty = 0; ZoomPan.apply(true); }
+                else ZoomPan.clampPan(), ZoomPan.apply(true);
+
+                if (ZoomPan.pts.size === 0 && wasSingleTap) {
+                    const now = Date.now();
+                    const dx = Math.abs(e.clientX - ZoomPan.lastTapX), dy = Math.abs(e.clientY - ZoomPan.lastTapY);
+                    if (now - ZoomPan.lastTapTime < 300 && dx < 30 && dy < 30) {
+                        if (ZoomPan.scale > 1.01) { ZoomPan.scale = 1; ZoomPan.tx = 0; ZoomPan.ty = 0; }
+                        else { ZoomPan.scale = 2.5; ZoomPan.tx = 0; ZoomPan.ty = 0; }
+                        ZoomPan.apply(true);
+                        ZoomPan.lastTapTime = 0;
+                    } else {
+                        ZoomPan.lastTapTime = now; ZoomPan.lastTapX = e.clientX; ZoomPan.lastTapY = e.clientY;
+                    }
+                }
+            },
+
+            init: () => {
+                const viewer = document.getElementById('viewer');
+                viewer.addEventListener('pointerdown', ZoomPan.onDown);
+                viewer.addEventListener('pointermove', ZoomPan.onMove);
+                viewer.addEventListener('pointerup', ZoomPan.onUp);
+                viewer.addEventListener('pointercancel', ZoomPan.onUp);
+            }
+        };
+        ZoomPan.init();
+
         const Viewer = {
             contextType: 'memories', currentIndex: 0,
             open: (index, type) => { Viewer.contextType = type; Viewer.currentIndex = index; Viewer.renderCurrent(); document.getElementById('viewer').style.display = 'flex'; },
             
             openDirect: (url, dateStr, locStr) => {
-                document.getElementById('viewer-media').innerHTML = `<img src="${url}">`;
+                document.getElementById('viewer-media').innerHTML = `<div id="viewer-zoomable"><img src="${url}"></div>`;
+                ZoomPan.reset();
                 Viewer.buildHeader(dateStr, locStr);
                 document.getElementById('viewer').style.display = 'flex';
                 document.querySelector('.nav-zone.left').style.display = 'none'; document.querySelector('.nav-zone.right').style.display = 'none';
@@ -2424,9 +3028,11 @@
                 const url = URLManager.create(mainFile);
                 const isVideo = mainKey.match(/\.(mp4|mov)$/i);
                 
-                container.innerHTML = isVideo ? `<div class="video-wrapper" style="max-width:100%; max-height:100%;" onclick="VideoPlayer.toggle(this)"><video src="${url}" autoplay playsinline style="max-width:100%; max-height:100%;" ontimeupdate="VideoPlayer.updateProgress(this)" onended="VideoPlayer.onEnded(this)" onerror="VideoDebugger.handleError(this, '${mainKey}')"></video><div class="video-play-overlay" style="display:none;">▶</div><div class="video-progress-hitarea" onclick="event.stopPropagation()" onmousedown="VideoPlayer.seekStart(event, this.parentElement)" ontouchstart="VideoPlayer.seekStart(event, this.parentElement)" ontouchmove="VideoPlayer.seekMove(event, this.parentElement)" ontouchend="VideoPlayer.seekEnd(event)"><div class="video-progress-bg"><div class="video-progress-fill"></div></div></div></div>` : `<img src="${url}">`;
-                if (overlayFile) container.innerHTML += `<img src="${URLManager.create(overlayFile)}" id="viewer-overlay">`;
-                
+                let mediaHtml = isVideo ? `<div class="video-wrapper" style="max-width:100%; max-height:100%;" onclick="VideoPlayer.toggle(this)"><video src="${url}" autoplay playsinline style="max-width:100%; max-height:100%;" ontimeupdate="VideoPlayer.updateProgress(this)" onended="VideoPlayer.onEnded(this)" onerror="VideoDebugger.handleError(this, '${mainKey}')"></video><div class="video-play-overlay" style="display:none;">▶</div><div class="video-progress-hitarea" onclick="event.stopPropagation()" onmousedown="VideoPlayer.seekStart(event, this.parentElement)" ontouchstart="VideoPlayer.seekStart(event, this.parentElement)" ontouchmove="VideoPlayer.seekMove(event, this.parentElement)" ontouchend="VideoPlayer.seekEnd(event)"><div class="video-progress-bg"><div class="video-progress-fill"></div></div></div></div>` : `<img src="${url}">`;
+                if (overlayFile) mediaHtml += `<img src="${URLManager.create(overlayFile)}" id="viewer-overlay">`;
+                container.innerHTML = `<div id="viewer-zoomable">${mediaHtml}</div>`;
+                ZoomPan.reset();
+
                 Viewer.buildHeader(dateStr, locStr);
                 
                 document.querySelector('.nav-zone.left').style.display = Viewer.currentIndex > 0 ? 'flex' : 'none';
@@ -2476,7 +3082,7 @@
                 }
                 if (prevIdx >= 0) { Viewer.currentIndex = prevIdx; Viewer.renderCurrent(); } 
             },
-            close: () => { stopAllMedia(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; }
+            close: () => { stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; }
         };
 
         window.UI = UI; window.Viewer = Viewer; window.Chat = Chat; window.Memories = Memories; window.AudioEngine = AudioEngine; window.VideoDebugger = VideoDebugger;
