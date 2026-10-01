@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <style>
         /* --- VARIABLES & RESET --- */
-        :root { --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; }
+        :root { --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; --snap-yellow-soft: rgba(255, 252, 0, 0.18); }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Avenir Next', -apple-system, sans-serif; }
         html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
@@ -57,47 +57,92 @@
 
         /* --- CHAT LISTE --- */
         #view-chat { display: flex; flex-direction: column; overflow: hidden; padding-top: 0; padding-bottom: 0; }
-        .sticky-chat-header { margin-top: calc(54px + env(safe-area-inset-top, 0px)); background: rgba(255, 255, 255, 0.98); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 10px; flex-shrink: 0; }
+        .sticky-chat-header { margin-top: calc(54px + env(safe-area-inset-top, 0px)); background: rgba(255, 255, 255, 0.98); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 2px; flex-shrink: 0; }
         #chat-list-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
         #view-map { display: flex; flex-direction: column; overflow: hidden; }
-        #view-map .chat-tabs { gap: 6px; padding: 0 12px; align-items: center; }
         .city-hide { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #e5e5e5; color: #666; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; }
-        #view-map .chat-tab { padding: 8px 2px; font-size: 12.5px; white-space: nowrap; }
+        #view-map .chat-tabs { padding-bottom: 4px; }   /* moins d'espace entre les onglets et la carte */
+        /* Code postal · ville et date du point : en surimpression tout en haut de la carte, au premier plan (visible avec la frise) */
+        #map-overlay-info { display: none; position: absolute; top: 10px; left: 20px; right: 20px; z-index: 1000; align-items: baseline; gap: 10px; background: rgba(255,255,255,0.94); color: var(--snap-black); border-radius: 12px; padding: 7px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); pointer-events: none; }
+        #map-wrap.tl-on #map-overlay-info { display: flex; }
+        #tl-place { flex: 1; min-width: 0; font-weight: 800; font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #tl-date { flex: none; font-weight: 800; font-size: 14px; line-height: 1.2; white-space: nowrap; }
+        #map-wrap.tl-on #leaflet-map .leaflet-top { margin-top: 38px; }   /* les boutons +/- passent sous le bandeau */
+        /* Mode « ce memory seulement » : boutons en surimpression en haut de la carte */
+        #map-focus-bar { display: none; position: absolute; top: 10px; left: 20px; right: 20px; z-index: 1000; gap: 8px; }
+        #map-focus-bar .mf-btn { flex: 1; text-align: center; padding: 9px 6px; border-radius: 12px; font-weight: 800; font-size: 13px; line-height: 1.2; cursor: pointer; background: var(--snap-black); color: var(--snap-yellow); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        #map-focus-bar .mf-btn.alt { background: rgba(255,255,255,0.96); color: var(--snap-black); }
+        #map-wrap.focus-on #map-focus-bar { display: flex; }
+        #map-wrap.focus-on #leaflet-map .leaflet-top { margin-top: 38px; }
+        #viewer-map-choice, #viewer-save-choice, #viewer-save-progress { display: none; position: absolute; inset: 0; z-index: 500; background: rgba(0,0,0,0.55); align-items: flex-end; justify-content: center; }
+        #viewer-map-choice .vmc-sheet, #viewer-save-choice .vmc-sheet, #viewer-save-progress .vmc-sheet { width: 100%; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
+        #viewer-map-choice .vmc-title { font-weight: 900; font-size: 15px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        #viewer-map-choice .friend-info-close, #viewer-save-choice .friend-info-close, #viewer-save-progress .friend-info-close { margin-top: 12px; }
         #map-cities-list { margin-top: 12px; display: none; }
         .tl-btn { width: 28px; height: 28px; flex: none; border-radius: 50%; border: none; background: var(--snap-black); color: var(--snap-yellow); font-size: 15px; font-weight: bold; line-height: 1; cursor: pointer; padding: 0; }
+        #rotate-lock { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100000; background: var(--snap-yellow); color: var(--snap-black); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; gap: 10px; }
+        html.landscape-lock #rotate-lock { display: flex; }
+        #rotate-lock .ico { font-size: 54px; animation: rotphone 2.4s ease-in-out infinite; }
+        @keyframes rotphone { 0%, 35% { transform: rotate(-90deg); } 65%, 100% { transform: rotate(0deg); } }
+        .tl-btn { display: inline-flex; align-items: center; justify-content: center; }
+        /* Points de localisation : vrais éléments du DOM (comme les memories) pour suivre le zoom/dézoom de façon fluide */
+        .pc-dot { border-radius: 50%; background: #FFFC00; border: 1.5px solid #111; box-sizing: border-box; opacity: .9; cursor: pointer; }
+        .pc-cursor { border-radius: 50%; background: #ef4444; border: 3px solid #fff; box-sizing: border-box; box-shadow: 0 0 0 1px rgba(0,0,0,.3); pointer-events: none; }
         .tl-speed { width: auto; min-width: 34px; padding: 0 8px; border-radius: 14px; font-size: 12px; }
         #tl-range { accent-color: #111; height: 22px; margin: 0; }
-        /* Avec le lecteur affiché, la carte est ajustée à l'écran pour que carte + lecteur ne dépassent pas */
-        #map-wrap.tl-on #leaflet-map { height: calc(100vh - 290px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); height: calc(100dvh - 290px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 240px; }
         .city-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin-bottom: 6px; background: var(--snap-gray); border-radius: 12px; cursor: pointer; }
         .city-row .city-name { font-weight: bold; font-size: 14px; }
         .city-row .city-meta { font-size: 11px; color: #888; margin-top: 2px; }
         .city-row .city-badge { background: var(--snap-black); color: var(--snap-yellow); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: bold; white-space: nowrap; }
         #map-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
-        #leaflet-map { width: 100%; height: 62vh; border-radius: 14px; background: #dceefb; }
+        /* Même taille de carte pour Memories et Localisation : ajustée à l'écran pour que carte + lecteur de frise ne dépassent pas. */
+        #leaflet-map { width: 100%; flex: 1 1 auto; min-height: 160px; border-radius: 14px; background: #dceefb; }
+        /* Carte + lecteur + infos grises occupent exactement l'espace visible ; la liste des codes postaux est en dessous (défilement). */
+        #map-scroll-area { display: flex; flex-direction: column; }
+        #map-wrap { flex: 0 0 100%; min-height: 0; display: flex; flex-direction: column; }
+        #map-wrap #map-timeline { flex: none; }
+        #map-wrap #map-info { flex: none; min-height: 17px; }
+        #map-wrap #map-offline-notice { flex: none; }
+        #map-cities-list { padding: 0 12px 12px; flex: none; }
         .meta-icon { vertical-align: -2px; opacity: 0.65; }
-        #leaflet-map .memory-marker { background: var(--snap-yellow); border: 2px solid var(--snap-black); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+        #leaflet-map .memory-marker { background: #FFFC00; border: 1.5px solid #111; border-radius: 50%; box-sizing: border-box; opacity: 1; cursor: pointer; }
+        /* Boutons +/- et attribution : toujours au-dessus des marqueurs/aperçus, y compris pendant le déplacement de la carte
+           (sur mobile, les panneaux déplacés passent parfois par-dessus les contrôles : on force leur propre couche). */
+        #leaflet-map { isolation: isolate; }
+        #leaflet-map .leaflet-control-container { position: absolute; inset: 0; z-index: 100000; pointer-events: none; -webkit-transform: translateZ(0); transform: translateZ(0); }
+        #leaflet-map .leaflet-control-container .leaflet-top, #leaflet-map .leaflet-control-container .leaflet-bottom { z-index: 100000; }
+        #leaflet-map .leaflet-control-container .leaflet-control { pointer-events: auto; -webkit-transform: translateZ(0); transform: translateZ(0); }
         #leaflet-map, .leaflet-container, .leaflet-container:focus, .leaflet-container *:focus { outline: none !important; }
         #leaflet-map .memory-thumb-icon { border: 3px solid var(--snap-yellow); border-radius: 8px; overflow: hidden; background: var(--snap-black); box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         #leaflet-map .memory-thumb-icon .lazy-media { width: 100%; height: 100%; object-fit: cover; }
         /* --- PANNEAU INFOS AMI --- */
         #friend-info-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 1900; display: none; justify-content: center; align-items: flex-end; }
-        #friend-info-sheet { width: 100%; max-height: 80vh; overflow-y: auto; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 26px 24px calc(24px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -4px 20px rgba(0,0,0,0.25); }
+        #friend-info-sheet { width: 100%; max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 26px 24px 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.25); }
         #fi-name { font-size: 21px; font-weight: 900; color: var(--snap-black); text-transform: uppercase; letter-spacing: 0.5px; }
-        .friend-info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 2px; border-bottom: 1px solid var(--snap-gray); font-weight: 700; color: var(--snap-black); font-size: 14px; }
+        .friend-info-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 4px; border-bottom: 1px solid var(--snap-gray); font-weight: 700; color: var(--snap-black); font-size: 14px; line-height: 1.3; }
         .friend-info-row:last-child { border-bottom: none; }
         .friend-info-row .label { color: #999; font-weight: 500; }
         .friend-info-close { text-align: center; margin-top: 20px; font-weight: 900; color: var(--snap-yellow); background: var(--snap-black); padding: 14px; border-radius: 24px; cursor: pointer; letter-spacing: 1px; }
+        /* Bouton Fermer : statique par défaut ; collant en bas (seule la pastille noire visible) pour Compte, Réglages et infos groupe */
+        .sheet-footer { margin: 0 -24px; padding: 20px 24px calc(24px + env(safe-area-inset-bottom, 0px)); }
+        .sheet-footer .friend-info-close { margin-top: 0; }
+        .sticky-close .sheet-footer { position: sticky; bottom: 0; z-index: 2; background: transparent; padding-top: 16px; pointer-events: none; }
+        .sticky-close .sheet-footer .friend-info-close { pointer-events: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
         .friend-info-merge-btn { text-align: center; margin-top: 14px; font-weight: 700; font-size: 13px; color: var(--snap-black); background: var(--snap-gray); padding: 12px; border-radius: 20px; cursor: pointer; }
         .friend-info-merge-btn:active { background: #e2e2e2; }
         #settings-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 1800; display: none; justify-content: center; align-items: flex-end; }
-        #settings-sheet { width: 100%; max-height: 85vh; display: flex; flex-direction: column; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -4px 20px rgba(0,0,0,0.25); }
+        #settings-sheet { width: 100%; max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 26px 24px 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.25); }
         #settings-sheet h3 { font-size: 18px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-        #settings-body { overflow-y: auto; flex: 1; }
-        .settings-section { font-weight: 900; font-size: 12px; color: #999; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 4px; border-bottom: 1px solid var(--snap-gray); font-weight: 700; font-size: 14px; cursor: pointer; }
+        #settings-body { display: block; }
+        .settings-section { font-weight: 900; font-size: 12px; color: var(--snap-black); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        /* Typographie unifiée (Réglages, Compte, fiches) : titre de ligne = 14 px gras partout, qu'il s'agisse d'un en-tête,
+           d'un élément de liste déroulante ou d'une ligne d'info ; texte secondaire = 12 px gris. */
+        .settings-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 4px; border-bottom: 1px solid var(--snap-gray); font-weight: 700; font-size: 14px; line-height: 1.3; cursor: pointer; }
+        .settings-row { color: #777; }                                   /* lignes de premier niveau (Amis, Tri des chats...) */
+        .settings-sublist .settings-row { color: var(--snap-black); }    /* éléments des listes déroulantes : restent bien lisibles */
         .settings-row:active { background: var(--snap-gray); }
-        .settings-row .sub { color: #999; font-weight: 500; font-size: 12px; }
+        .settings-row .sub { color: #999; font-weight: 500; font-size: 12px; line-height: 1.35; }
+        .settings-row div.sub { margin-top: 2px; }
         .settings-row.active { color: var(--snap-black); }
         .sort-arrow { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #bbb; flex-shrink: 0; }
         .sort-arrow.on { background: var(--snap-yellow); color: var(--snap-black); }
@@ -105,8 +150,12 @@
         .time-bar div { height: 100%; background: var(--snap-yellow); border-right: 2px solid var(--snap-black); border-radius: 3px; }
         .chev { transition: transform 0.2s; color: #999; }
         .chev.open { transform: rotate(180deg); }
-        .settings-sublist { max-height: 38vh; overflow-y: auto; background: #fafafa; border-radius: 12px; margin: 2px 0 6px; padding: 0 8px; }
-        .settings-row.sub-row { font-weight: 600; }
+        .settings-sublist { background: #E8E8EA; border-radius: 12px; margin: 2px 0 6px; padding: 0 8px; }
+        .settings-sublist .settings-row { border-bottom-color: rgba(17, 17, 17, 0.12); }
+        .settings-sublist .settings-row:last-child { border-bottom: none; }
+        .settings-sublist .settings-row:active { background: rgba(0, 0, 0, 0.08); }
+        .settings-sublist .settings-row .sub { color: #707070; }
+        .settings-row.sub-row { font-weight: 700; font-size: 14px; }
         .settings-danger { text-align: center; margin-top: 18px; padding: 13px; border-radius: 20px; background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 13px; cursor: pointer; }
         #rename-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 2100; display: none; justify-content: center; align-items: flex-end; }
         #rename-sheet { width: 100%; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 24px 22px calc(22px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -4px 20px rgba(0,0,0,0.25); }
@@ -138,7 +187,7 @@
         .search-bar:focus { background: #e8e8e8; }
 
         /* --- CONVERSATION --- */
-        .conv-header { display: flex; align-items: center; justify-content: space-between; padding: env(safe-area-inset-top, 0px) 20px 0; height: calc(86px + env(safe-area-inset-top, 0px)); background: var(--snap-black); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 10;}
+        .conv-header { display: flex; align-items: center; justify-content: space-between; padding: calc(6px + env(safe-area-inset-top, 0px)) 20px 0; height: calc(54px + env(safe-area-inset-top, 0px)); background: var(--snap-black); border-bottom-left-radius: 22px; border-bottom-right-radius: 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 10;}
         .back-btn { font-size: 26px; margin-right: 15px; cursor: pointer; color: var(--snap-yellow); font-weight: 900; }
         #conv-title { position: absolute; left: 50%; transform: translateX(-50%); max-width: 60%; color: var(--snap-yellow); font-weight: 900; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sort-btn { font-size: 24px; cursor: pointer; margin-left: 10px; padding: 8px; background: transparent; display: flex; justify-content: center; align-items: center; color: var(--snap-yellow);}
@@ -149,7 +198,7 @@
         .conv-filter.active { background: var(--snap-black); color: var(--snap-yellow); }
         .conv-filter.active span { color: var(--snap-yellow); font-weight: bold; }
         
-        #chat-loading-overlay { position: absolute; top: calc(164px + env(safe-area-inset-top, 0px)); left: 0; width: 100%; height: calc(100% - 164px - env(safe-area-inset-top, 0px)); background: rgba(255,255,255,0.8); z-index: 50; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        #chat-loading-overlay { position: absolute; top: calc(132px + env(safe-area-inset-top, 0px)); left: 0; width: 100%; height: calc(100% - 132px - env(safe-area-inset-top, 0px)); background: rgba(255,255,255,0.8); z-index: 50; display: none; justify-content: center; align-items: center; flex-direction: column; }
         #chat-scroll-loader { text-align: center; padding: 10px; color: var(--snap-black); font-size: 20px; display: none; font-weight: bold;}
         
         #conv-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: block; position: relative; }
@@ -161,7 +210,7 @@
         .msg-row.them { align-items: flex-start; }
         .msg-bubble { padding: 9px 16px; max-width: 85%; font-weight: 500; word-wrap: break-word; }
         .msg-row.them .msg-bubble { background: var(--snap-gray); border-radius: 20px 20px 20px 4px; margin-left: 10px; }
-        .msg-row.me .msg-bubble { background: rgba(255, 252, 0, 0.18); border-radius: 20px 20px 4px 20px; margin-right: 10px; }
+        .msg-row.me .msg-bubble { background: var(--snap-yellow-soft); border-radius: 20px 20px 4px 20px; margin-right: 10px; }
         .msg-date { font-size: 11px; color: #888; margin: 0 15px 4px 15px; font-weight: bold; }
         
         .msg-media { max-width: 100%; max-height: 350px; border-radius: 10px; margin-top: 5px; cursor: pointer; background: #eee; min-height: 50px; display: block; }
@@ -169,6 +218,9 @@
         .video-wrapper video.msg-media { margin-top: 5px; }
         .video-play-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 54px; height: 54px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         .video-progress-hitarea { position: absolute; bottom: 0px; left: 0; right: 0; height: 26px; display: flex; align-items: center; padding: 0 8px; cursor: pointer; }
+        /* Visionneuse : la barre de lecture passe sous la vidéo (sans l'empiéter), sans être collée au bas de l'écran */
+        #viewer-media .video-progress-hitarea { top: 100%; bottom: auto; margin-top: 8px; height: 34px; }
+        #viewer-media .video-progress-bg { height: 5px; }
         .video-progress-bg { position: relative; width: 100%; height: 4px; background: rgba(255,255,255,0.4); border-radius: 2px; overflow: hidden; }
         .video-progress-fill { height: 100%; width: 0%; background: var(--snap-yellow); pointer-events: none; }
         
@@ -182,6 +234,7 @@
         .memories-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 2px !important; padding: 2px !important; width: 100% !important; align-content: flex-start !important; }
         .memory-thumb { aspect-ratio: 9/16; background-color: var(--snap-gray); position: relative; overflow: hidden; cursor: pointer; }
         .lazy-media { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        .memory-more-badge { position: absolute; right: 2px; bottom: 2px; z-index: 3; background: var(--snap-black); color: var(--snap-yellow); font-size: 10px; font-weight: 800; line-height: 1; padding: 3px 5px; border-radius: 8px; pointer-events: none; }
         .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2; }
         .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
         
@@ -211,12 +264,53 @@
         .nav-zone.right { right: 0; justify-content: flex-end; padding-right: 10px; }
         .nav-arrow { background: rgba(0,0,0,0.3); color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; backdrop-filter: blur(4px); pointer-events: none; opacity: 0; transition: opacity 0.2s;}
         .nav-zone:active .nav-arrow { opacity: 1; }
+
+        /* --- ANIMATIONS (désactivées si l'appareil demande de réduire les animations) --- */
+        .nav-item, .chat-tab, .conv-filter, .friend-info-close, .friend-info-merge-btn, .tl-btn, .pill-icon-btn, .viewer-btn, .memory-thumb, .city-row, .chat-item, .settings-row, .sort-btn, .back-btn, .mf-btn { transition: transform .15s ease, color .2s ease, background-color .2s ease, opacity .2s ease; -webkit-tap-highlight-color: transparent; }
+        .nav-item:active, .chat-tab:active, .conv-filter:active, .friend-info-close:active, .friend-info-merge-btn:active, .memory-thumb:active, .city-row:active, .mf-btn:active { transform: scale(.96); }
+        .tl-btn:active, .pill-icon-btn:active, .viewer-btn:active, .sort-btn:active, .back-btn:active { transform: scale(.88); }
+        .chat-item:active, .settings-row:active { transform: scale(.985); }
+        @media (prefers-reduced-motion: no-preference) {
+            /* Changement d'onglet / ouverture d'une conversation */
+            @keyframes viewInRight { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+            @keyframes viewInLeft { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            .view[data-anim="right"] { animation: viewInRight .26s cubic-bezier(.2,.8,.2,1); }
+            .view[data-anim="left"] { animation: viewInLeft .26s cubic-bezier(.2,.8,.2,1); }
+            .view[data-anim="fade"], #view-map[data-anim="right"], #view-map[data-anim="left"] { animation: fadeIn .2s ease-out; }
+            /* Fenêtres du bas : fond en fondu, panneau qui glisse depuis le bas */
+            @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+            #friend-info-overlay, #settings-overlay, #rename-overlay, #merge-picker-overlay, #viewer-map-choice, #viewer-save-choice, #viewer-save-progress { animation: fadeIn .2s ease-out; }
+            #friend-info-sheet, #settings-sheet, #rename-sheet, #merge-picker-sheet, #viewer-map-choice .vmc-sheet, #viewer-save-choice .vmc-sheet, #viewer-save-progress .vmc-sheet { animation: sheetUp .3s cubic-bezier(.2,.9,.3,1); }
+            /* Visionneuse : ouverture en fondu + léger zoom, fondu à chaque changement de média */
+            @keyframes viewerIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+            #viewer { animation: viewerIn .22s ease-out; }
+            #viewer-zoomable { animation: fadeIn .2s ease-out; }
+            @keyframes slideFromRight { from { opacity: 0; transform: translateX(70px); } to { opacity: 1; transform: translateX(0); } }
+            @keyframes slideFromLeft { from { opacity: 0; transform: translateX(-70px); } to { opacity: 1; transform: translateX(0); } }
+            #viewer-zoomable[data-dir="next"] { animation: slideFromRight .26s cubic-bezier(.2,.8,.2,1); }
+            #viewer-zoomable[data-dir="prev"] { animation: slideFromLeft .26s cubic-bezier(.2,.8,.2,1); }
+            /* Grilles : les vignettes apparaissent en douceur, l'image se révèle une fois chargée */
+            @keyframes thumbIn { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+            .memory-thumb { animation: thumbIn .32s ease-out backwards; }
+            img.lazy-media { opacity: 0; transition: opacity .3s ease; }
+            img.lazy-media.is-loaded { opacity: 1; }
+            /* Carte : les aperçus de memories apparaissent en grossissant, le curseur de la frise glisse */
+            @keyframes mapPop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+            #leaflet-map .memory-marker, #leaflet-map .memory-thumb-icon { animation: fadeIn .22s ease-out; }
+            #leaflet-map .memory-thumb-icon > div { animation: mapPop .26s cubic-bezier(.2,.9,.3,1.2); }
+            #leaflet-map .pc-cursor { transition: transform .15s linear; }
+        }
+        @media (prefers-reduced-motion: reduce) { img.lazy-media { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="app-container">
         
+        <!-- Écran affiché quand le téléphone est en paysage (une page web ne peut pas toujours verrouiller l'orientation) -->
+        <div id="rotate-lock"><div class="ico">📱</div><h2 style="font-weight: 900;">Remets ton téléphone à la verticale</h2><p style="font-size: 13px; max-width: 280px;">Cette app s'utilise en portrait. Sur iPhone, tu peux aussi activer le verrouillage de l'orientation dans le centre de contrôle.</p></div>
+
         <!-- ÉCRAN DE CHARGEMENT DB AVEC BOUTON DE SECOURS -->
         <div id="loading-screen">
             <h1 style="font-size: 50px; margin-bottom: 10px;">👻</h1>
@@ -259,7 +353,7 @@
             <!-- VUE CONVERSATION (Prend 100% de l'espace) -->
             <div id="view-conversation" class="view">
                 <div class="conv-header">
-                    <div class="back-btn" onclick="UI.switchTab('chat')">‹</div>
+                    <div class="back-btn" onclick="Chat.back()">‹</div>
                     <div id="conv-title" onclick="FriendInfo.openCurrent()" style="cursor:pointer;">Nom</div>
                     <div class="sort-btn" id="conv-sort-btn" onclick="Chat.toggleSort()">▾</div>
                 </div>
@@ -290,33 +384,33 @@
 
             <!-- VUE MAP -->
             <div id="view-map" class="view">
-                <div class="sticky-chat-header" style="padding-top: 6px; padding-bottom: 6px;">
+                <div class="sticky-chat-header">
                     <div class="chat-tabs">
                         <div class="chat-tab active" id="map-tab-memories" onclick="MapView.switchTab('memories')">Memories</div>
                         <div class="chat-tab" id="map-tab-localisation" onclick="MapView.switchTab('localisation')">Localisation</div>
                     </div>
                 </div>
                 <div id="map-scroll-area">
-                    <div id="map-wrap" style="padding: 8px 12px 12px; position: relative;">
+                    <div id="map-wrap" style="padding: 2px 12px 12px; position: relative;">
                         <div id="leaflet-map"></div>
+                        <div id="map-overlay-info"><div id="tl-place">—</div><div id="tl-date">—</div></div>
+                        <div id="map-focus-bar"><div class="mf-btn" onclick="MapView.focusBack()">‹ Retour au memory</div><div class="mf-btn alt" onclick="MapView.focusAll()">Voir tous les points</div></div>
                         <div id="map-timeline" style="display:none; margin-top: 6px;">
-                            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">
-                                <div id="tl-place" style="flex:1; min-width:0; font-weight:800; font-size:14px; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</div>
-                                <div id="tl-date" style="flex:none; font-size:11px; color:#888; font-weight:700; white-space:nowrap;">—</div>
-                            </div>
                             <div style="display:flex; align-items:center; gap:6px;">
                                 <button id="tl-prev" class="tl-btn" aria-label="Précédent">‹</button>
-                                <button id="tl-play" class="tl-btn" aria-label="Lecture">▶</button>
+                                <button id="tl-play" class="tl-btn" aria-label="Lecture/Pause"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
                                 <button id="tl-next" class="tl-btn" aria-label="Suivant">›</button>
                                 <button id="tl-speed" class="tl-btn tl-speed" aria-label="Vitesse de lecture">×1</button>
-                                <input type="range" id="tl-range" min="0" max="0" value="0" step="1" style="flex:1; min-width:0;">
+                                <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+                                    <input type="range" id="tl-range" min="0" max="0" value="0" step="1" style="width:100%; min-width:0;">
+                                    <div style="display:flex; justify-content:space-between; gap:8px; font-size:10px; color:#888; font-weight:700; margin-top:1px;"><span id="tl-min"></span><span id="tl-max"></span></div>
+                                </div>
                             </div>
-                            <div style="display:flex; justify-content:space-between; font-size:9px; color:#aaa; font-weight:600; margin-top:0;"><span id="tl-min"></span><span id="tl-max"></span></div>
                         </div>
                         <div id="map-info" style="margin-top: 6px; text-align: center; color: #888; font-weight: bold; font-size: 13px;"></div>
                         <div id="map-offline-notice" style="display:none; margin-top: 4px; text-align: center; color: #d97706; font-size: 11px; font-weight: 600;">Pas de connexion : le fond de carte ne peut pas se charger (les tuiles viennent d'OpenStreetMap).</div>
-                        <div id="map-cities-list"></div>
                     </div>
+                    <div id="map-cities-list"></div>
                 </div>
             </div>
 
@@ -332,6 +426,28 @@
                 <div class="nav-zone left" onclick="Viewer.prev()"><div class="nav-arrow">‹</div></div>
                 <div id="viewer-media"></div>
                 <div class="nav-zone right" onclick="Viewer.next()"><div class="nav-arrow">›</div></div>
+                <div id="viewer-save-choice" onclick="if(event.target===this) Viewer.answerSave(null)">
+                    <div class="vmc-sheet">
+                        <div class="friend-info-merge-btn" style="margin-top:0" onclick="Viewer.answerSave(true)">Avec calque</div>
+                        <div class="friend-info-merge-btn" onclick="Viewer.answerSave(false)">Sans calque</div>
+                        <div class="friend-info-close" onclick="Viewer.answerSave(null)">Fermer</div>
+                    </div>
+                </div>
+                <div id="viewer-save-progress">
+                    <div class="vmc-sheet">
+                        <div id="vsp-text" style="font-weight:800; font-size:14px; text-align:center; margin-bottom:12px;"></div>
+                        <div id="vsp-bar" style="height:8px; border-radius:4px; background:var(--snap-gray); overflow:hidden;"><div id="vsp-fill" style="height:100%; width:0; background:var(--snap-black); transition:width .2s;"></div></div>
+                        <div class="friend-info-merge-btn" id="vsp-save" style="display:none;" onclick="Viewer.saveMerged()">Enregistrer</div>
+                        <div class="friend-info-close" onclick="Viewer.cancelMerge()">Fermer</div>
+                    </div>
+                </div>
+                <div id="viewer-map-choice" onclick="if(event.target===this) Viewer.closeMapChoice()">
+                    <div class="vmc-sheet">
+                        <div class="friend-info-merge-btn" style="margin-top:0" onclick="Viewer.showOnMap()">Carte Memories</div>
+                        <div class="friend-info-merge-btn" onclick="Viewer.openGpsLink()">Google Maps</div>
+                        <div class="friend-info-close" onclick="Viewer.closeMapChoice()">Fermer</div>
+                    </div>
+                </div>
             </div>
 
             <!-- PANNEAU INFOS AMI / GROUPE -->
@@ -341,16 +457,16 @@
                     <div id="fi-sub" style="color:#888; font-weight:600; font-size:13px; margin-bottom:14px;"></div>
                     <div id="fi-rows"></div>
                     <div id="fi-merge-action"></div>
-                    <div class="friend-info-close" onclick="FriendInfo.close()">Fermer</div>
+                    <div class="sheet-footer"><div class="friend-info-close" onclick="FriendInfo.close()">Fermer</div></div>
                 </div>
             </div>
 
             <!-- RÉGLAGES -->
             <div id="settings-overlay" onclick="if(event.target===this) Settings.close()">
-                <div id="settings-sheet">
+                <div id="settings-sheet" class="sticky-close">
                     <h3 id="settings-title">Réglages</h3>
                     <div id="settings-body"></div>
-                    <div class="friend-info-close" onclick="Settings.close()">Fermer</div>
+                    <div class="sheet-footer"><div class="friend-info-close" onclick="Settings.close()">Fermer</div></div>
                 </div>
             </div>
 
@@ -402,6 +518,7 @@
                     a.href = url;
                     a.download = key;
                     a.click();
+                    setTimeout(() => URLManager.revoke(url), 10000);
                 } else {
                     alert("Le fichier est introuvable dans la base de données.");
                 }
@@ -490,7 +607,24 @@
 
         const URLManager = {
             activeUrls: new Set(),
-            create: (blob) => { const url = URL.createObjectURL(blob); URLManager.activeUrls.add(url); return url; }
+            create: (blob) => { const url = URL.createObjectURL(blob); URLManager.activeUrls.add(url); return url; },
+            byKey: new Map(),
+            scopes: {},
+            // Une seule URL par média (réutilisée par la grille, la carte, le chat...) au lieu d'une nouvelle à chaque affichage.
+            forKey: (key, blob) => {
+                let url = URLManager.byKey.get(key);
+                if (!url) { url = URLManager.create(blob); URLManager.byKey.set(key, url); }
+                return url;
+            },
+            // URL éphémère rattachée à un "scope" (ex. le lecteur plein écran) : libérée d'un coup avec takeScope/revokeScope.
+            scoped: (scope, blob) => {
+                const url = URLManager.create(blob);
+                (URLManager.scopes[scope] || (URLManager.scopes[scope] = new Set())).add(url);
+                return url;
+            },
+            revoke: (url) => { try { URL.revokeObjectURL(url); } catch (e) {} URLManager.activeUrls.delete(url); },
+            takeScope: (scope) => { const old = URLManager.scopes[scope] || new Set(); URLManager.scopes[scope] = new Set(); return old; },
+            revokeScope: (scope) => { URLManager.takeScope(scope).forEach(URLManager.revoke); }
         };
 
         // --- ENREGISTREMENT DANS LA PELLICULE (Photos / Galerie) ---
@@ -630,6 +764,53 @@
             } catch (e) { return null; }
         }
 
+        // Miniatures d'images générées à la volée (canvas) et gardées en mémoire pour la session : la grille et la carte
+        // affichent de petites images au lieu de décoder les originaux en pleine résolution. Repli automatique sur l'original.
+        const Thumbs = {
+            cache: new Map(),     // "clé|taille" -> Promise<url | null>
+            active: 0, queue: [],
+            next: () => { while (Thumbs.active < 3 && Thumbs.queue.length) { Thumbs.active++; Thumbs.queue.shift()(); } },
+            run: (task) => new Promise(resolve => {
+                Thumbs.queue.push(async () => {
+                    try { resolve(await task()); } catch (e) { resolve(null); }
+                    finally { Thumbs.active--; Thumbs.next(); }
+                });
+                Thumbs.next();
+            }),
+            get: (key, size) => {
+                const id = key + '|' + size;
+                let p = Thumbs.cache.get(id);
+                if (!p) {
+                    p = Thumbs.run(async () => {
+                        const blob = await getMediaFromDB(key);
+                        if (!blob) return null;
+                        // Décodage via <img> : même orientation EXIF que l'affichage normal.
+                        const tmp = URL.createObjectURL(blob);
+                        try {
+                            const img = new Image();
+                            img.src = tmp;
+                            await img.decode();
+                            const W = img.naturalWidth, H = img.naturalHeight;
+                            const scale = Math.min(1, size / Math.max(W, H));
+                            if (!W || !H || scale >= 1) return null;          // déjà petite : on garde l'original
+                            const w = Math.max(1, Math.round(W * scale)), h = Math.max(1, Math.round(H * scale));
+                            const canvas = document.createElement('canvas');
+                            canvas.width = w; canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx.imageSmoothingQuality = 'high';
+                            ctx.drawImage(img, 0, 0, w, h);
+                            const alpha = /png|webp|gif/i.test(blob.type || '') || /\.(png|webp|gif)$/i.test(key);   // garde la transparence (filtres/textes)
+                            const out = await new Promise(r => canvas.toBlob(r, alpha ? 'image/png' : 'image/jpeg', 0.82));
+                            return out ? URLManager.create(out) : null;
+                        } finally { URL.revokeObjectURL(tmp); }
+                    });
+                    Thumbs.cache.set(id, p);
+                }
+                return p;
+            }
+        };
+
+        document.addEventListener('load', (e) => { const t = e.target; if (t && t.classList && t.classList.contains('lazy-media')) t.classList.add('is-loaded'); }, true);
         const LazyMediaObserver = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -637,16 +818,18 @@
                     const mediaKey = el.getAttribute('data-media-key');
                     if (mediaKey && !el.src && !el.dataset.loading) {
                         el.dataset.loading = "true";
-                        getMediaFromDB(mediaKey).then(blob => {
-                            if (blob) {
-                                const url = URLManager.create(blob);
-                                if (el.tagName === 'VIDEO') {
-                                    el.src = url + "#t=0.001";
-                                } else {
-                                    el.src = url;
-                                }
+                        (async () => {
+                            // Images marquées data-thumb : on affiche une miniature légère (repli : le fichier d'origine).
+                            const size = parseInt(el.dataset.thumb, 10);
+                            if (size && el.tagName === 'IMG') {
+                                const thumbUrl = await Thumbs.get(mediaKey, size);
+                                if (thumbUrl) { el.src = thumbUrl; return; }
                             }
-                        });
+                            const blob = await getMediaFromDB(mediaKey);
+                            if (!blob) { el.dispatchEvent(new Event('error')); return; }
+                            const url = URLManager.forKey(mediaKey, blob);
+                            el.src = el.tagName === 'VIDEO' ? url + "#t=0.001" : url;
+                        })().catch(() => el.dispatchEvent(new Event('error')));
                     }
                     observer.unobserve(el);
                 }
@@ -663,6 +846,63 @@
             }
         }
 
+        // --- ERREURS IMPRÉVUES : un petit bandeau au lieu d'un échec silencieux ---
+        (function installErrorBanner() {
+            let last = 0;
+            const show = (msg) => {
+                const now = Date.now();
+                if (now - last < 4000) return;
+                last = now;
+                let b = document.getElementById('error-banner');
+                if (!b) {
+                    b = document.createElement('div');
+                    b.id = 'error-banner';
+                    b.style.cssText = 'position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top, 0px) + 8px); z-index:100001; background:rgba(17,17,17,.94); color:#fff; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.3; box-shadow:0 4px 14px rgba(0,0,0,.3);';
+                    b.onclick = () => { b.style.display = 'none'; };
+                    document.body.appendChild(b);
+                }
+                b.textContent = '⚠️ ' + msg;
+                b.style.display = 'block';
+                clearTimeout(b._t);
+                b._t = setTimeout(() => { b.style.display = 'none'; }, 8000);
+            };
+            window.addEventListener('error', (e) => {
+                if (!e.message || /ResizeObserver|Script error/i.test(e.message)) return;
+                console.error(e.error || e.message);
+                show('Une erreur est survenue : ' + e.message);
+            });
+            window.addEventListener('unhandledrejection', (e) => {
+                const r = e.reason, msg = (r && r.message) || (typeof r === 'string' ? r : '');
+                if (!msg) return;
+                console.error(r);
+                show('Une erreur est survenue : ' + msg);
+            });
+        })();
+
+        // --- PORTRAIT UNIQUEMENT ---
+        // Une page web ne peut pas verrouiller l'orientation partout : screen.orientation.lock() ne marche que sur Android
+        // (Chrome, en plein écran ou app installée) et iOS Safari ne l'autorise pas. On tente donc le vrai verrou, et sinon
+        // l'app est masquée derrière un écran « remets ton téléphone à la verticale » tant que le téléphone est en paysage.
+        const OrientationGuard = {
+            tryLock: () => { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(() => {}); } catch (e) {} },
+            isLandscape: () => {
+                if (screen.orientation && screen.orientation.type) return screen.orientation.type.indexOf('landscape') === 0;
+                return typeof window.orientation === 'number' ? Math.abs(window.orientation) === 90 : window.innerWidth > window.innerHeight;
+            },
+            // Téléphones uniquement (écran tactile de petite taille) ; le clavier virtuel ne fait pas basculer en « paysage ».
+            isPhone: () => window.matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 500,
+            update: () => document.documentElement.classList.toggle('landscape-lock', OrientationGuard.isPhone() && OrientationGuard.isLandscape()),
+            init: () => {
+                OrientationGuard.tryLock();
+                OrientationGuard.update();
+                window.addEventListener('orientationchange', () => setTimeout(OrientationGuard.update, 100));
+                window.addEventListener('resize', OrientationGuard.update);
+                if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', OrientationGuard.update);
+                document.addEventListener('click', OrientationGuard.tryLock, { once: true });   // certains navigateurs exigent un geste
+            }
+        };
+        OrientationGuard.init();
+
         // INIT SYSTEM (Passage à la version 2 pour forcer la recréation si corrompue)
         const dbReq = indexedDB.open("SnapArchiveDB", 2);
         
@@ -672,6 +912,8 @@
             if (!db.objectStoreNames.contains('media_files')) db.createObjectStore('media_files');
         };
         
+        dbReq.onerror = () => showLoadError('Base locale inaccessible', 'Le navigateur refuse d’ouvrir le stockage de l’app (navigation privée ou stockage bloqué ?). Ouvre la page dans un onglet normal.', { retry: true, detail: String(dbReq.error || '') });
+        dbReq.onblocked = () => showLoadError('Base locale bloquée', 'Une autre fenêtre de cette page utilise encore la base. Ferme les autres onglets puis réessaie.', { retry: true });
         dbReq.onsuccess = async (e) => {
             State.db = e.target.result;
             
@@ -680,6 +922,7 @@
                 const store = tx.objectStore('json_data');
                 const checkReq = store.get('friends');
                 
+                checkReq.onerror = () => showLoadError('Lecture de la base impossible', 'Impossible de lire les données enregistrées. Réessaie, ou efface les données pour réimporter ton dossier.', { retry: true, reset: true, detail: String(checkReq.error || '') });
                 checkReq.onsuccess = async () => {
                     if (!checkReq.result) {
                         document.getElementById('loading-screen').querySelector('p').innerText = "Aucune donnée trouvée. Importe ton archive.";
@@ -691,66 +934,206 @@
                 };
             } catch(err) {
                 // Fallback sécurité si la base est cassée
-                document.getElementById('loading-screen').querySelector('p').innerText = "Erreur de lecture de la base. Recharge la page ou efface les données du site dans les réglages du navigateur.";
-                document.querySelector('.spinner').style.display = 'none';
+                showLoadError('Erreur de lecture de la base', 'Recharge la page, ou efface les données pour réimporter ton dossier.', { retry: true, reset: true, detail: String(err && err.stack || err) });
             }
         };
 
-        document.getElementById('folder-input').addEventListener('change', async (event) => {
-            const files = event.target.files;
+        // Affiche une erreur claire sur l'écran de chargement, avec les boutons utiles.
+        function showLoadError(title, message, opts = {}) {
+            const ls = document.getElementById('loading-screen');
+            document.getElementById('main-ui').style.display = 'none';
+            ls.style.display = 'flex';
+            document.querySelector('.spinner').style.display = 'none';
             document.getElementById('setup-btn').style.display = 'none';
-            document.querySelector('.spinner').style.display = 'block';
-            const logEl = document.getElementById('init-log');
-            logEl.innerText = "Injection des fichiers dans le navigateur...";
-            
+            ls.querySelector('h2').innerText = title;
+            ls.querySelector('p').innerText = message;
+            document.getElementById('init-log').innerText = opts.step ? `Étape : ${opts.step}` : '';
+            let box = document.getElementById('init-error-actions');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'init-error-actions';
+                box.style.cssText = 'display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:16px; max-width:340px;';
+                ls.appendChild(box);
+            }
+            box.innerHTML = '';
+            const mk = (label, fn, primary) => {
+                const btn = document.createElement('button');
+                btn.type = 'button'; btn.textContent = label; btn.onclick = fn;
+                btn.style.cssText = `border:none; border-radius:22px; padding:11px 18px; font-weight:800; font-size:14px; cursor:pointer; ${primary ? 'background:#111; color:#fff;' : 'background:rgba(0,0,0,.12); color:#111;'}`;
+                box.appendChild(btn);
+            };
+            if (opts.retry) mk('Réessayer', () => window.location.reload(), true);
+            if (opts.reimport) mk('Choisir un dossier', () => { const i = document.getElementById('folder-input'); i.value = ''; i.click(); }, !opts.retry);
+            if (opts.reset) mk('Effacer les données', () => resetDB());
+            if (opts.detail) mk('Copier le détail', () => { try { navigator.clipboard.writeText(String(opts.detail)); } catch (e) {} });
+        }
+
+        // Fichiers attendus dans l'export Snapchat (dossier json/). required : sans eux, rien ne s'affiche.
+        const IMPORT_SPEC = [
+            { path: 'json/friends.json', key: 'friends', required: true, impact: 'la liste d\u2019amis' },
+            { path: 'json/chat_history.json', key: 'chats', required: true, impact: 'les conversations' },
+            { path: 'json/memories_history.json', key: 'memories', impact: 'les dates et lieux des Memories' },
+            { path: 'json/location_history.json', key: 'locations', impact: 'les positions GPS de la carte' },
+            { path: 'json/account.json', key: 'account', impact: 'les infos du compte' },
+            { path: 'json/ranking.json', key: 'ranking', impact: 'les statistiques' },
+            { path: 'json/account_history.json', key: 'accountHistory', impact: 'l\u2019historique du compte' },
+            { path: 'json/talk_history.json', key: 'talkHistory', impact: 'les appels' },
+            { path: 'json/snap_map_places_history.json', key: 'mapPlaces', impact: 'les lieux de la Snap Map' },
+            { path: 'json/user_profile.json', key: 'userProfile', impact: 'le profil' },
+            { path: 'json/bitmoji.json', key: 'bitmoji', impact: 'les infos Bitmoji' },
+            { path: 'json/custom_sticker.json', key: 'customSticker', impact: 'les stickers' },
+            { path: 'json/snap_pro.json', key: 'snapPro', impact: 'le profil Snap Pro' }
+        ];
+
+        class ImportError extends Error { constructor(title, message) { super(message); this.title = title; } }
+        const isQuotaError = (e) => !!e && (e.name === 'QuotaExceededError' || /quota/i.test(String(e.message)));
+
+        // Vérifie le dossier AVANT d'écrire quoi que ce soit, lit chaque fichier avec un message d'erreur précis,
+        // et n'enregistre friends.json qu'en dernier : un import interrompu ne laisse donc jamais une app à moitié remplie.
+        async function importFolder(files, log) {
+            const report = { date: new Date().toISOString(), found: [], missing: [], invalid: [], notes: [],
+                             counts: { total: 0, saved: 0, failed: 0, skipped: 0, memories: 0, chatMedia: 0 } };
+            const relPath = (f) => (f.webkitRelativePath || f.name || '').toLowerCase();
+
+            const byKey = {};
+            files.forEach(f => { const p = relPath(f); IMPORT_SPEC.forEach(sp => { if (p.includes(sp.path)) byKey[sp.key] = f; }); });
+
+            if (!files.some(f => /(^|\/)json\//.test(relPath(f)))) {
+                throw new ImportError('Mauvais dossier', 'Je ne trouve pas de sous-dossier « json » dans ce dossier. Sélectionne le dossier racine de l\u2019export Snapchat, une fois décompressé (celui qui contient json, memories et chat_media).');
+            }
+            const missingReq = IMPORT_SPEC.filter(sp => sp.required && !byKey[sp.key]);
+            if (missingReq.length) {
+                throw new ImportError('Fichiers indispensables manquants', `Il manque ${missingReq.map(sp => sp.path.replace('json/', '')).join(' et ')} : sans ${missingReq.length > 1 ? 'eux' : 'lui'}, je ne peux pas afficher ${missingReq.map(sp => sp.impact).join(' ni ')}. Vérifie que l\u2019export est complet et entièrement décompressé.`);
+            }
+
+            const read = async (sp) => {
+                const name = sp.path.replace('json/', '');
+                let text;
+                try { text = await byKey[sp.key].text(); }
+                catch (e) { throw new ImportError(`Problème avec ${name}`, `Lecture impossible (${(e && e.message) || 'fichier inaccessible'}). Réessaie en resélectionnant le dossier.`); }
+                try { return JSON.parse(text); }
+                catch (e) { throw new ImportError(`Problème avec ${name}`, `Le fichier n\u2019est pas un JSON valide (${e.message}). Il est peut-être incomplet ou corrompu : recopie le dossier depuis l\u2019export d\u2019origine.`); }
+            };
+            const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
+
+            // 1) Fichiers indispensables : lus et contrôlés avant toute écriture
+            log('Lecture de friends.json...');
+            const friends = await read(IMPORT_SPEC[0]);
+            if (!isObject(friends)) throw new ImportError('Problème avec friends.json', 'Structure inattendue : ce n\u2019est pas un fichier d\u2019amis Snapchat.');
+            log('Lecture de chat_history.json...');
+            const chats = await read(IMPORT_SPEC[1]);
+            if (!isObject(chats)) throw new ImportError('Problème avec chat_history.json', 'Structure inattendue : ce n\u2019est pas un historique de conversations Snapchat.');
+            report.found.push('json/friends.json', 'json/chat_history.json');
+            if (!Object.keys(chats).length) report.notes.push('chat_history.json est vide : aucune conversation à afficher.');
+
+            // 2) Fichiers facultatifs : un fichier abîmé est signalé mais n'empêche pas l'import
+            const optional = [];
+            for (const sp of IMPORT_SPEC.filter(x => !x.required)) {
+                if (!byKey[sp.key]) { report.missing.push(sp.path); continue; }
+                log(`Lecture de ${sp.path.replace('json/', '')}...`);
+                try { optional.push([sp.key, await read(sp)]); report.found.push(sp.path); }
+                catch (e) { report.invalid.push({ file: sp.path, message: e.message }); }
+            }
+
+            // 2b) modifications.json (exporté depuis l'app) : repris automatiquement s'il se trouve dans le dossier
+            const modFile = files.filter(f => /(^|\/)modifications\.json$/.test(relPath(f))).sort((a, b) => relPath(a).length - relPath(b).length)[0];
+            let modsToSave = null;
+            if (modFile) {
+                log('Lecture de modifications.json...');
+                try {
+                    const parsed = JSON.parse(await modFile.text());
+                    if (!isObject(parsed)) throw new Error('structure inattendue');
+                    modsToSave = parsed;
+                } catch (e) { report.invalid.push({ file: 'modifications.json', message: `Fichier ignoré : ${e.message}` }); }
+            }
+
+            // 3) Médias
             const mediaToSave = [];
             for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const path = file.webkitRelativePath.toLowerCase();
-                const name = file.name;
-
-                if (path.includes('json/friends.json')) await saveJSON('friends', JSON.parse(await file.text()));
-                if (path.includes('json/chat_history.json')) await saveJSON('chats', JSON.parse(await file.text()));
-                if (path.includes('json/memories_history.json')) await saveJSON('memories', JSON.parse(await file.text()));
-                if (path.includes('json/location_history.json')) await saveJSON('locations', JSON.parse(await file.text()));
-                if (path.includes('json/account.json')) await saveJSON('account', JSON.parse(await file.text()));
-                if (path.includes('json/ranking.json')) await saveJSON('ranking', JSON.parse(await file.text()));
-                if (path.includes('json/account_history.json')) await saveJSON('accountHistory', JSON.parse(await file.text()));
-                if (path.includes('json/talk_history.json')) await saveJSON('talkHistory', JSON.parse(await file.text()));
-                if (path.includes('json/snap_map_places_history.json')) await saveJSON('mapPlaces', JSON.parse(await file.text()));
-                if (path.includes('json/user_profile.json')) await saveJSON('userProfile', JSON.parse(await file.text()));
-                if (path.includes('json/bitmoji.json')) await saveJSON('bitmoji', JSON.parse(await file.text()));
-                if (path.includes('json/custom_sticker.json')) await saveJSON('customSticker', JSON.parse(await file.text()));
-                if (path.includes('json/snap_pro.json')) await saveJSON('snapPro', JSON.parse(await file.text()));
-
-                if (name.match(/\.(mp4|mov|m4a|wav|mp3|aac|jpg|jpeg|png)$/i)) {
-                    if (path.includes('/memories/') || path.includes('/chat_media/')) {
-                        let cleanKey = name;
-                        if (path.includes('/chat_media/')) {
-                            const extMatch = name.match(/\.([a-z0-9]+)$/i);
-                            const ext = extMatch ? extMatch[1].toLowerCase() : '';
-                            const matchDate = name.match(/^\d{4}-\d{2}-\d{2}_(.*)\./);
-                            let base = matchDate ? matchDate[1] : name.split('.')[0];
-                            base = base.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
-                            cleanKey = ext ? `${base}.${ext}` : base;
-                        }
-                        mediaToSave.push({ key: cleanKey, file: file });
-                    }
+                const file = files[i], path = relPath(file), name = file.name;
+                if (name.match(/\.(mp4|mov|m4a|wav|mp3|aac|jpg|jpeg|png)$/i) && (path.includes('/memories/') || path.includes('/chat_media/'))) {
+                    let cleanKey = name;
+                    if (path.includes('/chat_media/')) {
+                        report.counts.chatMedia++;
+                        const extMatch = name.match(/\.([a-z0-9]+)$/i);
+                        const ext = extMatch ? extMatch[1].toLowerCase() : '';
+                        const matchDate = name.match(/^\d{4}-\d{2}-\d{2}_(.*)\./);
+                        let base = matchDate ? matchDate[1] : name.split('.')[0];
+                        base = base.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
+                        cleanKey = ext ? `${base}.${ext}` : base;
+                    } else report.counts.memories++;
+                    mediaToSave.push({ key: cleanKey, file });
                 }
-                if (i % 500 === 0) { logEl.innerText = `Analyse... ${i}/${files.length}`; await new Promise(r => setTimeout(r, 0)); }
+                if (i % 500 === 0) { log(`Analyse... ${i}/${files.length}`); await new Promise(r => setTimeout(r, 0)); }
             }
+            report.counts.total = mediaToSave.length;
+            if (!mediaToSave.length) report.notes.push('Aucune photo ni vidéo trouvée (dossiers memories et chat_media absents ou vides) : seuls les textes seront affichés.');
 
-            for (let i = 0; i < mediaToSave.length; i++) {
-                const item = mediaToSave[i];
-                await saveMedia(item.key, item.file);
-                if (i % 50 === 0) { logEl.innerText = `Sauvegarde... ${i}/${mediaToSave.length}`; await new Promise(r => setTimeout(r, 0)); }
+            // 4) Écriture
+            log('Enregistrement...');
+            for (const [key, data] of optional) await saveJSON(key, data);
+            if (modsToSave) {
+                // Fusion avec les modifications déjà en base : celles du fichier ont priorité, les autres sont conservées.
+                const prev = (await new Promise((res) => { const rq = State.db.transaction('json_data', 'readonly').objectStore('json_data').get('modifications'); rq.onsuccess = () => res(rq.result); rq.onerror = () => res(null); })) || {};
+                const uniq = (a, b) => Array.from(new Set([...(a || []), ...(b || [])]));
+                const merged = { ...prev,
+                    merges: { ...(prev.merges || {}), ...(modsToSave.merges || {}) },
+                    renames: { ...(prev.renames || {}), ...(modsToSave.renames || {}) },
+                    hiddenFriends: uniq(prev.hiddenFriends, modsToSave.hiddenFriends),
+                    hiddenGroups: uniq(prev.hiddenGroups, modsToSave.hiddenGroups),
+                    hiddenPostals: uniq(prev.hiddenPostals, modsToSave.hiddenPostals),
+                    shownPostals: uniq(prev.shownPostals, modsToSave.shownPostals) };
+                await saveJSON('modifications', merged);
+                report.mods = { ok: true, merges: Object.keys(modsToSave.merges || {}).length, renames: Object.keys(modsToSave.renames || {}).length,
+                                hidden: (modsToSave.hiddenFriends || []).length + (modsToSave.hiddenGroups || []).length + (modsToSave.hiddenPostals || []).length };
             }
-            
-            window.location.reload();
+            let quota = false;
+            for (let i = 0; i < mediaToSave.length; i++) {
+                try { await saveMedia(mediaToSave[i].key, mediaToSave[i].file); report.counts.saved++; }
+                catch (e) {
+                    report.counts.failed++;
+                    if (isQuotaError(e)) { quota = true; report.counts.skipped = mediaToSave.length - i - 1; break; }
+                }
+                if (i % 50 === 0) { log(`Sauvegarde... ${i}/${mediaToSave.length}`); await new Promise(r => setTimeout(r, 0)); }
+            }
+            if (quota) report.notes.push(`Stockage du navigateur plein : ${report.counts.saved} médias sur ${report.counts.total} enregistrés. Libère de l\u2019espace puis réimporte pour avoir le reste.`);
+            else if (report.counts.failed) report.notes.push(`${report.counts.failed} média${report.counts.failed > 1 ? 's' : ''} n\u2019ont pas pu être enregistrés.`);
+
+            await saveJSON('memDateCache', {});        // les médias ont pu changer : on recalcule les horodatages
+            await saveJSON('chats', chats);
+            await saveJSON('importReport', report);
+            await saveJSON('friends', friends);        // en dernier : marque l'import comme complet
+            return report;
+        }
+
+        document.getElementById('folder-input').addEventListener('change', async (event) => {
+            const input = event.target;
+            const files = Array.from(input.files || []);
+            if (!files.length) return;
+            document.getElementById('setup-btn').style.display = 'none';
+            document.querySelector('.spinner').style.display = 'block';
+            document.getElementById('loading-screen').querySelector('p').innerText = '';   // retire « Aucune donnée trouvée… » pendant l'import
+            const logEl = document.getElementById('init-log');
+            logEl.innerText = "Vérification du dossier...";
+            try {
+                await importFolder(files, (m) => { logEl.innerText = m; });
+                window.location.reload();
+            } catch (err) {
+                console.error(err);
+                input.value = '';   // permet de resélectionner le même dossier
+                if (err instanceof ImportError) showLoadError(err.title, err.message, { reimport: true, detail: `${err.title}\n${err.message}` });
+                else if (isQuotaError(err)) showLoadError('Espace de stockage insuffisant', 'Le navigateur n\u2019a plus assez de place pour enregistrer l\u2019archive. Libère de l\u2019espace (ou efface des données d\u2019autres sites) puis réessaie.', { reimport: true, detail: String(err && err.stack || err) });
+                else showLoadError('Import interrompu', `Une erreur inattendue est survenue : ${(err && err.message) || err}`, { reimport: true, detail: String(err && err.stack || err) });
+            }
         });
 
         function saveJSON(key, data) {
-            return new Promise((resolve) => { const req = State.db.transaction('json_data', 'readwrite').objectStore('json_data').put(data, key); req.onsuccess = resolve; });
+            return new Promise((resolve, reject) => {
+                const tx = State.db.transaction('json_data', 'readwrite');
+                tx.objectStore('json_data').put(data, key);
+                tx.oncomplete = resolve;
+                tx.onerror = tx.onabort = () => reject(tx.error || new Error('écriture impossible'));
+            });
         }
         // Sauvegarde le journal des modifications (fusions, renommages, masquages) en base, ET le tient à
         // jour comme un vrai fichier JSON qu'on peut exporter/réimporter (voir ModsManager plus bas).
@@ -805,31 +1188,38 @@
             return saveJSON('modifications', State.modifications);
         }
         function saveMedia(key, file) {
-            return new Promise((resolve) => { const req = State.db.transaction('media_files', 'readwrite').objectStore('media_files').put(file, key); req.onsuccess = resolve; });
+            return new Promise((resolve, reject) => {
+                const tx = State.db.transaction('media_files', 'readwrite');
+                tx.objectStore('media_files').put(file, key);
+                tx.oncomplete = resolve;
+                tx.onerror = tx.onabort = () => reject(tx.error || new Error('écriture impossible'));
+            });
         }
 
         async function initApp() {
+            try { await _initApp(); }
+            catch (err) {
+                console.error(err);
+                const step = document.getElementById('init-log').innerText.replace(/^Étape : /, '');
+                showLoadError('Impossible d’afficher tes données', `${(err && err.message) || err}`, { step, retry: true, reimport: true, reset: true, detail: `${step}\n${(err && err.stack) || err}` });
+            }
+        }
+
+        async function _initApp() {
             const logEl = document.getElementById('init-log');
             logEl.innerText = "Lecture des historiques JSON...";
             
-            const getJSON = (storeName) => new Promise(res => {
+            const getJSON = (storeName) => new Promise((res, rej) => {
                 const req = State.db.transaction('json_data', 'readonly').objectStore('json_data').get(storeName);
                 req.onsuccess = () => res(req.result);
+                req.onerror = () => rej(new Error(`Lecture de « ${storeName} » impossible : ${(req.error && req.error.message) || 'erreur de base'}`));
             });
 
-            const rawFriends = await getJSON('friends') || {};
-            const rawChats = await getJSON('chats') || {};
-            const rawMemories = await getJSON('memories') || {};
-            const rawLocations = await getJSON('locations') || {};
-            const rawAccount = await getJSON('account') || {};
-            const rawRanking = await getJSON('ranking') || {};
-            const rawAccountHistory = await getJSON('accountHistory') || {};
-            const rawBitmoji = await getJSON('bitmoji') || {};
-            const rawCustomSticker = await getJSON('customSticker') || {};
-            const rawSnapPro = await getJSON('snapPro') || {};
-            const rawTalk = await getJSON('talkHistory') || {};
-            const rawMapPlaces = await getJSON('mapPlaces') || {};
-            const rawUserProfile = await getJSON('userProfile') || {};
+            const [rawFriends, rawChats, rawMemories, rawLocations, rawAccount, rawRanking, rawAccountHistory, rawBitmoji,
+                   rawCustomSticker, rawSnapPro, rawTalk, rawMapPlaces, rawUserProfile] = (await Promise.all(
+                ['friends', 'chats', 'memories', 'locations', 'account', 'ranking', 'accountHistory', 'bitmoji',
+                 'customSticker', 'snapPro', 'talkHistory', 'mapPlaces', 'userProfile'].map(k => getJSON(k)))).map(v => v || {});
+            State.importReport = (await getJSON('importReport')) || null;
 
             const basicInfo = rawAccount["Basic Information"] || {};
             const deviceInfo = rawAccount["Device Information"] || {};
@@ -872,7 +1262,7 @@
                 const gps = MapView.parseLatLng(entry[1]);
                 if (gps) State.locations.push({ lat: gps.lat, lng: gps.lng, date: entry[0] });
             });
-            State.locations.sort((a, b) => new Date(a.date.replace(' UTC', 'Z')) - new Date(b.date.replace(' UTC', 'Z')));
+            State.locations.sort((a, b) => Util.date(a.date) - Util.date(b.date));
 
             // Villes/zones visitées (json/location_history.json > "Areas you may have visited in the last two years").
             State.areas = (rawLocations["Areas you may have visited in the last two years"] || [])
@@ -935,10 +1325,24 @@
             // Dans chaque journée, on trie les entrées JSON par heure croissante : ça doit correspondre à
             // l'ordre chronologique des fichiers ci-dessous, pour bien associer chaque JSON à son média.
             for (const d in jsonByDate) {
-                jsonByDate[d].sort((a, b) => new Date(a.Date.replace(' UTC', 'Z')) - new Date(b.Date.replace(' UTC', 'Z')));
+                jsonByDate[d].sort((a, b) => Util.date(a.Date) - Util.date(b.Date));
+            }
+
+            // Contrôle : pour chaque jour, nombre d'entrées dans memories.json vs nombre de fichiers datés de ce jour.
+            {
+                const diffs = [];
+                new Set([...Object.keys(memFilesByDate), ...Object.keys(jsonByDate)]).forEach(d => {
+                    const f = (memFilesByDate[d] || []).length, j = (jsonByDate[d] || []).length;
+                    if (f !== j) diffs.push({ d, files: f, json: j });
+                });
+                diffs.sort((a, b) => a.d < b.d ? 1 : -1);
+                State.memoryDiffs = { json: memList.length, files: Object.values(memFilesByDate).reduce((n, g) => n + g.length, 0), days: diffs };
             }
 
             logEl.innerText = "Lecture des horodatages des memories...";
+            const memDateCache = (await getJSON('memDateCache')) || {};
+            let memCacheDirty = false, memDone = 0;
+            const memTotal = Object.values(memFilesByDate).reduce((n, g) => n + (g.length > 1 ? g.length : 0), 0);
             for (const d in memFilesByDate) {
                 const fGroups = memFilesByDate[d];
                 const jList = jsonByDate[d] || [];
@@ -947,7 +1351,17 @@
                     // Le nom de fichier ne contient qu'un identifiant aléatoire (pas d'heure) : on lit l'heure
                     // de prise de vue réelle dans les métadonnées du fichier (mvhd pour les vidéos, EXIF pour
                     // les photos) pour trier les groupes avec précision. Repli sur l'id si rien n'est trouvé.
-                    const realDates = await Promise.all(fGroups.map(g => getRealCreationDate(g.keys.main)));
+                    const realDates = await Promise.all(fGroups.map(async g => {
+                        const k = g.keys.main;
+                        if (k in memDateCache) return memDateCache[k];
+                        const v = await getRealCreationDate(k);
+                        const n = v == null ? null : +v;
+                        memDateCache[k] = (n === null || isNaN(n)) ? null : n;
+                        memCacheDirty = true;
+                        return memDateCache[k];
+                    }));
+                    memDone += fGroups.length;
+                    if (memTotal > 20) logEl.innerText = `Lecture des horodatages des memories... ${memDone}/${memTotal}`;
                     fGroups.forEach((g, i) => { g.realDate = realDates[i]; });
                     fGroups.sort((a, b) => {
                         if (a.realDate && b.realDate) return a.realDate - b.realDate;
@@ -986,7 +1400,8 @@
                     });
                 }
             }
-            State.memories.sort((a, b) => new Date(b.json.Date.replace(' UTC', 'Z')) - new Date(a.json.Date.replace(' UTC', 'Z')));
+            if (memCacheDirty) { try { await saveJSON('memDateCache', memDateCache); } catch (e) { console.warn('cache des horodatages non enregistré', e); } }
+            State.memories.sort((a, b) => Util.date(b.json.Date) - Util.date(a.json.Date));
 
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -1028,7 +1443,7 @@
 
             for (const key in mergedChats) {
                 let isGroup = uuidRegex.test(key) || mergedChats[key].some(m => m["Conversation Title"]);
-                mergedChats[key].sort((a, b) => new Date(a.Created.replace(' UTC', 'Z')) - new Date(b.Created.replace(' UTC', 'Z')));
+                mergedChats[key].sort((a, b) => Util.date(a.Created) - Util.date(b.Created));
                 
                 let mCount = 0, medCount = 0, audCount = 0;
                 
@@ -1096,6 +1511,14 @@
             
             Memories.render(); Chat.renderList();
             UI.switchTab('chat');
+
+            const ir = State.importReport;
+            if (ir && !ir.seen) {
+                const warn = (ir.invalid || []).length + (ir.notes || []).length + ((State.memoryDiffs && State.memoryDiffs.days.length) ? 1 : 0);
+                ir.seen = true;
+                saveJSON('importReport', ir).catch(() => {});
+                if (warn) setTimeout(() => MergePicker.showToast(`Import terminé avec ${warn} avertissement${warn > 1 ? 's' : ''} - voir Réglages ▸ Dernier import`), 700);
+            }
         }
 
         function findChatMediaKey(mediaIdStr) {
@@ -1104,7 +1527,11 @@
             return State.mediaIndex.chatsMap[targetClean] || null;
         }
 
+        // Les Intl.DateTimeFormat sont coûteux à créer : on les construit une seule fois (même rendu qu'avant).
+        const DATE_FMT_SHORT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+        const DATE_FMT_FULL = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const Util = {
+            date: (str) => new Date(String(str == null ? '' : str).replace(/\//g, '-').replace(' UTC', 'Z').replace(' ', 'T')),
             formatTime: (seconds) => {
                 if (!isFinite(seconds) || seconds < 0) return '0:00';
                 const s = Math.floor(seconds);
@@ -1115,8 +1542,8 @@
                 try {
                     const dt = new Date(dateStr.replace(' UTC', 'Z').replace(' ', 'T'));
                     if(isNaN(dt.getTime())) return dateStr;
-                    if (format === 'short-year') return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(dt);
-                    return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(dt);
+                    if (format === 'short-year') return DATE_FMT_SHORT.format(dt);
+                    return DATE_FMT_FULL.format(dt);
                 } catch(e) { return dateStr; }
             },
             getDisplayName: (username) => {
@@ -1152,7 +1579,7 @@
                     let overHtml = '';
                     if (item.overlayKey) {
                         State.lazyFiles.push(item.overlayKey); const idxOver = State.lazyFiles.length - 1;
-                        overHtml = `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-lazy-idx="${idxOver}">`;
+                        overHtml = `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-lazy-idx="${idxOver}" data-thumb="640">`;
                     }
                     
                     const thumb = document.createElement('div');
@@ -1161,7 +1588,7 @@
                     
                     // Bloque la lecture vidéo en miniature
                     thumb.innerHTML = `
-                        ${isVideo ? `<video class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}">`}
+                        ${isVideo ? `<video class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" data-thumb="640">`}
                         ${overHtml}
                         <div class="memory-date-badge">${Util.formatDate(item.json.Date, 'short-year')}</div>
                     `;
@@ -1202,7 +1629,10 @@
                             if (!blob) return;
                             const probe = new Audio();
                             probe.preload = 'metadata';
-                            probe.src = URLManager.create(blob);
+                            const probeUrl = URLManager.create(blob);
+                            probe.src = probeUrl;
+                            const freeProbe = () => { URLManager.revoke(probeUrl); probe.removeAttribute('src'); };
+                            probe.addEventListener('error', freeProbe);
                             probe.addEventListener('loadedmetadata', () => {
                                 if (isFinite(probe.duration) && probe.duration > 0) {
                                     el.dataset.duration = probe.duration;
@@ -1211,6 +1641,7 @@
                                         if (timeEl) timeEl.innerText = Util.formatTime(probe.duration);
                                     }
                                 }
+                                freeProbe();
                             });
                         });
                     }
@@ -1241,7 +1672,9 @@
                 const blob = await getMediaFromDB(mediaKey);
                 if(!blob) return alert("Audio introuvable.");
 
-                AudioEngine.audio.src = URLManager.create(blob);
+                if (AudioEngine.curUrl) URLManager.revoke(AudioEngine.curUrl);
+                AudioEngine.curUrl = URLManager.create(blob);
+                AudioEngine.audio.src = AudioEngine.curUrl;
                 AudioEngine.audio.currentTime = 0;
                 AudioEngine.audio.play();
                 el.querySelector('.ca-play').innerText = '⏸';
@@ -1302,9 +1735,9 @@
                 const hiddenList = chatActiveTab === 'amis' ? State.modifications.hiddenFriends : State.modifications.hiddenGroups;
                 const source = Settings.sortChats((chatActiveTab === 'amis' ? State.friendsList : State.groups).filter(c => !hiddenList.includes(c.id)));
                 
-                let html = '';
+                const tiers = [[], [], []];   // 0 : nom commençant par la saisie · 1 : nom contenant la saisie · 2 : contenu des chats
                 source.forEach(c => {
-                    let msgIndex = -1; let matchText = "";
+                    let msgIndex = -1; let matchText = ""; let tier = 0;
                     if (search) {
                         const nameMatch = c.name.toLowerCase().includes(search);
                         for(let i = c.messages.length - 1; i >= 0; i--) {
@@ -1312,6 +1745,7 @@
                             if ((m.Content && m.Content.toLowerCase().includes(search)) || (m.Created && m.Created.toLowerCase().includes(search))) { msgIndex = i; break; }
                         }
                         if (!nameMatch && msgIndex === -1) return;
+                        tier = nameMatch ? (c.name.toLowerCase().startsWith(search) ? 0 : 1) : 2;
                         if (msgIndex !== -1) {
                             const rawText = c.messages[msgIndex].Content || c.messages[msgIndex].Created;
                             const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1319,7 +1753,7 @@
                             matchText = `<div style="font-size:13px; color:#666; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">... ${Util.escapeHTML(rawText).replace(regex, '<span style="background:var(--snap-yellow); color:black; font-weight:bold;">$1</span>')} ...</div>`;
                         }
                     }
-                    html += `<div class="chat-item"
+                    tiers[tier].push(`<div class="chat-item"
                         onpointerdown="LongPress.start('${c.id}', event)"
                         onpointermove="LongPress.move(event)"
                         onpointerup="LongPress.end(() => Chat.openConv('${c.id}', ${msgIndex}))"
@@ -1329,22 +1763,42 @@
                         <div class="chat-info" style="display:flex; flex-direction:column; width:100%;">
                             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                                 <div class="chat-name">${c.name}</div>
-                                <div class="chat-meta"><svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> ${c.mCount}<svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-5-5L5 21"></path></svg> ${c.medCount}</div>
+                                <div class="chat-meta">${c.mCount ? `<svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> ${c.mCount}` : ''}${c.medCount ? `<svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-5-5L5 21"></path></svg> ${c.medCount}` : ''}</div>
                             </div>
                             ${matchText}
                         </div>
-                    </div>`;
+                    </div>`);
                 });
-                document.getElementById('chat-list').innerHTML = html;
+                document.getElementById('chat-list').innerHTML = tiers.flat().join('');
             },
             
+            // Retour : si la conversation a été ouverte depuis la liste des membres d'un groupe, on revient à cette liste.
+            back: () => {
+                const gid = State.returnToGroup; State.returnToGroup = null;
+                UI.switchTab('chat');
+                if (gid && State.groups.some(g => g.id === gid)) { Chat.switchTab('groupes'); FriendInfo.open(gid); }
+            },
+
             openConv: (id, targetMsgIndex = -1) => {
-                State.currentChat = (chatActiveTab === 'amis' ? State.friendsList : State.groups).find(c => c.id === id);
+                const target = (chatActiveTab === 'amis' ? State.friendsList : State.groups).find(c => c.id === id);
+                // Aucun contenu (0 message) : pas de conversation à afficher, on ouvre directement la fiche info.
+                if (target && !target.mCount) { State.returnToGroup = null; FriendInfo.open(id); return; }
+                State.returnToGroup = null;
+                State.currentChat = target;
                 document.getElementById('conv-title').innerText = State.currentChat.name;
                 
                 document.getElementById('c-count-tout').innerText = `(${State.currentChat.mCount})`;
                 document.getElementById('c-count-med').innerText = `(${State.currentChat.medCount})`;
                 document.getElementById('c-count-aud').innerText = `(${State.currentChat.audCount})`;
+                // Onglets Tout / Médias / Audios : un onglet n'existe que s'il contient quelque chose de DIFFÉRENT de « Tout »
+                // (ex. si tout est média, « Médias » = « Tout »). S'il ne reste que « Tout », la barre entière est inutile : on la masque.
+                const cc = State.currentChat;
+                const showMed = cc.medCount > 0 && cc.medCount < cc.mCount;
+                const showAud = cc.audCount > 0 && cc.audCount < cc.mCount;
+                document.getElementById('f-tout').style.display = '';
+                document.getElementById('f-medias').style.display = showMed ? '' : 'none';
+                document.getElementById('f-audios').style.display = showAud ? '' : 'none';
+                document.querySelector('.conv-filters').style.display = (showMed || showAud) ? '' : 'none';
                 
                 State.chatSortOrder = 'bottom_up'; document.getElementById('conv-sort-btn').innerText = '▾';
                 
@@ -1441,7 +1895,7 @@
                                     </div>`;
                                 } else {
                                     const blob = await getMediaFromDB(mediaKey);
-                                    const url = blob ? URLManager.create(blob) : '';
+                                    const url = blob ? URLManager.forKey(mediaKey, blob) : '';
                                     const isVid = mediaKey.match(/\.(mp4|mov)$/i);
                                     
                                     // Vidéo = juste une miniature (1ère frame) qui ouvre le lecteur plein écran au clic,
@@ -1563,7 +2017,10 @@
 
         const UI = {
             switchTab: (tabId) => {
+                if (tabId !== 'map') { try { MapView.focusMem = null; } catch (e) {} }   // on quitte la carte : fin du mode « ce memory seulement »
                 stopAllMedia();
+                const prevActive = document.querySelector('.view.active');
+                const prevId = prevActive ? prevActive.id.replace('view-', '') : null;
                 document.querySelectorAll('.view').forEach(v => {
                     v.classList.remove('active');
                     v.style.display = 'none';
@@ -1572,10 +2029,19 @@
                 
                 const targetView = document.getElementById(`view-${tabId}`);
                 targetView.classList.add('active');
+                // Sens de l'animation : conversation = arrive de la droite, retour = de la gauche, onglets = selon leur ordre
+                const order = { chat: 0, memories: 1, map: 2 };
+                let anim = 'fade';
+                if (prevId === tabId) anim = 'none';
+                else if (tabId === 'conversation') anim = 'right';
+                else if (prevId === 'conversation') anim = 'left';
+                else if (prevId in order && tabId in order) anim = order[tabId] > order[prevId] ? 'right' : 'left';
+                targetView.dataset.anim = anim;
                 targetView.style.display = 'flex';
                 
                 if (document.getElementById(`nav-${tabId}`)) document.getElementById(`nav-${tabId}`).classList.add('active');
                 
+                if (tabId === 'chat' && prevId === 'conversation' && State.chatTabBefore) { const t = State.chatTabBefore; State.chatTabBefore = null; Chat.switchTab(t); }
                 if (tabId === 'conversation') {
                     document.querySelector('.top-nav').style.display = 'none';
                     document.querySelector('.bottom-nav').style.display = 'none';
@@ -1583,13 +2049,16 @@
                     document.querySelector('.top-nav').style.display = 'flex';
                     document.querySelector('.bottom-nav').style.display = 'flex';
                 }
-                if (tabId === 'map') MapView.switchTab('memories'); // Memories est l'onglet par défaut de la carte
+                if (tabId === 'map') MapView.switchTab(MapView.activeTab || 'memories'); // on garde le sous-onglet courant (Memories par défaut)
             }
         };
 
         // --- CARTE (Leaflet.js + tuiles OpenStreetMap) ---
         const MapView = {
             activeTab: 'memories',
+            focusMem: null,          // index du memory affiché seul sur la carte (null = carte classique)
+            focusOrigin: 'memories', // vue d'où l'on vient, pour le bouton retour
+            focusLatLng: null,
             map: null,
             layer: null,           // groupe Leaflet affiché à l'écran (trajet OU memories)
             memoryMarkers: [],      // {marker, latlng} pour recalculer les tailles au zoom
@@ -1623,6 +2092,7 @@
                 });
                 tiles.addTo(MapView.map);
                 MapView.layer = L.layerGroup().addTo(MapView.map);
+                if (window.ResizeObserver) new ResizeObserver(() => { if (MapView.map) MapView.map.invalidateSize({ animate: false }); }).observe(document.getElementById('leaflet-map'));
 
                 // Les carrés "memory" changent de taille (isolé/groupé) quand on zoome.
                 MapView.map.on('zoomend', () => {
@@ -1630,7 +2100,17 @@
                 });
             },
 
+            // Boutons du mode « ce memory seulement »
+            focusBack: () => {
+                const idx = MapView.focusMem, origin = MapView.focusOrigin || 'memories';
+                MapView.focusMem = null;
+                UI.switchTab(origin);
+                if (idx !== null) Viewer.open(idx, 'memories');
+            },
+            focusAll: () => { MapView.focusMem = null; MapView.render(); },
+
             switchTab: (tab) => {
+                if (tab !== 'memories') MapView.focusMem = null;
                 MapView.activeTab = tab;
                 document.querySelectorAll('#view-map .chat-tab').forEach(e => e.classList.remove('active'));
                 document.getElementById(`map-tab-${tab}`).classList.add('active');
@@ -1660,7 +2140,7 @@
                         if (gps) points.push({ lat: gps.lat, lng: gps.lng, date: m.Created });
                     });
                 });
-                points.sort((a, b) => new Date(a.date.replace(' UTC', 'Z')) - new Date(b.date.replace(' UTC', 'Z')));
+                points.sort((a, b) => Util.date(a.date) - Util.date(b.date));
                 return points;
             },
 
@@ -1738,7 +2218,7 @@
                     st.points++;
                     if (p.date) {
                         st.days.add(String(p.date).slice(0, 10));
-                        const t = new Date(String(p.date).replace(' UTC', 'Z')).getTime();
+                        const t = Util.date(p.date).getTime();
                         if (!isNaN(t)) {
                             if (st.first === null || t < st.first) st.first = t;
                             if (st.last === null || t > st.last) st.last = t;
@@ -1850,6 +2330,7 @@
                 if (!coords) { c.err = errs.join(' · '); MapView.lastGeoErr = c.err; return false; }
                 c.err = '';
                 MapView.geoCache[c.geoKey] = coords;
+                MapView._areaBase = null;   // nouvelle coordonnée : le cache des zones doit être recalculé
                 MapView.saveGeoCache();
                 c.lat = coords[0]; c.lng = coords[1];
                 if (coords[2]) c.label = `${c.postal} · ${coords[2]}`;
@@ -1857,7 +2338,15 @@
             },
 
             // Regroupe les zones visitées par code postal + pays (le nom de ville du fichier est ignoré : seul le code postal est fiable).
+            // Zones par code postal : le calcul lourd est mis en cache (vidé quand une coordonnée est trouvée) ;
+            // chaque appel renvoie de NOUVEAUX objets (la carte y accroche ses marqueurs) avec l'état "masqué" à jour.
+            _areaBase: null,
             getAreaStats: () => {
+                if (!MapView._areaBase) MapView._areaBase = MapView._computeAreaBase();
+                const m = State.modifications, hid = m.hiddenPostals || [], shown = m.shownPostals || [];
+                return MapView._areaBase.map(g => ({ ...g, hidden: hid.includes(g.geoKey) || (g.autoHide && !shown.includes(g.geoKey)) }));
+            },
+            _computeAreaBase: () => {
                 const usStates = new Set(MapView.US_STATES);
                 const votes = {};   // code postal -> [entrées avec un État américain, total]
                 State.areas.forEach(a => {
@@ -1894,26 +2383,30 @@
                     const co = ((MapView.POSTAL_GPS[g.cc] || {})[g.postal]) || MapView.geoCache[g.geoKey];
                     const place = co && co[2] ? co[2] : '';   // nom du lieu trouvé PAR le code postal (pas celui du fichier)
                     return { ...g, label: place ? `${g.postal} · ${place}` : g.postal,
-                             lat: co ? co[0] : null, lng: co ? co[1] : null, approx: !!(co && co[3]), hidden: (State.modifications.hiddenPostals || []).includes(g.geoKey), dayCount: g.days.size || 1 };
+                             lat: co ? co[0] : null, lng: co ? co[1] : null, approx: !!(co && co[3]), autoHide: g.points === 1, dayCount: g.days.size || 1 };
                 });
                 list.sort((a, b) => b.dayCount - a.dayCount || b.points - a.points || a.postal.localeCompare(b.postal));
                 return list;
             },
 
+            dotDiameter: (days, maxDays) => Math.round(2 * (6 + 12 * Math.sqrt(days / maxDays))),
+            dotIcon: (d) => L.divIcon({ className: 'pc-dot', iconSize: [d, d], iconAnchor: [d / 2, d / 2], tooltipAnchor: [0, -d / 2] }),
+            setDotSize: (c, d) => { if (c.d === d || !c.marker) return; c.d = d; c.marker.setIcon(MapView.dotIcon(d)); },
+
             addCityMarker: (c, maxDays) => {
                 if (c.lat === null || c.marker) return;
-                const radius = 6 + 12 * Math.sqrt(c.dayCount / maxDays);
-                c.marker = L.circleMarker([c.lat, c.lng], {
-                    radius, color: '#111111', weight: 1.5, fillColor: '#FFFC00', fillOpacity: 0.85
-                }).addTo(MapView.layer);
+                c.d = MapView.dotDiameter(c.dayCount, maxDays);
+                c.marker = L.marker([c.lat, c.lng], { icon: MapView.dotIcon(c.d), keyboard: false }).addTo(MapView.layer);
                 c.shown = true;
-                c.marker.bindTooltip(() => { const d = c.cum !== undefined ? c.cum : c.dayCount; return `${c.label} · ${d} jour${d > 1 ? 's' : ''}`; });
+                c.marker.bindTooltip(() => { const d = c.cum !== undefined ? c.cum : c.dayCount; return `${c.label} · ${d} jour${d > 1 ? 's' : ''}`; }, { direction: 'top' });
                 c.marker.on('click', () => { if (c.onClick) c.onClick(c); else MapView.smoothTo(c.lat, c.lng); });
             },
 
             parseTime: (str) => str ? new Date(String(str).replace(/\//g, '-').replace(' UTC', 'Z').replace(' ', 'T')).getTime() : NaN,
             fmtDateTime: (t) => new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
             playTimer: null,
+            ICON_PLAY: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+            ICON_PAUSE: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
 
             // Masquer / réafficher un code postal (clé = "pays|code") : mémorisé dans les modifications, exportable avec elles.
             // Déplacement fluide vers un point, SANS changer le zoom : glissement doux s'il est proche,
@@ -1924,14 +2417,27 @@
                 else map.flyTo(ll, map.getZoom(), { duration: 1.6 });
             },
 
+            // Les codes postaux présents une seule fois dans location.json sont masqués par défaut :
+            // "shownPostals" mémorise ceux que l'utilisateur a réaffichés, "hiddenPostals" ceux qu'il a masqués lui-même.
             togglePostal: (key) => {
-                const m = State.modifications; m.hiddenPostals = m.hiddenPostals || [];
-                const i = m.hiddenPostals.indexOf(key);
-                if (i === -1) m.hiddenPostals.push(key); else m.hiddenPostals.splice(i, 1);
+                const m = State.modifications; m.hiddenPostals = m.hiddenPostals || []; m.shownPostals = m.shownPostals || [];
+                const c = MapView.getAreaStats().find(x => x.geoKey === key);
+                const isHidden = c ? c.hidden : m.hiddenPostals.includes(key);
+                if (isHidden) {
+                    m.hiddenPostals = m.hiddenPostals.filter(k => k !== key);
+                    if (c && c.autoHide && !m.shownPostals.includes(key)) m.shownPostals.push(key);
+                } else {
+                    if (!m.hiddenPostals.includes(key)) m.hiddenPostals.push(key);
+                    m.shownPostals = m.shownPostals.filter(k => k !== key);
+                }
                 saveModifications();
                 MapView.afterPostalChange();
             },
-            showAllPostals: () => { State.modifications.hiddenPostals = []; saveModifications(); MapView.afterPostalChange(); },
+            showAllPostals: () => {
+                State.modifications.hiddenPostals = [];
+                State.modifications.shownPostals = MapView.getAreaStats().filter(c => c.autoHide).map(c => c.geoKey);
+                saveModifications(); MapView.afterPostalChange();
+            },
             afterPostalChange: () => {
                 if (MapView.map && MapView.activeTab === 'localisation') MapView.render();
                 if (document.getElementById('settings-overlay').style.display === 'flex') Settings.render();
@@ -1940,12 +2446,13 @@
             speedIdx: 0,
             stopPlay: () => {
                 if (MapView.playTimer) { clearInterval(MapView.playTimer); MapView.playTimer = null; }
-                const b = document.getElementById('tl-play'); if (b) b.textContent = '▶';
+                const b = document.getElementById('tl-play'); if (b) b.innerHTML = MapView.ICON_PLAY;
             },
 
             fmtDay: (t) => t === null ? '' : new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
 
             render: () => {
+                if (typeof L === 'undefined') { document.getElementById('map-info').innerText = 'Carte indisponible : la bibliothèque Leaflet n’a pas pu être chargée (connexion ?).'; return; }
                 MapView.ensureMap();
                 MapView.stopPlay();
                 MapView.layer.clearLayers();
@@ -1955,25 +2462,34 @@
                 const listEl = document.getElementById('map-cities-list');
                 const tlEl = document.getElementById('map-timeline');
                 listEl.style.display = 'none'; listEl.innerHTML = '';
-                tlEl.style.display = 'none';
+                tlEl.style.display = 'block'; tlEl.style.visibility = 'hidden';   // place réservée : même hauteur de carte dans Memories et Localisation
                 document.getElementById('map-wrap').classList.remove('tl-on');
 
                 const isMemories = MapView.activeTab === 'memories';
+                if (!isMemories) MapView.focusMem = null;
+                document.getElementById('map-wrap').classList.toggle('focus-on', isMemories && MapView.focusMem !== null);
                 if (isMemories) MapView.renderMemories(infoEl); else MapView.renderLocalisation(infoEl, listEl, tlEl);
 
                 // Le conteneur peut avoir été caché (display:none) pendant l'onglet précédent : on attend que
                 // Leaflet ait recalculé sa taille réelle avant de mesurer les distances entre marqueurs.
                 setTimeout(() => {
                     MapView.map.invalidateSize();
+                    if (isMemories && MapView.focusMem !== null && MapView.focusLatLng) MapView.map.setView(MapView.focusLatLng, 15, { animate: false });
                     if (isMemories) MapView.refreshMemorySizes();
                 }, 0);
                 // Note : la carte s'ouvre toujours sur la France, l'utilisateur se déplace lui-même.
             },
 
             renderMemories: (infoEl) => {
-                const points = MapView.getMemoryPoints();
+                let points = MapView.getMemoryPoints();
+                const focusOnly = MapView.focusMem !== null;
+                if (focusOnly) {
+                    points = points.filter(p => p.memIndex === MapView.focusMem);   // uniquement le point de ce memory
+                    MapView.focusLatLng = points.length ? L.latLng(points[0].lat, points[0].lng) : null;
+                    if (!points.length) { MapView.focusMem = null; MapView.focusLatLng = null; document.getElementById('map-wrap').classList.remove('focus-on'); points = MapView.getMemoryPoints(); }
+                }
                 if (points.length === 0) { infoEl.innerText = "Aucune memory géolocalisée trouvée."; return; }
-                infoEl.innerText = `${points.length} point${points.length > 1 ? 's' : ''} géolocalisé${points.length > 1 ? 's' : ''}`;
+                infoEl.innerText = focusOnly && MapView.focusMem !== null ? 'Ce memory uniquement' : `${points.length} point${points.length > 1 ? 's' : ''} géolocalisé${points.length > 1 ? 's' : ''}`;
                 points.forEach(p => {
                     const marker = L.marker([p.lat, p.lng], {
                         icon: MapView.memoryIcon(12) // petit carré le temps de calculer l'isolement
@@ -1993,8 +2509,8 @@
                 if (!usingAreas && gpsPoints.length === 0) { infoEl.innerText = "Aucune position trouvée dans tes données."; return; }
 
                 let list, unmatched = 0;
-                let hiddenCount = 0;
-                if (usingAreas) { const all = MapView.getAreaStats(); list = all.filter(c => !c.hidden); hiddenCount = all.length - list.length; }
+                let hiddenCount = 0, allAreas = [], hiddenGps = 0;
+                if (usingAreas) { const all = allAreas = MapView.getAreaStats(); list = all.filter(c => !c.hidden); hiddenCount = all.length - list.length; }
                 else ({ list, unmatched } = MapView.getCityStats(gpsPoints)); // repli : rattachement des positions GPS aux villes connues
                 list.forEach((c, i) => { c.idx = i; });
                 const unit = usingAreas ? 'passage' : 'point';
@@ -2030,9 +2546,23 @@
                     });
                     return best;
                 };
+                // Une position GPS dont la zone (code postal) la plus proche est masquée (incohérente ou masquée à la main) est ignorée.
+                const nearestAny = (lat, lng) => {
+                    let best = null, bestD = 12; // km
+                    const cosLat = Math.cos(lat * Math.PI / 180);
+                    allAreas.forEach(c => {
+                        if (c.lat === null) return;
+                        const dy = (c.lat - lat) * 111.32; if (dy > bestD || dy < -bestD) return;
+                        const dx = (c.lng - lng) * 111.32 * cosLat;
+                        const d = Math.sqrt(dx * dx + dy * dy);
+                        if (d < bestD) { bestD = d; best = c; }
+                    });
+                    return best;
+                };
                 gpsPoints.forEach(p => {
                     const t = MapView.parseTime(p.date);
                     if (isNaN(t)) return;
+                    if (usingAreas) { const near = nearestAny(p.lat, p.lng); if (near && near.hidden) { hiddenGps++; return; } }
                     const gi = nearestGroup(p.lat, p.lng);
                     events.push({ t, lat: p.lat, lng: p.lng, gi: usingAreas ? -1 : gi, kind: 'GPS',
                                   label: gi >= 0 ? list[gi].label : `${p.lat.toFixed(3)}, ${p.lng.toFixed(3)}` });
@@ -2053,14 +2583,14 @@
                         if (n === 0) { if (c.shown) { MapView.layer.removeLayer(c.marker); c.shown = false; } }
                         else {
                             if (!c.shown) { MapView.layer.addLayer(c.marker); c.shown = true; }
-                            c.marker.setRadius(6 + 12 * Math.sqrt(n / maxDays));
+                            MapView.setDotSize(c, MapView.dotDiameter(n, maxDays));
                         }
                     });
                 };
 
                 // ---- Curseur + barre de défilement ----
                 let cur = 0;
-                const cursor = L.circleMarker([0, 0], { radius: 10, color: '#ffffff', weight: 3, fillColor: '#ef4444', fillOpacity: 1, interactive: false });
+                const cursor = L.marker([0, 0], { icon: L.divIcon({ className: 'pc-cursor', iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false, keyboard: false, zIndexOffset: 1000 });
                 const rangeEl = document.getElementById('tl-range');
                 const show = (i, pan = true) => {
                     if (!events.length) return;
@@ -2072,7 +2602,6 @@
                     if (usingAreas) updateCircles(e.t);
                     cursor.setLatLng([e.lat, e.lng]);
                     if (!MapView.layer.hasLayer(cursor)) cursor.addTo(MapView.layer);
-                    cursor.bringToFront();
                     if (pan && !MapView.map.getBounds().pad(-0.15).contains([e.lat, e.lng])) MapView.smoothTo(e.lat, e.lng);
                 };
 
@@ -2089,7 +2618,7 @@
                 list.forEach((c, i) => { c.onClick = () => { MapView.stopPlay(); if (!jumpToGroup(i)) MapView.smoothTo(c.lat, c.lng); }; });
 
                 if (events.length) {
-                    tlEl.style.display = 'block';
+                    tlEl.style.display = 'block'; tlEl.style.visibility = 'visible';
                     document.getElementById('map-wrap').classList.add('tl-on');
                     rangeEl.min = 0; rangeEl.max = events.length - 1; rangeEl.step = 1;
                     document.getElementById('tl-min').textContent = MapView.fmtDay(events[0].t);
@@ -2115,7 +2644,7 @@
                     playBtn.onclick = () => {
                         if (MapView.playTimer) { MapView.stopPlay(); return; }
                         if (cur >= events.length - 1) show(0);
-                        playBtn.textContent = '⏸';
+                        playBtn.innerHTML = MapView.ICON_PAUSE;
                         startTimer();
                     };
                     show(events.length - 1, false); // au départ : la position la plus récente, tous les lieux visibles
@@ -2123,54 +2652,14 @@
 
                 // ---- Infos + liste des codes postaux ----
                 const updateInfo = (extra) => {
-                    const placed = list.filter(c => c.lat !== null).length;
-                    const failed = list.filter(c => c.failed).length;
-                    const parts = [usingAreas ? pl(list.length, 'code postal', 'codes postaux') : pl(list.length, 'ville', 'villes')];
-                    if (usingAreas) parts.push(`${placed} placé${placed > 1 ? 's' : ''} sur la carte`);
-                    if (hiddenCount) parts.push(`${hiddenCount} masqué${hiddenCount > 1 ? 's' : ''}`);
+                    // Bandeau minimal : codes postaux affichés / total, et nombre de positions.
+                    const fmt = (n) => n.toLocaleString('fr-FR');
+                    const parts = [usingAreas ? `${fmt(list.length)}/${fmt(list.length + hiddenCount)} codes postaux affichés` : pl(list.length, 'ville', 'villes')];
                     if (events.length) parts.push(pl(events.length, 'position', 'positions'));
-                    if (failed) parts.push(`${failed} introuvable${failed > 1 ? 's' : ''}${MapView.lastGeoErr ? ' (' + MapView.lastGeoErr.slice(0, 160) + ')' : ''}`);
-                    if (unmatched) parts.push(`${unmatched} point${unmatched > 1 ? 's' : ''} hors des villes connues`);
-                    if (extra) parts.push(extra);
+                    if (extra) parts.push(extra);   // progression temporaire du placement sur la carte
                     infoEl.innerText = parts.join(' · ');
                 };
                 updateInfo();
-
-                listEl.innerHTML = list.map((c, i) => {
-                    const range = c.first !== null ? `${MapView.fmtDay(c.first)}${c.last !== c.first ? ' → ' + MapView.fmtDay(c.last) : ''}` : '';
-                    const meta = [c.country, usingAreas ? '' : c.region, `${c.points} ${unit}${c.points > 1 ? 's' : ''}`, range].filter(Boolean).join(' · ');
-                    return `<div class="city-row" data-i="${i}">
-                        <div><div class="city-name">${esc(c.label)}</div><div class="city-meta">${esc(meta)}</div></div>
-                        <div style="display:flex; align-items:center; gap:8px;"><div class="city-badge">${c.dayCount} j</div>${usingAreas ? `<span class="city-hide" data-key="${c.geoKey}" title="Masquer ce code postal">×</span>` : ''}</div></div>`;
-                }).join('');
-                if (list.length) listEl.style.display = 'block';
-                listEl.querySelectorAll('.city-hide').forEach(b => { b.onclick = (ev) => { ev.stopPropagation(); MapView.togglePostal(b.dataset.key); }; });
-
-                const refreshLabel = (c) => {
-                    const el = listEl.querySelector(`.city-row[data-i="${c.idx}"] .city-name`);
-                    if (el) el.textContent = c.label;
-                };
-                const goTo = (c) => {
-                    document.getElementById('map-scroll-area').scrollTo({ top: 0, behavior: 'smooth' });
-                    MapView.smoothTo(c.lat, c.lng);
-                };
-                listEl.querySelectorAll('.city-row[data-i]').forEach(row => {
-                    row.onclick = async () => {
-                        const c = list[+row.dataset.i];
-                        if (c.lat === null) {
-                            infoEl.innerText = `Recherche de ${c.label}…`;
-                            const ok = await MapView.geocodeCity(c);
-                            if (!stillHere()) return;
-                            if (!ok) { infoEl.innerText = `Code postal ${c.label} introuvable. ${c.err || ''}`; return; }
-                            c.failed = false;
-                            refreshLabel(c);
-                            MapView.addCityMarker(c, maxDays);
-                            updateInfo();
-                        }
-                        MapView.stopPlay(); jumpToGroup(c.idx); // cale la barre sur ce lieu
-                        goTo(c);
-                    };
-                });
 
                 // Codes absents de la table intégrée : GPS recherché en ligne (cache), puis la frise est reconstruite.
                 const runId = MapView.placeRun = (MapView.placeRun || 0) + 1;
@@ -2184,7 +2673,7 @@
                             if (!alive()) return;
                             const ok = await MapView.geocodeCity(c);
                             if (!alive()) return;
-                            if (ok) { okCount++; refreshLabel(c); MapView.addCityMarker(c, maxDays); } else { c.failed = true; }
+                            if (ok) { okCount++; MapView.addCityMarker(c, maxDays); } else { c.failed = true; }
                             done++;
                             updateInfo(done < todo.length ? `placement ${done}/${todo.length}…` : '');
                         }
@@ -2200,14 +2689,20 @@
             memoryIcon: (size) => L.divIcon({ className: 'memory-marker', iconSize: [size, size], iconAnchor: [size / 2, size / 2] }),
 
             // Rectangle affichant la vraie photo/vidéo de la memory (utilisé quand elle est isolée sur la carte).
-            memoryThumbIcon: (w, h, item) => {
+            memoryThumbIcon: (w, h, item, more = 0) => {
                 const isVideo = item.mainKey.match(/\.(mp4|mov)$/i);
+                // Si le média est introuvable / illisible : on cache l'élément cassé et la vignette devient une tuile jaune.
+                const fail = `this.style.display='none'; this.parentNode.style.background='#FFFC00';`;
                 const mediaTag = isVideo
-                    ? `<video class="lazy-media" data-media-key="${item.mainKey}" preload="metadata" muted playsinline onplay="this.pause()"></video>`
-                    : `<img class="lazy-media" data-media-key="${item.mainKey}">`;
+                    ? `<video class="lazy-media" data-media-key="${item.mainKey}" preload="metadata" muted playsinline onplay="this.pause()" onerror="${fail}" style="pointer-events:none;"></video>`
+                    : `<img class="lazy-media" data-media-key="${item.mainKey}" data-thumb="260" onerror="${fail}" style="pointer-events:none;">`;
+                // Filtre / texte / stickers par-dessus, comme dans la grille des memories.
+                const overTag = item.overlayKey
+                    ? `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-thumb="260" onerror="this.style.display='none';">`
+                    : '';
                 return L.divIcon({
                     className: 'memory-thumb-icon',
-                    html: `<div style="position:relative; width:100%; height:100%;">${mediaTag}</div>`,
+                    html: `<div style="position:relative; width:100%; height:100%;">${mediaTag}${overTag}${more > 0 ? `<div class="memory-more-badge">+${more}</div>` : ''}</div>`,
                     iconSize: [w, h],
                     iconAnchor: [w / 2, h / 2]
                 });
@@ -2225,30 +2720,40 @@
                 const h = Math.round(w * 1.3); // portrait, comme les photos/vidéos Snapchat
                 const clusteredSize = 13;
 
+                // Chaque memory qui a un média reçoit un aperçu, tant que son rectangle ne recouvre pas celui d'un aperçu déjà placé.
+                // Les memories qui tombent sous un aperçu (même lieu ou trop proches) sont comptées dans son badge "+N" et
+                // redeviennent des aperçus à part entière en zoomant. Les autres restent de petits points.
+                const gap = 4;
+                const chosen = [];                       // indices des entrées qui affichent un aperçu
+                const hiddenUnder = new Map();           // indice d'aperçu -> nombre de memories cachées dessous
+                const isThumb = new Array(list.length).fill(false);
                 list.forEach((entry, i) => {
-                    let minDist = Infinity;
-                    for (let j = 0; j < pts.length; j++) {
-                        if (i === j) continue;
-                        const d = pts[i].distanceTo(pts[j]);
-                        if (d < minDist) minDist = d;
-                    }
-                    const isolated = minDist > MapView.ISOLATION_PX;
                     const item = typeof entry.memIndex === 'number' ? State.memories[entry.memIndex] : null;
+                    if (!item || !item.mainKey) return;
+                    let owner = -1;
+                    for (const c of chosen) {
+                        if (Math.abs(pts[i].x - pts[c].x) < w + gap && Math.abs(pts[i].y - pts[c].y) < h + gap) { owner = c; break; }
+                    }
+                    if (owner === -1) { chosen.push(i); isThumb[i] = true; hiddenUnder.set(i, 0); }
+                    else hiddenUnder.set(owner, hiddenUnder.get(owner) + 1);
+                });
 
-                    if (isolated && item && item.mainKey) {
-                        // Évite de recréer l'icône (et de re-télécharger le média) si la taille n'a pas changé.
-                        if (entry.lastMode === 'thumb' && entry.lastW === w) return;
-                        entry.lastMode = 'thumb'; entry.lastW = w;
-                        entry.marker.setIcon(MapView.memoryThumbIcon(w, h, item));
+                list.forEach((entry, i) => {
+                    const item = typeof entry.memIndex === 'number' ? State.memories[entry.memIndex] : null;
+                    if (isThumb[i]) {
+                        const more = hiddenUnder.get(i) || 0;
+                        // Évite de recréer l'icône (et de re-télécharger le média) si rien n'a changé.
+                        if (entry.lastMode === 'thumb' && entry.lastW === w && entry.lastMore === more) return;
+                        entry.lastMode = 'thumb'; entry.lastW = w; entry.lastMore = more;
+                        entry.marker.setIcon(MapView.memoryThumbIcon(w, h, item, more));
+                        entry.marker.setZIndexOffset(1000);   // l'aperçu passe au-dessus des petits points
                         const el = entry.marker.getElement();
-                        if (el) {
-                            const lazyEl = el.querySelector('.lazy-media');
-                            if (lazyEl) LazyMediaObserver.observe(lazyEl);
-                        }
+                        if (el) el.querySelectorAll('.lazy-media').forEach(lazyEl => LazyMediaObserver.observe(lazyEl));
                     } else {
                         if (entry.lastMode === 'plain') return;
-                        entry.lastMode = 'plain';
+                        entry.lastMode = 'plain'; entry.lastMore = 0;
                         entry.marker.setIcon(MapView.memoryIcon(clusteredSize));
+                        entry.marker.setZIndexOffset(0);
                     }
                 });
             },
@@ -2263,9 +2768,9 @@
         // --- RÉGLAGES (bouton engrenage) ---
         const Settings = {
             sortModes: [
-                ['last', 'Dernier message', { desc: 'du plus récent au plus ancien', asc: 'du plus ancien au plus récent' }],
-                ['created', 'Création ami / groupe', { desc: 'du plus récent au plus ancien', asc: 'du plus ancien au plus récent' }],
-                ['msgs', 'Nombre de messages', { desc: 'du plus au moins', asc: 'du moins au plus' }]
+                ['last', 'Dernier message', { desc: 'déchronologique', asc: 'chronologique' }],
+                ['created', 'Création ami / groupe', { desc: 'déchronologique', asc: 'chronologique' }],
+                ['msgs', 'Nombre de messages', { desc: 'décroissant', asc: 'croissant' }]
             ],
 
             created: (c) => {
@@ -2277,10 +2782,9 @@
                 const mode = State.sortMode || 'msgs_desc';
                 const key = { last: c => c.lastDate || '', created: c => Settings.created(c), msgs: c => c.messages.length }[mode.split('_')[0]] || (c => c.messages.length);
                 const dir = mode.endsWith('_asc') ? 1 : -1;
-                return [...list].sort((a, b) => {
-                    const ka = key(a), kb = key(b);
-                    return ka < kb ? -dir : (ka > kb ? dir : 0);
-                });
+                const keyed = list.map(c => ({ c, k: key(c) }));   // clé calculée une seule fois par élément
+                keyed.sort((a, b) => a.k < b.k ? -dir : (a.k > b.k ? dir : 0));
+                return keyed.map(x => x.c);
             },
 
             open: () => { Settings.render(); document.getElementById('settings-overlay').style.display = 'flex'; },
@@ -2294,7 +2798,7 @@
                 Settings.render();
             },
 
-            expanded: { friends: false, groups: false, hidden: false, sort: false, postal: false },
+            expanded: { friends: false, groups: false, hidden: false, dissoc: false, sort: false, postal: false, importReport: false, mods: false },
             toggle: (k) => { Settings.expanded[k] = !Settings.expanded[k]; Settings.render(); },
 
             // Un clic sur une conversation de la liste l'ouvre directement.
@@ -2306,6 +2810,58 @@
             },
 
             listRow: (c, isGroup, hidden) => `<div class="settings-row sub-row" onclick="Settings.openConv('${c.id}', ${isGroup})"><div><div>${Util.escapeHTML(c.name)}</div><div class="sub"><svg class="meta-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> ${c.mCount}</div></div>${hidden ? `<span style="color:var(--snap-yellow); background:var(--snap-black); padding:4px 10px; border-radius:12px; font-size:11px;" onclick="event.stopPropagation(); ModsManager.toggleHide('${c.id}', ${isGroup}); Settings.render();">Afficher</span>` : ''}</div>`,
+
+
+            // --- AMIS DISSOCIÉS : conversations privées dont le pseudo n'est dans aucune catégorie de friends.json
+            // (= "pas dans tes amis"), rapprochées des amis actuels par ressemblance pseudo / nom d'affichage.
+            dissocNorm: (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''),
+            dissocDice: (a, b) => {
+                if (!a || !b) return 0; if (a === b) return 1;
+                const bg = (x) => { const m = new Map(); for (let i = 0; i < x.length - 1; i++) { const k = x.slice(i, i + 2); m.set(k, (m.get(k) || 0) + 1); } return m; };
+                const A = bg(a), B = bg(b); let n = 0;
+                A.forEach((v, k) => { if (B.has(k)) n += Math.min(v, B.get(k)); });
+                return (2 * n) / (Math.max(a.length - 1, 1) + Math.max(b.length - 1, 1));
+            },
+            dissocScore: (orphanId, cand) => {
+                const N = Settings.dissocNorm, D = Settings.dissocDice;
+                const o = N(orphanId), info = State.friendsInfo[cand.id] || {};
+                const u = N(cand.id), d = N(info.displayName || cand.name);
+                const digs = (x) => (x.match(/\d+/g) || []).join(''), lets = (x) => x.replace(/\d+/g, '');
+                const sFull = Math.max(D(o, u), D(o, d));
+                const sLet = Math.max(D(lets(o), lets(u)), D(lets(o), lets(d)));
+                const sDig = (digs(o) && digs(u)) ? (digs(o) === digs(u) ? 1 : 0) : 0;
+                return Math.round((0.5 * sFull + 0.35 * sLet + 0.15 * sDig) * 100);
+            },
+            dissocList: () => {
+                const MIN = 30;   // en dessous, rapprochement jugé sans rapport
+                const hid = State.modifications.hiddenFriends || [];
+                // Ancien pseudo : a des messages, aucune fiche ami, non masqué.
+                const orphans = State.friendsList.filter(c => !State.friendsInfo[c.id] && !hid.includes(c.id) && c.messages.length > 0);
+                // Nouveau pseudo : fiche ami, zéro message/média/audio, non masqué.
+                const cands = State.friendsList.filter(c => {
+                    const i = State.friendsInfo[c.id];
+                    return i && i.category === 'Friends' && i.since && !hid.includes(c.id)
+                        && c.messages.length === 0 && !c.mCount && !c.medCount && !c.audCount;
+                });
+                // Impossible si l'ami a été ajouté APRÈS le 1er message de l'ancien pseudo.
+                const scores = orphans.map(o => {
+                    const first = Util.date(o.messages[0].Created);
+                    return cands.filter(c => Util.date(State.friendsInfo[c.id].since) < first)
+                        .map(c => ({ c, score: Settings.dissocScore(o.id, c) }))
+                        .filter(x => x.score >= MIN).sort((a, b) => b.score - a.score);
+                });
+                return orphans.map((o, k) => ({ o, sugg: scores[k].slice(0, 3) })).sort((a, b) => b.o.mCount - a.o.mCount);
+            },
+            dissocMerge: (orphanId, friendId) => {
+                const o = State.friendsList.find(f => f.id === orphanId), f = State.friendsList.find(f => f.id === friendId);
+                if (!o || !f) return;
+                if (!confirm(`Fusionner @${o.id} (pas dans tes amis) dans "${f.name}" (@${f.id}) ? Les messages seront réunis et la fusion restera appliquée aux prochains imports.`)) return;
+                MergePicker.applyMerge(friendId, orphanId).then(() => Settings.render());
+            },
+            dissocRows: () => Settings.dissocList().map(({ o, sugg }) => {
+                const chips = sugg.length ? sugg.map(({ c, score }) => `<span style="display:inline-block; background:${score >= 60 ? 'var(--snap-black)' : 'var(--snap-gray)'}; color:${score >= 60 ? 'var(--snap-yellow)' : '#555'}; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:700; margin:4px 4px 0 0;" onclick="event.stopPropagation(); Settings.dissocMerge('${o.id}', '${c.id}')">${Util.escapeHTML(c.name)} @${Util.escapeHTML(c.id)} · ${score}%</span>`).join('') : '<span class="sub">Aucune correspondance</span>';
+                return `<div class="settings-row sub-row" style="padding-top:8px; padding-bottom:8px;" onclick="Settings.openConv('${o.id}', false)"><div><div>@${Util.escapeHTML(o.id)}</div><div>${chips}</div></div><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
+            }),
 
             accordion: (key, label, rows, subText) => {
                 const open = Settings.expanded[key];
@@ -2330,9 +2886,49 @@
                 const sortRows = Settings.sortModes.map(([c, l, msgs]) => {
                     const active = c === curCrit;
                     const dir = active ? curDir : 'desc';
-                    return `<div class="settings-row sub-row ${active ? 'active' : ''}" onclick="Settings.setSort('${c}')"><div><div>${l}</div><div class="sub">${msgs[dir]}</div></div><span class="sort-arrow ${active ? 'on' : ''}">${arrow(dir)}</span></div>`;
+                    return `<div class="settings-row sub-row ${active ? 'active' : ''}" onclick="Settings.setSort('${c}')"><div>${l} <span class="sub">· ${msgs[dir]}</span></div><span class="sort-arrow ${active ? 'on' : ''}">${arrow(dir)}</span></div>`;
                 });
 
+                const modRows = Settings.expanded.mods ? ModsManager.rows() : [];
+                const modSub = `${ModsManager.count()}`;
+                const ir = State.importReport;
+                const importRows = [];
+                let importProblems = 0;
+                if (ir) {
+                    const esc = Util.escapeHTML;
+                    const row = (title, sub, o = {}) => `<div class="settings-row sub-row" style="cursor:default;${o.muted ? ' opacity:.6;' : ''}${o.indent ? ' padding-left:18px;' : ''}"><div><div>${esc(title)}</div>${sub ? `<div class="sub"${o.bad ? ' style="color:#c0392b;"' : ''}>${esc(sub)}</div>` : ''}</div></div>`;
+                    const head = (t) => `<div class="sub" style="padding:12px 4px 2px; font-weight:800;">${esc(t)}</div>`;
+                    const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
+                    const c = ir.counts || {};
+                    // Résumé de l'import
+                    if (ir.date) importRows.push(row('Importé le ' + new Date(ir.date).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }), ''));
+                    importRows.push(row(`Médias enregistrés : ${c.saved || 0} / ${c.total || 0}`, `Memories : ${c.memories || 0} · Médias de chat : ${c.chatMedia || 0}`));
+                    if (ir.mods && ir.mods.ok) importRows.push(row('modifications.json repris du dossier', [plural(ir.mods.merges, 'fusion'), plural(ir.mods.renames, 'renommage'), plural(ir.mods.hidden, 'masquage')].join(' · ')));
+                    // Dates memories.json / fichiers
+                    const md = State.memoryDiffs;
+                    if (md) {
+                        const fmtDay = (d) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                        if (!md.days.length) importRows.push(row('Dates memories.json / fichiers', `${md.json} entrées · ${md.files} fichiers : aucune différence`));
+                        else {
+                            importProblems++;
+                            importRows.push(row('Dates memories.json / fichiers', `${md.json} entrées · ${md.files} fichiers · ${plural(md.days.length, 'jour')} avec différence`));
+                            md.days.slice(0, 40).forEach(x => importRows.push(row(fmtDay(x.d), `memories.json : ${x.json} · fichiers : ${x.files}${x.files === 0 ? ' (aucun fichier ce jour-là)' : x.json === 0 ? ' (absent de memories.json : heure et lieu inconnus)' : ''}`, { indent: true })));
+                            if (md.days.length > 40) importRows.push(row(`et ${md.days.length - 40} autre${md.days.length - 40 > 1 ? 's' : ''} jour${md.days.length - 40 > 1 ? 's' : ''}`, '', { muted: true, indent: true }));
+                        }
+                    }
+                    // À vérifier : uniquement ce qui pose problème ou manque (les json bien importés ne sont pas listés)
+                    const todo = [];
+                    IMPORT_SPEC.forEach(sp => {
+                        const name = sp.path.replace('json/', '');
+                        const bad = (ir.invalid || []).find(x => x.file === sp.path);
+                        if (bad) { importProblems++; todo.push(row(name, bad.message, { bad: true })); }
+                        else if (!(ir.found || []).includes(sp.path)) todo.push(row(name, `absent : ${sp.impact} indisponible(s)`, { muted: true }));
+                    });
+                    (ir.invalid || []).filter(x => !IMPORT_SPEC.some(sp => sp.path === x.file)).forEach(x => { importProblems++; todo.push(row(x.file, x.message, { bad: true })); });
+                    (ir.notes || []).forEach(n => { importProblems++; todo.push(row(n, '', { bad: true })); });
+                    if (todo.length) importRows.push(head('À vérifier'), ...todo);
+                }
+                const importSub = ir ? (importProblems ? `${importProblems} problème${importProblems > 1 ? 's' : ''}` : 'OK') : 'aucun';
                 const postalAll = State.areas.length ? MapView.getAreaStats() : [];
                 const postalHidden = postalAll.filter(c => c.hidden).length;
                 const postalRows = postalAll.map(c => `<div class="settings-row sub-row" style="${c.hidden ? 'opacity:.55;' : ''}" onclick="MapView.togglePostal('${c.geoKey}')"><div><div>${Util.escapeHTML(c.label)}</div><div class="sub">${Util.escapeHTML([c.country, c.dayCount + ' j'].filter(Boolean).join(' · '))}</div></div>${c.hidden
@@ -2346,13 +2942,15 @@
                     ${Settings.accordion('friends', 'Amis', friends)}
                     ${Settings.accordion('groups', 'Groupes', groups)}
                     ${Settings.accordion('hidden', 'Personnes masquées', hidden)}
+                    ${Settings.accordion('dissoc', 'Amis dissociés (pas dans tes amis)', Settings.dissocRows())}
                     <div class="settings-section">Affichage</div>
                     ${Settings.accordion('sort', 'Tri des chats', sortRows, curSort)}
                     <div class="settings-section" id="settings-postal-anchor">Carte</div>
                     ${Settings.accordion('postal', 'Codes postaux affichés', postalRows, postalSub)}
-                    <div class="settings-section">Modifications</div>
-                    ${ModsManager.settingsSectionHTML()}
-                    <div class="settings-danger" onclick="resetDB()">Supprimer la base de données (importer un nouveau dossier)</div>`;
+                    <div class="settings-section">Données</div>
+                    ${Settings.accordion('mods', 'Gérer les modifications', modRows, modSub)}
+                    ${Settings.accordion('importReport', 'Dernier import', importRows, importSub)}
+                    <div class="settings-danger" onclick="resetDB()">Supprimer les données</div>`;
             }
         };
 
@@ -2381,7 +2979,7 @@
                 'Pending Requests': 'Demande en attente'
             },
 
-            open: (id) => {
+            open: (id, backId) => {
                 const chatMeta = [...State.friendsList, ...State.groups].find(c => c.id === id);
                 const aliasIds = (chatMeta && chatMeta.aliases) || [];
                 const allIds = [id, ...aliasIds];
@@ -2404,12 +3002,19 @@
                     if (info.source) rows += FriendInfo.row('Ajout', FriendInfo.sourceLabels[info.source.toLowerCase()] || info.source);
                     if (info.category && info.category !== 'Friends') rows += FriendInfo.row('Statut', FriendInfo.categoryLabels[info.category] || info.category);
                 } else {
-                    document.getElementById('fi-sub').innerText = 'Conversation de groupe';
+                    document.getElementById('fi-sub').innerText = isGroup ? 'Conversation de groupe' : ('@' + id + ' · pas dans tes amis');
+                }
+                if (chatMeta && id !== 'account') {
+                    const orig = RenameBox.originalName(chatMeta);
+                    if (State.modifications.renames[id] && orig && orig !== chatMeta.name) rows = FriendInfo.row('Ancien nom', Util.escapeHTML(orig)) + rows;
                 }
                 if (chatMeta) {
-                    rows += FriendInfo.row('Messages', chatMeta.mCount);
-                    rows += FriendInfo.row('Médias', chatMeta.medCount);
-                    rows += FriendInfo.row('Audios', chatMeta.audCount);
+                    if (isGroup) rows += FriendInfo.groupRows(chatMeta);
+                }
+                if (backId && !isGroup) {
+                    const bg = State.groups.find(x => x.id === backId);
+                    const me = bg && FriendInfo.groupStats(bg).members.find(x => x.id === id);
+                    if (me) rows += FriendInfo.row('Dans ce groupe', `${me.n} message${me.n > 1 ? 's' : ''}`);
                 }
                 if (!rows) rows = FriendInfo.row('Infos', 'Aucune information disponible');
 
@@ -2419,6 +3024,7 @@
                 // ami a changé de username après l'ajout, ce qui fait apparaître ses infos/messages séparés
                 // en deux entrées côté export Snapchat).
                 const actionsEl = document.getElementById('fi-merge-action');
+                const backHtml = backId ? `<div class="friend-info-merge-btn" onclick="FriendInfo.open('${backId}')">← Retour au groupe</div>` : '';
                 if (chatMeta && id !== 'account') {
                     const hiddenList = isGroup ? State.modifications.hiddenGroups : State.modifications.hiddenFriends;
                     const isHidden = hiddenList.includes(id);
@@ -2431,15 +3037,77 @@
                         });
                         actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.open('${id}')">Fusionner avec un autre contact</div>`;
                     }
-                    actionsEl.innerHTML = actionsHtml;
+                    actionsEl.innerHTML = backHtml + actionsHtml;
                 } else {
-                    actionsEl.innerHTML = '';
+                    actionsEl.innerHTML = backHtml;
                 }
 
+                document.getElementById('friend-info-sheet').classList.toggle('sticky-close', isGroup);
                 document.getElementById('friend-info-overlay').style.display = 'flex';
             },
 
+            // L'export ne contient pas la liste des membres d'un groupe : on les déduit des expéditeurs des messages.
+            groupStats: (g) => {
+                const byAny = new Map();
+                State.friendsList.forEach(c => { byAny.set(c.id, c); (c.aliases || []).forEach(a => byAny.set(a, c)); });
+                const members = new Map(), titles = new Map(), days = new Set();
+                let first = null, last = null;
+                g.messages.forEach(m => {
+                    const created = m.Created || '';
+                    const title = m["Conversation Title"];
+                    if (title && !titles.has(title)) titles.set(title, created);
+                    if (created) { if (!first || created < first) first = created; if (!last || created > last) last = created; days.add(created.slice(0, 10)); }
+                    const from = (m.From || '').toLowerCase();
+                    if (!from) return;
+                    const meta = byAny.get(from);
+                    const rid = meta ? meta.id : from;
+                    let e = members.get(rid);
+                    if (!e) { e = { id: rid, meta, n: 0, media: 0, audio: 0, first: null, last: null }; members.set(rid, e); }
+                    const mt = m["Media Type"] || '';
+                    e.n++;
+                    if (/AUDIO|NOTE|VOICE/.test(mt)) e.audio++; else if (/MEDIA|VIDEO|SNAP/.test(mt)) e.media++;
+                    if (created) { if (!e.first || created < e.first) e.first = created; if (!e.last || created > e.last) e.last = created; }
+                });
+                return { members: [...members.values()].sort((a, b) => b.n - a.n), titles: [...titles.entries()].sort((a, b) => a[1].localeCompare(b[1])), first, last, days: days.size };
+            },
+
+            groupRows: (g) => {
+                const st = FriendInfo.groupStats(g), esc = Util.escapeHTML;
+                let html = '';
+                if (st.first) html += FriendInfo.row('Première activité', Util.formatDate(st.first));
+                if (st.last) html += FriendInfo.row('Dernier message', Util.formatDate(st.last));
+                if (st.titles.length > 1) html += FriendInfo.row('Noms successifs', st.titles.map(([t, d]) => `${esc(t)}${d ? ` <span class="label">(${Util.formatDate(d)})</span>` : ''}`).join('<br>'));
+                html += `<div class="friend-info-row" style="border-bottom:none; padding-bottom:2px;"><span class="label" style="font-weight:800; letter-spacing:.5px;">MEMBRES (${st.members.length})</span><span></span></div>`;
+                st.members.forEach(e => {
+                    const isMe = !!State.myUsername && e.id === State.myUsername;
+                    const info = State.friendsInfo[e.id];
+                    const name = isMe ? 'Toi' : (e.meta ? e.meta.name : ((info && info.displayName) || State.friends[e.id] || e.id));
+                    let status = '';
+                    if (!isMe) {
+                        if (!info) status = 'pas dans tes amis';
+                        else if (info.category && info.category !== 'Friends') status = (FriendInfo.categoryLabels[info.category] || info.category).toLowerCase();
+                    }
+                    const sub = [`@${e.id}`, status, e.last ? `dernier message ${Util.formatDate(e.last)}` : ''].filter(Boolean).join(' · ');
+                    const click = isMe ? '' : ` onclick="FriendInfo.openChat('${e.id}', '${g.id}')" style="cursor:pointer;"`;
+                    html += `<div class="friend-info-row"${click}><span style="min-width:0;"><span style="font-weight:800;">${esc(name)}</span><br><span class="label" style="font-size:11px;">${esc(sub)}</span></span><span style="flex:none; padding-left:10px;">${e.n} msg</span></div>`;
+                });
+                html += `<div style="color:#999; font-size:12px; font-weight:500; padding:10px 2px 0;">L'export ne contient pas la liste des membres : seules les personnes qui ont écrit au moins un message apparaissent.</div>`;
+                return html;
+            },
+
             row: (label, value) => `<div class="friend-info-row"><span class="label">${label}</span><span>${value}</span></div>`,
+
+            // Clic sur un membre dans la liste d'un groupe : ouvre directement la conversation privée avec lui.
+            // S'il n'a pas de conversation (pas dans les amis / jamais écrit en privé), on retombe sur sa fiche d'infos.
+            openChat: (id, backId) => {
+                const target = State.friendsList.find(c => c.id === id || (c.aliases || []).includes(id));
+                if (!target) { FriendInfo.open(id, backId); return; }
+                FriendInfo.close();
+                State.chatTabBefore = chatActiveTab;   // pour revenir sur le même onglet (Groupes) à la sortie
+                Chat.switchTab('amis');
+                Chat.openConv(target.id, -1);
+                State.returnToGroup = backId || null;
+            },
 
             openCurrent: () => { if (State.currentChat) FriendInfo.open(State.currentChat.id); },
 
@@ -2533,6 +3201,7 @@
                     State.modifications.hiddenFriends = Array.from(new Set([...(State.modifications.hiddenFriends || []), ...(parsed.hiddenFriends || [])]));
                     State.modifications.hiddenGroups = Array.from(new Set([...(State.modifications.hiddenGroups || []), ...(parsed.hiddenGroups || [])]));
                     State.modifications.hiddenPostals = Array.from(new Set([...(State.modifications.hiddenPostals || []), ...(parsed.hiddenPostals || [])]));
+                    State.modifications.shownPostals = Array.from(new Set([...(State.modifications.shownPostals || []), ...(parsed.shownPostals || [])]));
                     await saveModifications();
 
                     // Les renommages peuvent s'appliquer tout de suite sur la liste déjà chargée.
@@ -2550,13 +3219,80 @@
                 reader.readAsText(file);
             },
 
-            settingsSectionHTML: () => {
-                const hiddenCount = State.modifications.hiddenFriends.length + State.modifications.hiddenGroups.length + (State.modifications.hiddenPostals || []).length;
-                const count = Object.keys(State.modifications.merges).length + Object.keys(State.modifications.renames).length + hiddenCount;
-                return `<div class="settings-row" style="cursor:default;"><span>Modifications <span class="sub">(${count})</span></span></div>
-                    <div class="friend-info-merge-btn" onclick="ModsManager.exportJSON()">Exporter modifications.json</div>
-                    <div class="friend-info-merge-btn" onclick="document.getElementById('mods-import-input').click()">Importer modifications.json</div>
-                    <input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">`;
+            count: () => {
+                const m = State.modifications;
+                return Object.keys(m.merges || {}).length + Object.keys(m.renames || {}).length + (m.hiddenFriends || []).length + (m.hiddenGroups || []).length + (m.hiddenPostals || []).length;
+            },
+
+            // Lignes du menu « Gérer les modifications » : export / import, puis chaque modification avec un bouton Supprimer.
+            rows: () => {
+                const m = State.modifications, esc = Util.escapeHTML;
+                const find = (id) => [...State.friendsList, ...State.groups].find(c => c.id === id);
+                const nameOf = (id) => { const c = find(id); return c ? c.name : (State.friends[id] || id); };
+                const head = (t, n) => `<div class="sub" style="padding:12px 4px 2px; font-weight:800;">${t} (${n})</div>`;
+                const entry = (title, sub, action) => `<div class="settings-row sub-row" style="cursor:default;"><div style="min-width:0;"><div>${esc(title)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div><span onclick="${action}" style="flex:none; background:var(--snap-gray); color:#c0392b; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">Supprimer</span></div>`;
+
+                const out = [
+                    `<div class="settings-row sub-row" onclick="ModsManager.exportJSON()"><span>Exporter modifications.json</span></div>`,
+                    `<div class="settings-row sub-row" onclick="document.getElementById('mods-import-input').click()"><span>Importer modifications.json</span></div><input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">`
+                ];
+                const renames = Object.keys(m.renames || {}), merges = Object.keys(m.merges || {});
+                const hidF = m.hiddenFriends || [], hidG = m.hiddenGroups || [], hidP = m.hiddenPostals || [];
+                if (!ModsManager.count()) { out.push(`<div class="settings-row sub-row" style="cursor:default;"><span class="sub">Aucune modification enregistrée</span></div>`); return out; }
+
+                if (renames.length) {
+                    out.push(head('Renommages', renames.length));
+                    renames.forEach(id => { const c = find(id); out.push(entry(`${c ? RenameBox.originalName(c) : id} → ${m.renames[id]}`, State.groups.some(g => g.id === id) ? 'Groupe' : 'Ami', `ModsManager.removeRename('${id}')`)); });
+                }
+                if (merges.length) {
+                    out.push(head('Fusions', merges.length));
+                    merges.forEach(sec => out.push(entry(`@${sec} → ${nameOf(m.merges[sec])}`, 'Les supprimer demande de réimporter le dossier', `ModsManager.removeMerge('${sec}')`)));
+                }
+                if (hidF.length) {
+                    out.push(head('Amis masqués', hidF.length));
+                    hidF.forEach(id => out.push(entry(nameOf(id), '@' + id, `ModsManager.removeHidden('${id}', false)`)));
+                }
+                if (hidG.length) {
+                    out.push(head('Groupes masqués', hidG.length));
+                    hidG.forEach(id => out.push(entry(nameOf(id), '', `ModsManager.removeHidden('${id}', true)`)));
+                }
+                if (hidP.length) {
+                    out.push(head('Codes postaux masqués', hidP.length));
+                    const labels = {};
+                    if (State.areas.length) MapView.getAreaStats().forEach(c => { labels[c.geoKey] = c.label; });
+                    hidP.forEach(k => out.push(entry(labels[k] || k.split('|')[1] || k, 'Carte', `MapView.togglePostal('${k}')`)));
+                }
+                return out;
+            },
+
+            removeRename: (id) => {
+                delete State.modifications.renames[id];
+                const c = [...State.friendsList, ...State.groups].find(x => x.id === id);
+                if (c) {
+                    c.name = RenameBox.originalName(c);
+                    if (State.currentChat && State.currentChat.id === id) document.getElementById('conv-title').innerText = c.name;
+                }
+                saveModifications();
+                Chat.renderList();
+                Settings.render();
+            },
+            removeMerge: (secondaryId) => {
+                if (!confirm('Supprimer cette fusion ? Il faudra réimporter le dossier (icône réglages) pour que les messages redeviennent deux conversations distinctes.')) return;
+                const primaryId = State.modifications.merges[secondaryId];
+                delete State.modifications.merges[secondaryId];
+                const p = State.friendsList.find(f => f.id === primaryId);
+                if (p) p.aliases = (p.aliases || []).filter(a => a !== secondaryId);
+                saveModifications();
+                MergePicker.showToast('Fusion supprimée - réimporte le dossier pour finaliser');
+                Settings.render();
+            },
+            removeHidden: (id, isGroup) => {
+                const list = isGroup ? State.modifications.hiddenGroups : State.modifications.hiddenFriends;
+                const i = list.indexOf(id);
+                if (i !== -1) list.splice(i, 1);
+                saveModifications();
+                Chat.renderList();
+                Settings.render();
             }
         };
 
@@ -2607,7 +3343,7 @@
                 const secondary = State.friendsList[secondaryIdx];
 
                 primary.messages = [...primary.messages, ...secondary.messages]
-                    .sort((a, b) => new Date(a.Created.replace(' UTC', 'Z')) - new Date(b.Created.replace(' UTC', 'Z')));
+                    .sort((a, b) => Util.date(a.Created) - Util.date(b.Created));
                 primary.messages.forEach((m, i) => { m.originalIndex = i; });
                 primary.mCount += secondary.mCount;
                 primary.medCount += secondary.medCount;
@@ -2712,6 +3448,7 @@
 
             open: () => {
                 const acc = State.accountInfo || {};
+                document.getElementById('friend-info-sheet').classList.add('sticky-close');
 
                 if (!acc.username && !acc.name) {
                     document.getElementById('fi-name').innerText = 'Mon compte';
@@ -2773,8 +3510,10 @@
 
             const container = document.getElementById('app-container');
 
+            let touchTarget = null, multiTouch = false;
             container.addEventListener('touchstart', (e) => {
-                if (e.touches.length !== 1) return;
+                if (e.touches.length !== 1) { multiTouch = true; return; }   // pincement : pas un glissement
+                multiTouch = false; touchTarget = e.target;
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
                 touchStartTime = Date.now();
@@ -2787,15 +3526,21 @@
                 const deltaX = touch.clientX - touchStartX;
                 const deltaY = touch.clientY - touchStartY;
 
+                if (multiTouch) return;
                 if (document.getElementById('viewer').style.display === 'flex') {
-                    // Visionneuse ouverte : glisser vers le haut OU le bas la ferme
+                    if (ZoomPan.scale > 1.01) return;   // image zoomée : le geste sert à la déplacer
+                    // Visionneuse ouverte : glisser vers le haut OU le bas la ferme ; vers la gauche / droite : photo suivante / précédente
                     if (Math.abs(deltaY) >= SWIPE_MIN_DISTANCE && Math.abs(deltaX) <= SWIPE_MAX_OFFAXIS) {
                         Viewer.close();
+                    } else if (Math.abs(deltaX) >= SWIPE_MIN_DISTANCE && Math.abs(deltaY) <= SWIPE_MAX_OFFAXIS && !(touchTarget && touchTarget.closest && touchTarget.closest('.video-progress-hitarea, .pill-icon-btn, .viewer-btn'))) {
+                        if (deltaX < 0) Viewer.next(); else Viewer.prev();
                     }
                     return;
                 }
 
                 if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE || Math.abs(deltaY) > SWIPE_MAX_OFFAXIS) return;
+                // Sur la carte, la frise et les curseurs, le glissement horizontal sert à la carte elle-même
+                if (touchTarget && touchTarget.closest && touchTarget.closest('#leaflet-map, #map-timeline, input[type=range], #map-focus-bar')) return;
 
                 if (document.getElementById('view-conversation').classList.contains('active')) {
                     UI.switchTab('chat'); // glisser (dans n'importe quel sens) quitte la conversation
@@ -2805,7 +3550,9 @@
                 const activeNav = document.querySelector('.nav-item.active');
                 if (!activeNav) return;
                 if (deltaX < 0 && activeNav.id === 'nav-chat') UI.switchTab('memories');       // glisser à gauche
+                else if (deltaX < 0 && activeNav.id === 'nav-memories') UI.switchTab('map');
                 else if (deltaX > 0 && activeNav.id === 'nav-memories') UI.switchTab('chat');   // glisser à droite
+                else if (deltaX > 0 && activeNav.id === 'nav-map') UI.switchTab('memories');
             }, { passive: true });
         })();
 
@@ -2969,6 +3716,109 @@
 
         const Viewer = {
             contextType: 'memories', currentIndex: 0,
+            renderToken: 0,
+            // --- Point GPS d'un memory : lien Google Maps OU affichage seul sur la carte Memories ---
+            mapChoice: () => { document.getElementById('viewer-map-choice').style.display = 'flex'; },
+            closeMapChoice: () => { const el = document.getElementById('viewer-map-choice'); if (el) el.style.display = 'none'; Viewer.answerSave(null); },
+            // Choix « Avec calque / Sans calque / Fermer » à l'enregistrement d'un memory qui a un filtre : renvoie true, false ou null (fermé)
+            askSave: () => new Promise(resolve => { Viewer.answerSave(null); Viewer._saveResolve = resolve; document.getElementById('viewer-save-choice').style.display = 'flex'; }),
+            answerSave: (v) => { const el = document.getElementById('viewer-save-choice'); if (el) el.style.display = 'none'; const r = Viewer._saveResolve; Viewer._saveResolve = null; if (r) r(v); },
+            currentGps: () => { const it = State.memories[Viewer.currentIndex]; return it ? MapView.parseLatLng(it.json.Location) : null; },
+            openGpsLink: () => {
+                const g = Viewer.currentGps();
+                if (g) window.open(`https://maps.google.com/?q=${g.lat},${g.lng}`, '_blank');
+                Viewer.closeMapChoice();
+            },
+            showOnMap: () => {
+                const idx = Viewer.currentIndex;
+                const activeView = document.querySelector('.view.active');
+                const origin = activeView ? activeView.id.replace('view-', '') : 'memories';   // d'où on vient (grille ou carte)
+                Viewer.closeMapChoice();
+                Viewer.close();
+                MapView.focusMem = idx; MapView.focusOrigin = origin; MapView.activeTab = 'memories';
+                UI.switchTab('map');
+            },
+            // --- Vidéo « avec calque » : on rejoue la vidéo hors écran, image + calque dessinés sur un canvas, et on réenregistre le tout (durée réelle de la vidéo) ---
+            _merge: null,
+            cancelMerge: () => {
+                const m = Viewer._merge; Viewer._merge = null;
+                if (m) { m.cancelled = true; try { m.stop(); } catch (e) {} }
+                const el = document.getElementById('viewer-save-progress'); if (el) el.style.display = 'none';
+            },
+            saveMerged: async () => {
+                const m = Viewer._merge; if (!m || !m.file) return;
+                const file = m.file; Viewer._merge = null;
+                document.getElementById('viewer-save-progress').style.display = 'none';
+                await DeviceSave.save(file);
+            },
+            mergeVideo: async (mainFile, overlayFile, baseName) => {
+                stopAllMedia();
+                const box = document.getElementById('viewer-save-progress');
+                const text = document.getElementById('vsp-text'), fill = document.getElementById('vsp-fill'), saveBtn = document.getElementById('vsp-save'), bar = document.getElementById('vsp-bar');
+                saveBtn.style.display = 'none'; bar.style.display = 'block'; fill.style.width = '0%';
+                text.textContent = 'Fusion de la vidéo avec le calque…';
+                box.style.display = 'flex';
+                const state = { cancelled: false, file: null, stop: () => {} };
+                Viewer._merge = state;
+                const urls = [];
+                let actx = null;
+                const cleanup = () => { urls.forEach(u => URL.revokeObjectURL(u)); try { if (actx) actx.close(); } catch (e) {} };
+                try {
+                    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) throw new Error('unsupported');
+                    const vUrl = URL.createObjectURL(mainFile), oUrl = URL.createObjectURL(overlayFile); urls.push(vUrl, oUrl);
+                    const video = document.createElement('video'); video.src = vUrl; video.playsInline = true; video.preload = 'auto';
+                    const img = new Image(); img.src = oUrl;
+                    // Le contexte audio est créé ici (juste après le geste de l'utilisateur) pour être autorisé sur iPhone.
+                    let audioTracks = [];
+                    try {
+                        const AC = window.AudioContext || window.webkitAudioContext;
+                        actx = new AC(); if (actx.state === 'suspended') actx.resume();
+                        const src = actx.createMediaElementSource(video), dest = actx.createMediaStreamDestination();
+                        src.connect(dest);   // pas relié aux haut-parleurs : la fusion se fait en silence
+                        audioTracks = dest.stream.getAudioTracks();
+                    } catch (e) { audioTracks = []; }
+                    await Promise.all([
+                        new Promise((res, rej) => { video.onloadedmetadata = res; video.onerror = () => rej(new Error('video')); }),
+                        new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('overlay')); })
+                    ]);
+                    if (state.cancelled) { cleanup(); return; }
+                    const W = video.videoWidth, H = video.videoHeight;
+                    const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+                    const ctx = canvas.getContext('2d');
+                    const stream = canvas.captureStream(30);
+                    audioTracks.forEach(t => stream.addTrack(t));
+                    const types = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+                    const mime = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+                    const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 8000000 } : { videoBitsPerSecond: 8000000 });
+                    const chunks = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+                    let raf = 0;
+                    const draw = () => {
+                        ctx.drawImage(video, 0, 0, W, H); ctx.drawImage(img, 0, 0, W, H);
+                        if (video.duration) fill.style.width = Math.min(99, Math.round(100 * video.currentTime / video.duration)) + '%';
+                        if (!video.ended && !video.paused) raf = requestAnimationFrame(draw);
+                    };
+                    state.stop = () => { cancelAnimationFrame(raf); try { video.pause(); } catch (e) {} if (rec.state !== 'inactive') { try { rec.stop(); } catch (e) {} } };
+                    rec.onstop = () => {
+                        cancelAnimationFrame(raf); cleanup();
+                        if (state.cancelled) return;
+                        const type = (rec.mimeType || mime || 'video/webm').split(';')[0];
+                        const ext = type.includes('mp4') ? 'mp4' : 'webm';
+                        state.file = new File([new Blob(chunks, { type })], `${baseName}.${ext}`, { type });
+                        fill.style.width = '100%'; bar.style.display = 'none';
+                        text.textContent = 'Vidéo prête';
+                        saveBtn.style.display = 'block';   // un nouveau tap est nécessaire pour ouvrir le partage de l'appareil
+                    };
+                    video.onended = () => { draw(); setTimeout(() => { if (rec.state !== 'inactive') rec.stop(); }, 200); };
+                    rec.start(250);
+                    await video.play();
+                    draw();
+                } catch (err) {
+                    cleanup();
+                    if (state.cancelled) return;
+                    bar.style.display = 'none';
+                    text.textContent = 'Fusion impossible sur cet appareil : enregistre sans calque.';
+                }
+            },
             open: (index, type) => { Viewer.contextType = type; Viewer.currentIndex = index; Viewer.renderCurrent(); document.getElementById('viewer').style.display = 'flex'; },
             
             openDirect: (url, dateStr, locStr) => {
@@ -2985,13 +3835,14 @@
                 };
             },
 
-            buildHeader: (dateStr, locStr) => {
+            buildHeader: (dateStr, locStr, memChoice = false) => {
                 const mapIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>';
                 const downloadIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.59l3.3-3.3 1.42 1.42L12 17.41l-4.71-4.7 1.41-1.42 3.3 3.3V3h2zM5 19h14v2H5z"/></svg>';
                 let mapBtn = "";
-                if (locStr) {
-                    const gpsMatch = locStr.match(/([-?\d.]+),\s*([-?\d.]+)/);
-                    if(gpsMatch) mapBtn = `<div class="pill-icon-btn" onclick="window.open('https://maps.google.com/?q=${gpsMatch[1]},${gpsMatch[2]}', '_blank')">${mapIcon}</div><div class="pill-divider"></div>`;
+                const gps = MapView.parseLatLng(locStr);
+                if (gps) {
+                    const act = memChoice ? 'Viewer.mapChoice()' : `window.open('https://maps.google.com/?q=${gps.lat},${gps.lng}', '_blank')`;
+                    mapBtn = `<div class="pill-icon-btn" onclick="${act}">${mapIcon}</div><div class="pill-divider"></div>`;
                 }
                 
                 document.getElementById('viewer-header-dynamic').innerHTML = `
@@ -3021,19 +3872,25 @@
 
                 if(!mainKey) return;
                 
+                const token = ++Viewer.renderToken;
                 const mainFile = await getMediaFromDB(mainKey);
                 const overlayFile = overlayKey ? await getMediaFromDB(overlayKey) : null;
+                if (token !== Viewer.renderToken) return;   // un affichage plus récent (ou la fermeture) a pris le relais
                 
                 const container = document.getElementById('viewer-media');
-                const url = URLManager.create(mainFile);
+                const prevUrls = URLManager.takeScope('viewer');   // URLs de l'élément précédent, libérées une fois le nouveau affiché
+                const url = URLManager.scoped('viewer', mainFile);
                 const isVideo = mainKey.match(/\.(mp4|mov)$/i);
                 
                 let mediaHtml = isVideo ? `<div class="video-wrapper" style="max-width:100%; max-height:100%;" onclick="VideoPlayer.toggle(this)"><video src="${url}" autoplay playsinline style="max-width:100%; max-height:100%;" ontimeupdate="VideoPlayer.updateProgress(this)" onended="VideoPlayer.onEnded(this)" onerror="VideoDebugger.handleError(this, '${mainKey}')"></video><div class="video-play-overlay" style="display:none;">▶</div><div class="video-progress-hitarea" onclick="event.stopPropagation()" onmousedown="VideoPlayer.seekStart(event, this.parentElement)" ontouchstart="VideoPlayer.seekStart(event, this.parentElement)" ontouchmove="VideoPlayer.seekMove(event, this.parentElement)" ontouchend="VideoPlayer.seekEnd(event)"><div class="video-progress-bg"><div class="video-progress-fill"></div></div></div></div>` : `<img src="${url}">`;
-                if (overlayFile) mediaHtml += `<img src="${URLManager.create(overlayFile)}" id="viewer-overlay">`;
-                container.innerHTML = `<div id="viewer-zoomable">${mediaHtml}</div>`;
+                if (overlayFile) mediaHtml += `<img src="${URLManager.scoped('viewer', overlayFile)}" id="viewer-overlay">`;
+                container.innerHTML = `<div id="viewer-zoomable"${Viewer._dir ? ` data-dir="${Viewer._dir}"` : ''}>${mediaHtml}</div>`;
+                Viewer._dir = null;
+                prevUrls.forEach(URLManager.revoke);
                 ZoomPan.reset();
 
-                Viewer.buildHeader(dateStr, locStr);
+                Viewer.closeMapChoice();
+                Viewer.buildHeader(dateStr, locStr, Viewer.contextType === 'memories');
                 
                 document.querySelector('.nav-zone.left').style.display = Viewer.currentIndex > 0 ? 'flex' : 'none';
                 document.querySelector('.nav-zone.right').style.display = Viewer.currentIndex < list.length - 1 ? 'flex' : 'none';
@@ -3047,16 +3904,18 @@
                     const cleanOrigName = mainFile.name.split('/').pop() || 'media.jpg';
                     const dlName = `Snapchat_${dateFmt}_${cleanOrigName}`;
 
-                    if (isVideo || !overlayFile) {
+                    if (!overlayFile) {
                         DeviceSave.save(new File([mainFile], dlName, { type: mainFile.type })); return;
                     }
 
-                    const wantOverlay = confirm("Enregistrer avec le filtre/texte (OK) ou sans (Annuler) ?");
+                    const wantOverlay = await Viewer.askSave();
+                    if (wantOverlay === null) return;   // Fermer
                     if (!wantOverlay) { DeviceSave.save(new File([mainFile], dlName, { type: mainFile.type })); return; }
+                    if (isVideo) { Viewer.mergeVideo(mainFile, overlayFile, `Snapchat_Fusion_${dateFmt}_${cleanOrigName.replace(/\.[^.]+$/, '')}`); return; }
 
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     const baseImg = new Image(); const overImg = new Image();
-                    baseImg.src = url; overImg.src = URLManager.create(overlayFile);
+                    baseImg.src = url; overImg.src = URLManager.scoped('viewer', overlayFile);
                     await new Promise(r => baseImg.onload = r); await new Promise(r => overImg.onload = r);
                     canvas.width = baseImg.width; canvas.height = baseImg.height;
                     ctx.drawImage(baseImg, 0, 0); ctx.drawImage(overImg, 0, 0, canvas.width, canvas.height);
@@ -3072,7 +3931,7 @@
                 if (Viewer.contextType === 'chat') {
                     while (nextIdx < max && State.chatMediasContext[nextIdx] === null) nextIdx++;
                 }
-                if (nextIdx < max) { Viewer.currentIndex = nextIdx; Viewer.renderCurrent(); } 
+                if (nextIdx < max) { Viewer.currentIndex = nextIdx; Viewer._dir = 'next'; Viewer.renderCurrent(); } 
             },
             prev: (e) => { 
                 if (e) e.stopPropagation(); 
@@ -3080,9 +3939,9 @@
                 if (Viewer.contextType === 'chat') {
                     while (prevIdx >= 0 && State.chatMediasContext[prevIdx] === null) prevIdx--;
                 }
-                if (prevIdx >= 0) { Viewer.currentIndex = prevIdx; Viewer.renderCurrent(); } 
+                if (prevIdx >= 0) { Viewer.currentIndex = prevIdx; Viewer._dir = 'prev'; Viewer.renderCurrent(); } 
             },
-            close: () => { stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; }
+            close: () => { Viewer.cancelMerge(); Viewer.renderToken++; stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; URLManager.revokeScope('viewer'); Viewer.closeMapChoice(); }
         };
 
         window.UI = UI; window.Viewer = Viewer; window.Chat = Chat; window.Memories = Memories; window.AudioEngine = AudioEngine; window.VideoDebugger = VideoDebugger;
