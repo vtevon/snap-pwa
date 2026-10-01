@@ -1087,6 +1087,12 @@
                 report.mods = { ok: true, merges: Object.keys(modsToSave.merges || {}).length, renames: Object.keys(modsToSave.renames || {}).length,
                                 hidden: (modsToSave.hiddenFriends || []).length + (modsToSave.hiddenGroups || []).length + (modsToSave.hiddenPostals || []).length };
             }
+            // Les textes (conversations, amis) sont écrits AVANT les médias : sur mobile le stockage se remplit vite avec les vidéos,
+            // et un échec sur les médias ne doit jamais empêcher l'app d'avoir ses conversations.
+            await saveJSON('memDateCache', {});        // les médias vont changer : on recalcule les horodatages
+            await saveJSON('chats', chats);
+            await saveJSON('importReport', report);    // rapport provisoire, mis à jour à la fin
+            await saveJSON('friends', friends);
             let quota = false;
             for (let i = 0; i < mediaToSave.length; i++) {
                 try { await saveMedia(mediaToSave[i].key, mediaToSave[i].file); report.counts.saved++; }
@@ -1099,10 +1105,8 @@
             if (quota) report.notes.push(`Stockage du navigateur plein : ${report.counts.saved} médias sur ${report.counts.total} enregistrés. Libère de l\u2019espace puis réimporte pour avoir le reste.`);
             else if (report.counts.failed) report.notes.push(`${report.counts.failed} média${report.counts.failed > 1 ? 's' : ''} n\u2019ont pas pu être enregistrés.`);
 
-            await saveJSON('memDateCache', {});        // les médias ont pu changer : on recalcule les horodatages
-            await saveJSON('chats', chats);
-            await saveJSON('importReport', report);
-            await saveJSON('friends', friends);        // en dernier : marque l'import comme complet
+            // Le rapport final (compteurs de médias) est un petit fichier : s'il ne passe pas (stockage plein), on garde le rapport provisoire.
+            try { await saveJSON('importReport', report); } catch (e) { console.warn('rapport final non enregistré', e); }
             return report;
         }
 
@@ -1127,14 +1131,19 @@
             }
         });
 
-        function saveJSON(key, data) {
+        // Écriture IndexedDB. L'erreur d'une requête n'est pas encore sur la transaction quand « error » se déclenche :
+        // on la capte sur la requête pour remonter la vraie cause (stockage plein, donnée trop grosse...) au lieu d'un message vague.
+        function idbPut(storeName, value, key) {
             return new Promise((resolve, reject) => {
-                const tx = State.db.transaction('json_data', 'readwrite');
-                tx.objectStore('json_data').put(data, key);
-                tx.oncomplete = resolve;
-                tx.onerror = tx.onabort = () => reject(tx.error || new Error('écriture impossible'));
+                const tx = State.db.transaction(storeName, 'readwrite');
+                let reqErr = null;
+                const req = tx.objectStore(storeName).put(value, key);
+                req.onerror = () => { reqErr = req.error; };
+                tx.oncomplete = () => resolve();
+                tx.onabort = () => reject(tx.error || reqErr || new Error('écriture annulée par le navigateur (stockage ou mémoire insuffisants ?)'));
             });
         }
+        function saveJSON(key, data) { return idbPut('json_data', data, key); }
         // Sauvegarde le journal des modifications (fusions, renommages, masquages) en base, ET le tient à
         // jour comme un vrai fichier JSON qu'on peut exporter/réimporter (voir ModsManager plus bas).
         // Noms d'affichage utilisés, stories (lieux + vues) et appels, à partir de account_history.json,
@@ -1187,14 +1196,7 @@
         function saveModifications() {
             return saveJSON('modifications', State.modifications);
         }
-        function saveMedia(key, file) {
-            return new Promise((resolve, reject) => {
-                const tx = State.db.transaction('media_files', 'readwrite');
-                tx.objectStore('media_files').put(file, key);
-                tx.oncomplete = resolve;
-                tx.onerror = tx.onabort = () => reject(tx.error || new Error('écriture impossible'));
-            });
-        }
+        function saveMedia(key, file) { return idbPut('media_files', file, key); }
 
         async function initApp() {
             try { await _initApp(); }
