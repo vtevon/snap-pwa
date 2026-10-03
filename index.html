@@ -29,7 +29,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <style>
         /* --- VARIABLES & RESET --- */
-        :root { --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; --snap-yellow-soft: rgba(255, 252, 0, 0.18); }
+        :root { --sab: min(env(safe-area-inset-bottom, 0px), 20px); --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; --snap-yellow-soft: rgba(255, 252, 0, 0.18); }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Avenir Next', -apple-system, sans-serif; }
         html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
@@ -78,7 +78,7 @@
         .bottom-nav { 
             position: absolute; bottom: 0; left: 0; width: 100%; background: var(--snap-black); 
             display: flex; justify-content: space-around; align-items: flex-start; 
-            padding-top: 12px; height: calc(52px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-top: 12px; height: calc(46px + var(--sab)); padding-bottom: var(--sab);
             border-top-left-radius: 40px; border-top-right-radius: 40px; 
             z-index: 100; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
         }
@@ -88,7 +88,7 @@
         /* --- CHAT LISTE --- */
         #view-chat { display: flex; flex-direction: column; overflow: hidden; padding-top: 0; padding-bottom: 0; }
         .sticky-chat-header { margin-top: calc(46px + env(safe-area-inset-top, 0px)); background: rgba(255, 255, 255, 0.98); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 2px; flex-shrink: 0; }
-        #chat-list-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+        #chat-list-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(46px + var(--sab)); }
         #view-map { display: flex; flex-direction: column; overflow: hidden; }
         .city-hide { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #e5e5e5; color: #666; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; }
         #view-map .chat-tabs { padding-bottom: 4px; }   /* moins d'espace entre les onglets et la carte */
@@ -124,7 +124,7 @@
         .city-row .city-name { font-weight: bold; font-size: 14px; }
         .city-row .city-meta { font-size: 11px; color: #888; margin-top: 2px; }
         .city-row .city-badge { background: var(--snap-black); color: var(--snap-yellow); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: bold; white-space: nowrap; }
-        #map-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+        #map-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(46px + var(--sab)); }
         /* Même taille de carte pour Memories et Localisation : ajustée à l'écran pour que carte + lecteur de frise ne dépassent pas. */
         #leaflet-map { width: 100%; flex: 1 1 auto; min-height: 160px; border-radius: 14px; background: #dceefb; }
         /* Carte + lecteur + infos grises occupent exactement l'espace visible ; la liste des codes postaux est en dessous (défilement). */
@@ -268,8 +268,8 @@
         .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2; }
         .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
         
-        #scroll-track { position: absolute; right: 0; top: calc(46px + env(safe-area-inset-top, 0px)); bottom: calc(52px + env(safe-area-inset-bottom, 0px)); width: 40px; z-index: 50; touch-action: none;}
-        #memories-scroll-area { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-top: calc(46px + env(safe-area-inset-top, 0px)); padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+        #scroll-track { position: absolute; right: 0; top: calc(46px + env(safe-area-inset-top, 0px)); bottom: calc(46px + var(--sab)); width: 40px; z-index: 50; touch-action: none;}
+        #memories-scroll-area { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-top: calc(46px + env(safe-area-inset-top, 0px)); padding-bottom: calc(46px + var(--sab)); }
         #scroll-thumb { position: absolute; right: 2px; top: 0; width: 8px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
 
         /* --- VISIONNEUSE --- */
@@ -641,8 +641,15 @@
             let c = el ? getComputedStyle(el).backgroundColor : '';
             if (!c || c === 'rgba(0, 0, 0, 0)') c = '#111111';
             const m = $('meta[name="theme-color"]'); if (m) m.setAttribute('content', c);
-            document.documentElement.style.backgroundColor = c;
-            document.body.style.backgroundColor = c;
+            let cb = c;
+            if (vis($('#main-ui'))) {
+                if (vis($('#viewer'))) cb = getComputedStyle($('#viewer')).backgroundColor || c;
+                else if ($('#view-conversation') && $('#view-conversation').classList.contains('active')) cb = '#FFFFFF';
+                else if (vis($('.bottom-nav'))) cb = getComputedStyle($('.bottom-nav')).backgroundColor || c;
+                else cb = '#FFFFFF';
+            }
+            document.documentElement.style.background = `linear-gradient(to bottom, ${c} 0, ${c} 50%, ${cb} 50%, ${cb} 100%)`;
+            document.body.style.backgroundColor = 'transparent';
         }
         window.addEventListener('DOMContentLoaded', () => {
             const mo = new MutationObserver(syncChromeColor);
@@ -4060,6 +4067,10 @@
                     'safe-area top/bottom: ' + cs.paddingTop + ' / ' + cs.paddingBottom,
                     'app-container: top=' + Math.round(c.top) + ' bottom=' + Math.round(c.bottom) + ' h=' + Math.round(c.height)].join('\n');
             };
+            const ac = document.getElementById('app-container'); if (ac) ac.style.boxShadow = 'inset 0 0 0 3px red';
+            const line = document.createElement('div');
+            line.style.cssText = 'position:fixed;left:0;right:0;top:' + (Math.max(screen.width, screen.height) - 4) + 'px;height:4px;background:cyan;z-index:999998;pointer-events:none;';
+            document.body.appendChild(line);
             upd(); setInterval(upd, 800);
         })();
     </script>
