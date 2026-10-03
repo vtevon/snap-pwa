@@ -12,16 +12,20 @@
     <link rel="apple-touch-icon" href="./Snapchat.png">
     <title>Snapchat Archive</title>
     <script>
-        /* iOS (mode app installée + black-translucent) : le viewport CSS est raccourci de la hauteur de la barre d'état
-           (bug WebKit 236445) -> bottom:0 / 100vh s'arrêtent trop haut. On ancre donc l'app en haut et on lui donne
-           la hauteur réelle de l'écran (screen.height ne subit pas ce bug). */
+        /* iOS (app installée + barre d'état translucide) : le viewport CSS est plus court que l'écran de la hauteur de la
+           barre d'état (ici 797 au lieu de 844, bug WebKit 236445) et tout ce qui dépasse est coupé. On ne force donc
+           PAS de hauteur : l'app occupe le viewport, et la bande restante en bas est peinte par le fond de la page
+           (voir syncChromeColor) pour que le bandeau du bas semble aller jusqu'au bord de l'écran. */
         (function () {
             try {
+                var r = document.documentElement;
                 if (navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
-                    var h = Math.max(screen.width, screen.height);
-                    var r = document.documentElement;
+                    var h = Math.max(screen.width, screen.height), gap = h - window.innerHeight;
                     r.classList.add('pwa-standalone');
                     r.style.setProperty('--app-h', h + 'px');
+                    r.style.setProperty('--bottom-gap', Math.max(0, gap) + 'px');
+                    /* bande hors viewport (gap > 10) : elle contient déjà la zone du home indicator -> pas de marge en plus */
+                    if (gap > 10) r.style.setProperty('--sab', '0px');
                 }
             } catch (e) {}
         })();
@@ -46,8 +50,7 @@
         #app-container { width: 100%; max-width: 428px; height: 100%; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
         @media (min-width: 600px) and (min-height: 700px) { #app-container { height: min(90vh, 926px); border-radius: 40px; } }
         /* Téléphone : l'app est collée aux 4 bords de l'écran (barres haut/bas comprises), sans dépendre de 100vh/100dvh */
-        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; height: auto; border-radius: 0; }
-            html.pwa-standalone #app-container { bottom: auto; height: var(--app-h); } }
+        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; height: auto; border-radius: 0; } }
 
         /* --- ÉCRAN DE CHARGEMENT PRINCIPAL --- */
         .welcome-logo { width: 96px; height: 96px; border-radius: 28px; background: var(--snap-yellow); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.12), inset 0 0 0 3px rgba(0,0,0,.08); }
@@ -78,7 +81,7 @@
         .bottom-nav { 
             position: absolute; bottom: 0; left: 0; width: 100%; background: var(--snap-black); 
             display: flex; justify-content: space-around; align-items: flex-start; 
-            padding-top: 12px; height: calc(46px + var(--sab)); padding-bottom: var(--sab);
+            padding-top: 12px; height: calc(40px + var(--sab)); padding-bottom: var(--sab);
             border-top-left-radius: 40px; border-top-right-radius: 40px; 
             z-index: 100; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
         }
@@ -88,7 +91,7 @@
         /* --- CHAT LISTE --- */
         #view-chat { display: flex; flex-direction: column; overflow: hidden; padding-top: 0; padding-bottom: 0; }
         .sticky-chat-header { margin-top: calc(46px + env(safe-area-inset-top, 0px)); background: rgba(255, 255, 255, 0.98); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 2px; flex-shrink: 0; }
-        #chat-list-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(46px + var(--sab)); }
+        #chat-list-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(40px + var(--sab)); }
         #view-map { display: flex; flex-direction: column; overflow: hidden; }
         .city-hide { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #e5e5e5; color: #666; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; }
         #view-map .chat-tabs { padding-bottom: 4px; }   /* moins d'espace entre les onglets et la carte */
@@ -124,7 +127,7 @@
         .city-row .city-name { font-weight: bold; font-size: 14px; }
         .city-row .city-meta { font-size: 11px; color: #888; margin-top: 2px; }
         .city-row .city-badge { background: var(--snap-black); color: var(--snap-yellow); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: bold; white-space: nowrap; }
-        #map-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(46px + var(--sab)); }
+        #map-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(40px + var(--sab)); }
         /* Même taille de carte pour Memories et Localisation : ajustée à l'écran pour que carte + lecteur de frise ne dépassent pas. */
         #leaflet-map { width: 100%; flex: 1 1 auto; min-height: 160px; border-radius: 14px; background: #dceefb; }
         /* Carte + lecteur + infos grises occupent exactement l'espace visible ; la liste des codes postaux est en dessous (défilement). */
@@ -268,8 +271,8 @@
         .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2; }
         .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
         
-        #scroll-track { position: absolute; right: 0; top: calc(46px + env(safe-area-inset-top, 0px)); bottom: calc(46px + var(--sab)); width: 40px; z-index: 50; touch-action: none;}
-        #memories-scroll-area { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-top: calc(46px + env(safe-area-inset-top, 0px)); padding-bottom: calc(46px + var(--sab)); }
+        #scroll-track { position: absolute; right: 0; top: calc(46px + env(safe-area-inset-top, 0px)); bottom: calc(40px + var(--sab)); width: 40px; z-index: 50; touch-action: none;}
+        #memories-scroll-area { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-top: calc(46px + env(safe-area-inset-top, 0px)); padding-bottom: calc(40px + var(--sab)); }
         #scroll-thumb { position: absolute; right: 2px; top: 0; width: 8px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
 
         /* --- VISIONNEUSE --- */
@@ -641,14 +644,21 @@
             let c = el ? getComputedStyle(el).backgroundColor : '';
             if (!c || c === 'rgba(0, 0, 0, 0)') c = '#111111';
             const m = $('meta[name="theme-color"]'); if (m) m.setAttribute('content', c);
+            // Couleur de la bande sous le viewport (iOS) : bandeau du bas sur les listes, blanc en conversation
             let cb = c;
-            if (vis($('#main-ui'))) {
-                if (vis($('#viewer'))) cb = getComputedStyle($('#viewer')).backgroundColor || c;
-                else if ($('#view-conversation') && $('#view-conversation').classList.contains('active')) cb = '#FFFFFF';
-                else if (vis($('.bottom-nav'))) cb = getComputedStyle($('.bottom-nav')).backgroundColor || c;
-                else cb = '#FFFFFF';
+            if (vis($('#main-ui')) && !vis($('#viewer'))) {
+                if ($('#view-conversation') && $('#view-conversation').classList.contains('active')) cb = '#FFFFFF';
+                else {
+                    const nb = vis($('.bottom-nav')) ? getComputedStyle($('.bottom-nav')).backgroundColor : '';
+                    cb = (!nb || /rgba\(.*,\s*0\)$/.test(nb) || nb === 'transparent') ? '#111111' : nb;
+                }
             }
-            document.documentElement.style.background = `linear-gradient(to bottom, ${c} 0, ${c} 50%, ${cb} 50%, ${cb} 100%)`;
+            const root = document.documentElement.style;
+            root.backgroundColor = cb;
+            root.backgroundImage = `linear-gradient(${c}, ${c})`;
+            root.backgroundRepeat = 'no-repeat';
+            root.backgroundSize = '100% 160px';
+            root.backgroundPosition = 'top';
             document.body.style.backgroundColor = 'transparent';
         }
         window.addEventListener('DOMContentLoaded', () => {
