@@ -18,9 +18,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Avenir Next', -apple-system, sans-serif; }
         html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
-        html { height: 100%; overflow: hidden; overscroll-behavior: none; }
+        html { height: 100%; overflow: hidden; overscroll-behavior: none; background: #111111; }
         body {
-            background-color: #000; display: flex; justify-content: center; align-items: center;
+            background-color: #111111; display: flex; justify-content: center; align-items: center;
             position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
         }
 
@@ -30,6 +30,8 @@
 
         #app-container { width: 100%; max-width: 428px; height: 100%; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
         @media (min-width: 600px) and (min-height: 700px) { #app-container { height: min(90vh, 926px); border-radius: 40px; } }
+        /* Téléphone : l'app est collée aux 4 bords de l'écran (barres haut/bas comprises), sans dépendre de 100vh/100dvh */
+        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; height: auto; border-radius: 0; } }
 
         /* --- ÉCRAN DE CHARGEMENT PRINCIPAL --- */
         .welcome-logo { width: 96px; height: 96px; border-radius: 28px; background: var(--snap-yellow); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.12), inset 0 0 0 3px rgba(0,0,0,.08); }
@@ -3079,11 +3081,11 @@
                     if (info.category && info.category !== 'Friends') rows += FriendInfo.row('Statut', FriendInfo.categoryLabels[info.category] || info.category);
                 } else {
                     document.getElementById('fi-sub').innerText = isGroup ? 'Conversation de groupe' : ('@' + id + ' · pas dans tes amis');
-                    if (!isGroup) rows += FriendInfo.row('Infos', "Pas d'infos : ami supprimé ou pseudo changé. Fusionne-le avec son nouveau compte.");
+                    if (!isGroup) rows += FriendInfo.row('Infos', "Ami supprimé ou pseudo changé. Fusionne-le avec son nouveau compte.");
                 }
                 if (chatMeta && id !== 'account') {
                     const orig = RenameBox.originalName(chatMeta);
-                    if (State.modifications.renames[id] && orig && orig !== chatMeta.name) rows = FriendInfo.row('Ancien nom', Util.escapeHTML(orig)) + rows;
+                    if ((info || isGroup) && State.modifications.renames[id] && orig && orig !== chatMeta.name) rows = FriendInfo.row('Ancien nom', Util.escapeHTML(orig)) + rows;
                 }
                 if (chatMeta) {
                     if (isGroup) rows += FriendInfo.groupRows(chatMeta);
@@ -4022,6 +4024,26 @@
         };
 
         window.UI = UI; window.Viewer = Viewer; window.Chat = Chat; window.Memories = Memories; window.AudioEngine = AudioEngine; window.VideoDebugger = VideoDebugger;
+    
+        // --- DIAGNOSTIC ÉCRAN (ajouter ?debug à l'adresse) : affiche les mesures réelles de l'iPhone ---
+        (function () {
+            if (!/[?&#]debug/.test(location.href)) return;
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden;';
+            document.body.appendChild(probe);
+            const box = document.createElement('pre');
+            box.style.cssText = 'position:fixed;left:8px;right:8px;top:50%;transform:translateY(-50%);z-index:999999;background:rgba(0,0,0,.85);color:#0f0;font:12px/1.4 monospace;padding:10px;border-radius:10px;white-space:pre-wrap;pointer-events:none;';
+            document.body.appendChild(box);
+            const upd = () => {
+                const cs = getComputedStyle(probe), c = document.getElementById('app-container').getBoundingClientRect();
+                box.textContent = ['standalone: ' + (navigator.standalone === true || matchMedia('(display-mode: standalone)').matches),
+                    'screen: ' + screen.width + 'x' + screen.height, 'innerWidth/Height: ' + innerWidth + 'x' + innerHeight,
+                    'documentElement.clientHeight: ' + document.documentElement.clientHeight,
+                    'safe-area top/bottom: ' + cs.paddingTop + ' / ' + cs.paddingBottom,
+                    'app-container: top=' + Math.round(c.top) + ' bottom=' + Math.round(c.bottom) + ' h=' + Math.round(c.height)].join('\n');
+            };
+            upd(); setInterval(upd, 800);
+        })();
     </script>
 </body>
 </html>
