@@ -11,6 +11,21 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./Snapchat.png">
     <title>Snapchat Archive</title>
+    <script>
+        /* iOS (mode app installée + black-translucent) : le viewport CSS est raccourci de la hauteur de la barre d'état
+           (bug WebKit 236445) -> bottom:0 / 100vh s'arrêtent trop haut. On ancre donc l'app en haut et on lui donne
+           la hauteur réelle de l'écran (screen.height ne subit pas ce bug). */
+        (function () {
+            try {
+                if (navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
+                    var h = Math.max(screen.width, screen.height);
+                    var r = document.documentElement;
+                    r.classList.add('pwa-standalone');
+                    r.style.setProperty('--app-h', h + 'px');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <style>
         /* --- VARIABLES & RESET --- */
@@ -31,7 +46,8 @@
         #app-container { width: 100%; max-width: 428px; height: 100%; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
         @media (min-width: 600px) and (min-height: 700px) { #app-container { height: min(90vh, 926px); border-radius: 40px; } }
         /* Téléphone : l'app est collée aux 4 bords de l'écran (barres haut/bas comprises), sans dépendre de 100vh/100dvh */
-        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; height: auto; border-radius: 0; } }
+        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; height: auto; border-radius: 0; }
+            html.pwa-standalone #app-container { bottom: auto; height: var(--app-h); } }
 
         /* --- ÉCRAN DE CHARGEMENT PRINCIPAL --- */
         .welcome-logo { width: 96px; height: 96px; border-radius: 28px; background: var(--snap-yellow); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.12), inset 0 0 0 3px rgba(0,0,0,.08); }
@@ -4039,6 +4055,8 @@
                 box.textContent = ['standalone: ' + (navigator.standalone === true || matchMedia('(display-mode: standalone)').matches),
                     'screen: ' + screen.width + 'x' + screen.height, 'innerWidth/Height: ' + innerWidth + 'x' + innerHeight,
                     'documentElement.clientHeight: ' + document.documentElement.clientHeight,
+                    'visualViewport.h: ' + (window.visualViewport ? Math.round(visualViewport.height) : 'n/a'),
+                    '--app-h: ' + (document.documentElement.style.getPropertyValue('--app-h') || 'non appliqué (pas en mode app)'),
                     'safe-area top/bottom: ' + cs.paddingTop + ' / ' + cs.paddingBottom,
                     'app-container: top=' + Math.round(c.top) + ' bottom=' + Math.round(c.bottom) + ' h=' + Math.round(c.height)].join('\n');
             };
