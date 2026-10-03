@@ -1,16 +1,23 @@
-{
   "name": "Snap Archive",
   "short_name": "Snapchat",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#FFFC00",
-  "theme_color": "#FFFC00",
+  "orientation": "portrait",
+  "background_color": "#111111",
+  "theme_color": "#111111",
   "icons": [
     {
       "src": "./Snapchat.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./Snapchat.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
