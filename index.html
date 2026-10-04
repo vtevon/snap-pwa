@@ -53,14 +53,17 @@
         @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; height: auto; border-radius: 0; } }
 
         /* --- ÉCRAN DE CHARGEMENT PRINCIPAL --- */
-        .welcome-logo { width: 96px; height: 96px; border-radius: 28px; background: var(--snap-yellow); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.12), inset 0 0 0 3px rgba(0,0,0,.08); }
+        .welcome-logo { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; background: none; box-shadow: none; }
+        .welcome-logo svg { width: 84px; height: 84px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.14)); }
         .welcome-brand { font-size: 38px; font-weight: 900; letter-spacing: -1.2px; line-height: 1; color: #111; }
         .welcome-sub { font-size: 12px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: rgba(0,0,0,.55); margin: 6px 0 26px; }
-        #welcome-pills { display: none; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 320px; margin-top: 18px; }
-        #loading-screen:has(#setup-btn:not([style*="display: none"])) #welcome-pills { display: flex; }
-        .w-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.09); color: #111; font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 20px; }
         #loading-screen { flex: 1; background-color: var(--snap-yellow); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; text-align: center; z-index: 1000;}
         .spinner { border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--snap-black); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-top: 20px;}
+        /* Écran de connexion : barre de chargement (sous le texte « Sauvegarde… »), remplie selon l'avancement quand il est connu */
+        #loading-screen .spinner { border: none; border-radius: 4px; width: 200px; height: 6px; background: rgba(0,0,0,0.12); position: relative; overflow: hidden; animation: none; margin-top: 14px; }
+        #loading-screen .spinner::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; border-radius: 4px; background: var(--snap-black); animation: barSlide 1.2s ease-in-out infinite; }
+        #loading-screen .spinner.det::after { width: calc(var(--p, 0) * 100%); animation: none; transition: width .2s ease; }
+        @keyframes barSlide { 0% { left: -40%; } 100% { left: 100%; } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* --- UI PRINCIPALE --- */
@@ -92,17 +95,42 @@
 
         /* --- CHAT LISTE --- */
         #view-chat { display: flex; flex-direction: column; overflow: hidden; padding-top: 0; padding-bottom: 0; }
-        .sticky-chat-header { margin-top: calc(46px + env(safe-area-inset-top, 0px)); background: rgba(255, 255, 255, 0.98); z-index: 10; border-bottom: 1px solid var(--snap-gray); padding-bottom: 5px; padding-top: 2px; flex-shrink: 0; }
-        #chat-list-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(92px + var(--sab)); }
+        .sticky-chat-header { position: absolute; top: 0; left: 0; right: 0; margin-top: calc(46px + env(safe-area-inset-top, 0px)); background: transparent; border: none; padding: 0; z-index: 10; pointer-events: none; }
+        .sticky-chat-header > * { pointer-events: auto; }
+        /* Pastille jaune animée : elle glisse d'un onglet à l'autre avec un rebond, se gonfle pendant le trajet ; l'onglet touché fait un petit "pop" */
+        .chat-tabs { position: relative; }
+        .pill-ind { position: absolute; left: 0; top: 0; z-index: 0; border-radius: 999px; background: rgba(255,252,0,0.16); pointer-events: none; will-change: translate, width;
+                    transition: translate .5s cubic-bezier(.34,1.56,.64,1), width .5s cubic-bezier(.34,1.56,.64,1); }
+        .has-ind > .nav-item, .has-ind > .chat-tab, .has-ind > .conv-filter { position: relative; z-index: 1; }
+        .has-ind > .active { background: transparent !important; }
+        .search-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 10px 14px 6px; }
+        .search-row .chat-tabs { width: auto; max-width: none; margin: 0; height: 44px; padding: 0 4px; gap: 0; justify-content: flex-start; flex: none; }
+        .search-row .chat-tab { padding: 8px 14px; font-size: 13px; letter-spacing: .5px; }
+        .top-left { display: flex; justify-content: flex-start; }
+        .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+        .search-field { display: none; flex: 1; align-items: center; gap: 8px; }
+        .search-field .search-bar { flex: 1; min-width: 0; margin: 0; height: 44px; box-sizing: border-box; }
+        .search-row.searching { display: flex; }
+        .search-row.searching .chat-tabs, .search-row.searching .top-actions, .search-row.searching .top-left { display: none; }
+        .search-row.searching .search-field { display: flex; }
+        .sticky-chat-header .search-bar { background: rgba(242,242,242,0.92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+        /* Glyphes en jaune sur pastille noire : profil seul à gauche ; loupe + réglages dans la même pastille à droite */
+        .sticky-chat-header .top-glyph { width: 34px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; color: var(--snap-yellow); cursor: pointer; background: none; box-shadow: none; }
+        .sticky-chat-header .top-glyph svg { width: 22px; height: 22px; }
+        .sticky-chat-header .top-left { justify-self: start; }
+        .sticky-chat-header .top-left .top-glyph { width: 44px; border-radius: 50%; background: rgba(17,17,17,0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 6px 22px rgba(0,0,0,0.22); }
+        .sticky-chat-header .top-actions { justify-self: end; height: 44px; padding: 0 5px; gap: 0; background: rgba(17,17,17,0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 999px; box-shadow: 0 6px 22px rgba(0,0,0,0.22); }
+        .sticky-chat-header .search-field .top-glyph { width: 44px; border-radius: 50%; background: rgba(17,17,17,0.94); box-shadow: 0 6px 22px rgba(0,0,0,0.22); }
+        #chat-list-scroll-area { flex: 1; padding-top: calc(46px + env(safe-area-inset-top, 0px) + var(--hdr-h, 130px)); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(92px + var(--sab)); }
         #view-map { display: flex; flex-direction: column; overflow: hidden; }
         .city-hide { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #e5e5e5; color: #666; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; }
-        #view-map .chat-tabs { padding-bottom: 4px; }   /* moins d'espace entre les onglets et la carte */
+        #view-map .chat-tabs { width: fit-content; max-width: none; margin: 10px auto 4px; padding: 0 4px; gap: 0; justify-content: center; }
+        #view-map .chat-tab { padding: 9px 16px; }
         /* Code postal · ville et date du point : en surimpression tout en haut de la carte, au premier plan (visible avec la frise) */
-        #map-overlay-info { display: none; position: absolute; top: 10px; left: 20px; right: 20px; z-index: 1000; align-items: baseline; gap: 10px; background: rgba(255,255,255,0.94); color: var(--snap-black); border-radius: 12px; padding: 7px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); pointer-events: none; }
+        #map-overlay-info { display: none; align-items: baseline; gap: 10px; color: var(--snap-yellow); padding: 2px 4px 4px; margin-bottom: 4px; pointer-events: none; }
         #map-wrap.tl-on #map-overlay-info { display: flex; }
         #tl-place { flex: 1; min-width: 0; font-weight: 800; font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #tl-date { flex: none; font-weight: 800; font-size: 14px; line-height: 1.2; white-space: nowrap; }
-        #map-wrap.tl-on #leaflet-map .leaflet-top { margin-top: 38px; }   /* les boutons +/- passent sous le bandeau */
         /* Mode « ce memory seulement » : boutons en surimpression en haut de la carte */
         #map-focus-bar { display: none; position: absolute; top: 10px; left: 20px; right: 20px; z-index: 1000; gap: 8px; }
         #map-focus-bar .mf-btn { flex: 1; text-align: center; padding: 9px 6px; border-radius: 12px; font-weight: 800; font-size: 13px; line-height: 1.2; cursor: pointer; background: var(--snap-black); color: var(--snap-yellow); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
@@ -112,7 +140,7 @@
         #viewer-map-choice, #viewer-save-choice, #viewer-save-progress { display: none; position: absolute; inset: 0; z-index: 500; background: rgba(0,0,0,0.55); align-items: flex-end; justify-content: center; }
         #viewer-map-choice .vmc-sheet, #viewer-save-choice .vmc-sheet, #viewer-save-progress .vmc-sheet { width: 100%; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
         #viewer-map-choice .vmc-title { font-weight: 900; font-size: 15px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        #viewer-map-choice .friend-info-close, #viewer-save-choice .friend-info-close, #viewer-save-progress .friend-info-close { margin-top: 12px; }
+        #viewer-map-choice .friend-info-close, #viewer-save-choice .friend-info-close, #viewer-save-progress .friend-info-close { margin-top: 10px; }
         #map-cities-list { margin-top: 12px; display: none; }
         .tl-btn { width: 28px; height: 28px; flex: none; border-radius: 50%; border: none; background: var(--snap-black); color: var(--snap-yellow); font-size: 15px; font-weight: bold; line-height: 1; cursor: pointer; padding: 0; }
         #rotate-lock { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100000; background: var(--snap-yellow); color: var(--snap-black); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; gap: 10px; }
@@ -125,11 +153,16 @@
         .pc-cursor { border-radius: 50%; background: #ef4444; border: 3px solid #fff; box-sizing: border-box; box-shadow: 0 0 0 1px rgba(0,0,0,.3); pointer-events: none; }
         .tl-speed { width: auto; min-width: 34px; padding: 0 8px; border-radius: 14px; font-size: 12px; }
         #tl-range { accent-color: #111; height: 22px; margin: 0; }
+        #map-wrap #map-timeline { position: absolute; top: 10px; left: 20px; right: 20px; z-index: 1000; margin: 0 !important; padding: 6px 12px 5px; background: rgba(17,17,17,0.94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-radius: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); color: var(--snap-yellow); }
+        #map-timeline .tl-btn { background: rgba(255,252,0,0.16); color: var(--snap-yellow); }
+        #map-timeline #tl-range { accent-color: #FFFC00; }
+        #map-timeline #tl-min, #map-timeline #tl-max { color: var(--snap-yellow); opacity: .85; }
+        #map-wrap.tl-on #leaflet-map .leaflet-top { margin-top: 100px; }   /* les boutons +/- passent sous lieu/date + lecteur */
         .city-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin-bottom: 6px; background: var(--snap-gray); border-radius: 12px; cursor: pointer; }
         .city-row .city-name { font-weight: bold; font-size: 14px; }
         .city-row .city-meta { font-size: 11px; color: #888; margin-top: 2px; }
         .city-row .city-badge { background: var(--snap-black); color: var(--snap-yellow); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: bold; white-space: nowrap; }
-        #map-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(92px + var(--sab)); }
+        #map-scroll-area { flex: 1; padding-top: calc(46px + env(safe-area-inset-top, 0px) + var(--hdr-h, 68px)); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(92px + var(--sab)); }
         /* Même taille de carte pour Memories et Localisation : ajustée à l'écran pour que carte + lecteur de frise ne dépassent pas. */
         #leaflet-map { width: 100%; flex: 1 1 auto; min-height: 160px; border-radius: 14px; background: #dceefb; }
         /* Carte + lecteur + infos grises occupent exactement l'espace visible ; la liste des codes postaux est en dessous (défilement). */
@@ -165,6 +198,17 @@
         .sticky-close .sheet-footer .friend-info-close { pointer-events: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
         .friend-info-merge-btn { text-align: center; margin-top: 14px; font-weight: 700; font-size: 13px; color: var(--snap-black); background: var(--snap-gray); padding: 12px; border-radius: 20px; cursor: pointer; }
         .friend-info-merge-btn:active { background: #e2e2e2; }
+        /* --- Compte / Réglages : tout est en pastilles (même forme que Renommer / Masquer) ; le contenu n'apparaît qu'au clic --- */
+        .sheet-pill { position: relative; display: flex; align-items: center; justify-content: center; margin-top: 10px; padding: 14px 46px; border-radius: 999px; background: var(--snap-gray); color: var(--snap-black); font-weight: 800; font-size: 14px; text-align: center; cursor: pointer; user-select: none; transition: transform .15s ease, background-color .2s ease; -webkit-tap-highlight-color: transparent; }
+        .sheet-pill:active { background: #e2e2e2; transform: scale(.98); }
+        .sheet-pill .sub { color: #999; font-weight: 600; font-size: 12px; }
+        .sheet-pill .chev { position: absolute; right: 18px; color: #999; }
+        .sheet-group { margin: 8px 0 6px 8px; padding-left: 12px; border-left: 3px solid var(--snap-yellow); }
+        .sheet-pill.sub { background: var(--snap-white); box-shadow: inset 0 0 0 2px var(--snap-gray); font-size: 13px; font-weight: 700; padding: 12px 46px; margin-top: 8px; }
+        .sheet-pill.sub:active { background: var(--snap-gray); }
+        .sheet-group > .sheet-pill:first-child { margin-top: 0; }
+        .sheet-group .settings-sublist { margin: 6px 0 4px; }
+        .sheet-group .settings-danger { margin-top: 10px; border-radius: 999px; padding: 13px; }
         #settings-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 1800; display: none; justify-content: center; align-items: flex-end; }
         #settings-sheet { width: 100%; max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: var(--snap-white); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 26px 24px 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.25); }
         #settings-sheet h3 { font-size: 18px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -209,14 +253,17 @@
         #merge-picker-list { overflow-y: auto; flex: 1; }
         .merge-picker-row { padding: 12px 6px; border-bottom: 1px solid var(--snap-gray); font-weight: 700; cursor: pointer; }
         .merge-picker-row:active { background: var(--snap-gray); }
-        .friend-info-close.secondary { background: var(--snap-gray); color: var(--snap-black); margin-top: 8px; }
-        .chat-tabs { display: flex; padding: 10px 20px; gap: 10px; }
-        .chat-tab { flex: 1; text-align: center; padding: 8px; border-radius: 15px; background: var(--snap-gray); font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .chat-tab.active { background: var(--snap-black); color: var(--snap-yellow); }
+        .friend-info-close.secondary { background: var(--snap-gray); color: var(--snap-black); }
+        .chat-tabs { display: flex; justify-content: space-around; align-items: center; width: calc(100% - 56px); max-width: 340px; height: 48px; padding: 0 8px; margin: 10px auto; background: rgba(17,17,17,0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 999px; box-shadow: 0 6px 22px rgba(0,0,0,0.22); }
+        .chat-tab { flex: none; text-align: center; padding: 9px 12px; border-radius: 999px; background: transparent; color: #555; font-size: 14px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1.2; cursor: pointer; transition: 0.2s; }
+        .chat-tab.active { background: rgba(255,252,0,0.14); color: var(--snap-yellow); }
         .chat-list { padding: 0 10px; padding-bottom: 20px;}
         .chat-item { display: flex; align-items: center; padding: 15px 10px; border-bottom: 1px solid var(--snap-gray); cursor: pointer; }
         .chat-name { font-weight: bold; font-size: 18px; color: var(--snap-black); }
         .chat-meta { color: #888; font-size: 14px; font-weight: bold; }
+        .chat-meta.stack { display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 9px; font-size: 13px; line-height: 1.2; font-weight: 800; flex: none; white-space: nowrap; }
+        .cm-line { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
+        .cm-line.zero { opacity: .32; }
         .search-bar { font-family: inherit; font-size: 15px; font-weight: 500; color: var(--snap-black); padding: 10px 16px; border: none; border-radius: 20px; background: var(--snap-gray); outline: none; -webkit-appearance: none; }
         .search-bar::placeholder { color: #999; font-weight: 500; }
         .search-bar:focus { background: #e8e8e8; }
@@ -226,23 +273,35 @@
         .back-btn { font-size: 26px; margin-right: 15px; cursor: pointer; color: var(--snap-yellow); font-weight: 900; }
         #conv-title { position: absolute; left: 50%; transform: translateX(-50%); max-width: 60%; color: var(--snap-yellow); font-weight: 900; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sort-btn { font-size: 24px; cursor: pointer; margin-left: 10px; padding: 8px; background: transparent; display: flex; justify-content: center; align-items: center; color: var(--snap-yellow);}
-        
-        .conv-filters { display: flex; padding: 10px 20px; gap: 10px; border-bottom: 1px solid var(--snap-gray); flex-shrink: 0;}
-        .conv-filter { flex: 1; background: var(--snap-gray); border-radius: 15px; padding: 8px; font-weight: bold; color: #888; cursor: pointer; transition: 0.2s; text-align: center; line-height: 1.2;}
+        .conv-filters { position: absolute; top: calc(46px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 20; margin: 10px 0; display: flex; justify-content: space-around; align-items: center; width: calc(100% - 56px); max-width: 340px; height: 48px; padding: 0 8px; background: rgba(17,17,17,0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 999px; box-shadow: 0 6px 22px rgba(0,0,0,0.22); }
+        .conv-filter { flex: none; text-align: center; padding: 9px 12px; border-radius: 999px; background: transparent; color: #555; font-size: 14px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1.2; cursor: pointer; transition: 0.2s; }
         .conv-filter span { font-size: 11px; font-weight: normal; color: #999;}
-        .conv-filter.active { background: var(--snap-black); color: var(--snap-yellow); }
+        .conv-filter.active { background: rgba(255,252,0,0.14); color: var(--snap-yellow); }
         .conv-filter.active span { color: var(--snap-yellow); font-weight: bold; }
         
         #chat-loading-overlay { position: absolute; top: calc(124px + env(safe-area-inset-top, 0px)); left: 0; width: 100%; height: calc(100% - 124px - env(safe-area-inset-top, 0px)); background: rgba(255,255,255,0.8); z-index: 50; display: none; justify-content: center; align-items: center; flex-direction: column; }
         #chat-scroll-loader { text-align: center; padding: 10px; color: var(--snap-black); font-size: 20px; display: none; font-weight: bold;}
         
-        #conv-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: block; position: relative; }
+        #view-conversation:has(.conv-filters[style*="none"]) #conv-scroll-area { padding-top: 0; }
+        #conv-scroll-area { flex: 1; padding-top: 68px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: block; position: relative; }
         
         .text-container { display: flex; flex-direction: column; padding: 15px 10px; width: 100%; box-sizing: border-box;}
         
         .msg-row { display: flex; flex-direction: column; width: 100%; margin-bottom: 15px; border-radius: 10px; transition: background 0.5s;}
         .msg-row.me { align-items: flex-end; }
         .msg-row.them { align-items: flex-start; }
+        .link-card { display: block; width: min(250px, 68vw); margin-top: 8px; border-radius: 14px; overflow: hidden; background: rgba(255,255,255,0.78); border: 1px solid rgba(0,0,0,0.07); color: var(--snap-black); text-decoration: none !important; }
+        .msg-bubble > .link-card:first-child { margin-top: 0; }
+        .msg-bubble .hit { font-weight: 900; }
+        .link-card .lc-img { display: none; width: 100%; height: 118px; background: #e4e4e4 center / cover no-repeat; }
+        .link-card.has-img .lc-img { display: block; }
+        .link-card .lc-body { padding: 8px 11px 9px; }
+        .link-card .lc-domain { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; color: #777; }
+        .link-card .lc-ico { display: inline-flex; align-items: center; flex: none; }
+        .link-card .lc-host { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .link-card .lc-title { font-size: 13.5px; font-weight: 800; line-height: 1.25; margin-top: 2px; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .link-card .lc-desc { font-size: 12px; font-weight: 500; color: #666; line-height: 1.25; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .link-card .lc-desc:empty { display: none; }
         .msg-bubble { padding: 9px 16px; max-width: 85%; font-weight: 500; word-wrap: break-word; }
         .msg-row.them .msg-bubble { background: var(--snap-gray); border-radius: 20px 20px 20px 4px; margin-left: 10px; }
         .msg-row.me .msg-bubble { background: var(--snap-yellow-soft); border-radius: 20px 20px 4px 20px; margin-right: 10px; }
@@ -279,7 +338,7 @@
 
         /* --- VISIONNEUSE --- */
         #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; }
-        #viewer-media { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; padding-top: 80px; padding-bottom: 80px; }
+        #viewer-media { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; padding-top: 88px; padding-bottom: 80px; }
         #viewer-media img, #viewer-media video { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
         #viewer-zoomable { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; touch-action: none; }
         #viewer-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; z-index: 201;}
@@ -341,6 +400,102 @@
             #leaflet-map .pc-cursor { transition: transform .15s linear; }
         }
         @media (prefers-reduced-motion: reduce) { img.lazy-media { opacity: 1; } }
+    
+        /* --- FEUILLES DU BAS : fond transparent derrière, tout flotte en pastilles --- */
+        #friend-info-sheet, #settings-sheet { background: transparent; box-shadow: none; max-height: 100%; padding: calc(env(safe-area-inset-top, 0px) + 18px) 14px 0; }
+        #settings-sheet.page-mode { height: 100%; display: flex; flex-direction: column; }
+        #settings-sheet.page-mode #settings-title { margin-top: auto; }
+        #settings-sheet.page-mode #settings-body { flex: 0 0 auto; }
+        #settings-sheet.page-mode .sheet-footer { margin-top: 0; }
+        .conv-filters.two { width: fit-content; max-width: none; justify-content: center; padding: 0 4px; gap: 0; }
+        .conv-filters.two .conv-filter { padding: 9px 16px; }
+        @media (prefers-reduced-motion: no-preference) {
+            @keyframes blurIn { from { background-color: rgba(255,255,255,0); -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px); } to { background-color: rgba(255,255,255,0.6); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); } }
+            #friend-info-overlay, #settings-overlay { animation: blurIn .45s ease-out; }
+            /* Sortie : le flou se retire et la feuille redescend */
+            @keyframes blurOut { from { background-color: rgba(255,255,255,0.6); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); } to { background-color: rgba(255,255,255,0); -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px); } }
+            @keyframes sheetDown { from { transform: none; } to { transform: translateY(100%); } }
+            #friend-info-overlay.closing, #settings-overlay.closing { animation: blurOut .3s ease-in forwards; pointer-events: none; }
+            #friend-info-overlay.closing #friend-info-sheet, #settings-overlay.closing #settings-sheet { animation: sheetDown .3s ease-in forwards; }
+        }
+        /* Liste ouverte seule : si elle ne remplit pas la page, elle est collée en bas */
+        #friend-info-sheet.page-mode { height: 100%; display: flex; flex-direction: column; }
+        #friend-info-sheet.page-mode .fi-card { margin-top: auto; flex: 0 0 auto; background: transparent; box-shadow: none; padding: 0; }
+        #friend-info-sheet.page-mode #fi-name { text-align: center; }
+        #friend-info-sheet.page-mode .settings-sublist { background: var(--snap-white); border-radius: 22px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); margin: 0; }
+        #friend-info-overlay, #settings-overlay { background: rgba(255,255,255,0.6); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+        #settings-sheet h3 { color: var(--snap-black); text-align: center; }
+
+        .sheet-footer { margin: 0; padding: 14px 0 calc(14px + env(safe-area-inset-bottom, 0px)); }
+        /* Infos ami / groupe / compte : une grande pastille blanche flottante */
+        .fi-card { background: var(--snap-white); border-radius: 28px; padding: 20px 20px 10px; box-shadow: 0 6px 22px rgba(0,0,0,0.22); }
+        .friend-info-merge-btn { background: var(--snap-white); border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+        .friend-info-merge-btn:active { background: #ececec; }
+        .friend-info-close { font-size: 13px; }
+        #settings-foot-actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+        #settings-foot-actions:empty { display: none; }
+        #settings-foot-actions .friend-info-merge-btn { margin-top: 0; }
+        .sheet-pill { background: var(--snap-white); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+        .sheet-pill.sub { box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+        .settings-sublist { background: var(--snap-white); border-radius: 22px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+        .settings-sublist .settings-row .sub { color: #888; }
+        .fi-card .sheet-pill { background: var(--snap-gray); box-shadow: none; }
+        .fi-card .sheet-pill.sub { background: var(--snap-white); box-shadow: inset 0 0 0 2px var(--snap-gray); }
+        .fi-card .settings-sublist { background: #E8E8EA; border-radius: 12px; box-shadow: none; }
+        .fi-card .settings-sublist .settings-row .sub { color: #707070; }
+        /* Renommer / fusion : pastille blanche flottante, détachée des bords */
+        #rename-sheet, #merge-picker-sheet { width: calc(100% - 24px); margin: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); border-radius: 28px; padding-bottom: 22px; }
+        /* Choix carte / calque / enregistrement : seules les pastilles sont visibles */
+        #viewer-map-choice .vmc-sheet, #viewer-save-choice .vmc-sheet, #viewer-save-progress .vmc-sheet { background: transparent; border-radius: 0; padding: 22px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
+        #vsp-text { color: #fff; }
+        #viewer-date-choice { display: none; position: absolute; inset: 0; z-index: 500; background: rgba(0,0,0,0.55); align-items: flex-end; justify-content: center; }
+        #viewer-date-choice .vmc-sheet { width: 100%; background: transparent; padding: 22px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
+        #viewer-date-choice .friend-info-close { margin-top: 10px; }
+        #memo-order-overlay { display: none; position: absolute; inset: 0; z-index: 2200; flex-direction: column; background: #fff; padding-top: calc(env(safe-area-inset-top, 0px) + 14px); }
+        #mo-head { padding: 6px 20px 10px; text-align: center; }
+        #mo-head h3 { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; }
+        #mo-sub { font-size: 12px; color: #777; font-weight: 600; margin-top: 4px; line-height: 1.35; }
+        #mo-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 6px 14px; }
+        #mo-foot { padding: 4px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
+        #mo-foot > * { margin-top: 10px; }
+        .mo-row { display: flex; align-items: center; gap: 12px; background: var(--snap-white); border-radius: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); padding: 10px 10px 10px 16px; margin-bottom: 10px; border: 3px solid transparent; }
+        .mo-row.over { border-color: var(--snap-yellow); }
+        .mo-info { flex: 1; min-width: 0; }
+        .mo-info b { display: block; font-size: 14px; font-weight: 800; }
+        .mo-info span { display: block; font-size: 12px; color: #888; font-weight: 600; margin-top: 2px; }
+        .mo-cell { flex: none; text-align: center; font-size: 10px; font-weight: 700; color: #888; width: 64px; }
+        .mo-thumb { position: relative; width: 64px; height: 114px; border-radius: 12px; overflow: hidden; background: var(--snap-gray); touch-action: none; cursor: grab; margin-bottom: 3px; }
+        .mo-thumb.sel { outline: 3px solid var(--snap-black); }
+        #mo-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+        .mo-row { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 10px; margin: 0; }
+        .mo-info { flex: none; text-align: center; }
+        .mo-cell { width: auto; }
+        .mo-thumb { width: 100%; height: auto; aspect-ratio: 9 / 16; margin: 0; }
+        .mo-row { padding: 6px; border-radius: 20px; }
+        .mo-thumb { border-radius: 14px; }
+        .mo-tag { position: absolute; left: 6px; bottom: 6px; z-index: 6; display: flex; align-items: center; gap: 5px; pointer-events: none; }
+        .mo-tag .mo-num { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; box-sizing: border-box; border-radius: 11px; background: var(--snap-black); color: var(--snap-yellow); font-size: 12px; font-weight: 900; }
+        .mo-tag .mo-time { height: 22px; padding: 0 7px; box-sizing: border-box; border-radius: 11px; display: inline-flex; align-items: center; background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; font-weight: 800; }
+        .sticky-close .sheet-footer .friend-info-merge-btn { pointer-events: auto; }
+        .mo-ghost { position: fixed; z-index: 3000; pointer-events: none; opacity: .88; box-shadow: 0 8px 24px rgba(0,0,0,0.35); margin: 0; }
+        .sc-grid { display: inline-grid; grid-template-columns: 60px 52px 46px; column-gap: 6px; }
+        .sc-cell { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
+        .sc-cell.zero { opacity: .32; }
+        .sheet-pill.disabled { opacity: .45; cursor: default; }
+        .sheet-pill.disabled:active { background: var(--snap-white); transform: none; }
+
+        /* --- PASTILLES : même police, même taille, même hauteur et même espacement partout --- */
+        :root { --pill-gap: 10px; --pill-font-size: 13px; --pill-font-weight: 700; --pill-pad-y: 13px; }
+        .friend-info-close, .friend-info-merge-btn, .sheet-pill, .sheet-pill.sub, .settings-danger, #map-focus-bar .mf-btn {
+            font-family: inherit; font-size: var(--pill-font-size); font-weight: var(--pill-font-weight); letter-spacing: 0; line-height: 1.3;
+        }
+        .friend-info-close, .friend-info-merge-btn, .sheet-pill, .sheet-pill.sub, .settings-danger { margin-top: var(--pill-gap); padding-top: var(--pill-pad-y); padding-bottom: var(--pill-pad-y); border-radius: 999px; }
+        .sheet-pill .sub { font-size: var(--pill-font-size); font-weight: var(--pill-font-weight); }
+        .sheet-group > .sheet-pill:first-child { margin-top: 0; }
+        .sheet-footer, .sticky-close .sheet-footer { padding-top: var(--pill-gap); }
+        #settings-foot-actions { gap: var(--pill-gap); margin-bottom: var(--pill-gap); }
+        #settings-foot-actions .friend-info-merge-btn { margin-top: 0; }
+        .rename-actions { gap: var(--pill-gap); }
     </style>
 </head>
 <body>
@@ -357,9 +512,8 @@
             <div class="welcome-sub">Archive</div>
             <h2 style="font-weight: 900;">Connexion...</h2>
             <p>Ouverture de la base de données locale.</p>
-            <div class="spinner"></div>
-            <div id="welcome-pills"><span class="w-pill"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"></polyline></svg> Sur ton appareil</span><span class="w-pill"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"></polyline></svg> Hors ligne</span><span class="w-pill"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"></polyline></svg> Rien n'est envoyé</span></div>
             <p id="init-log" style="margin-top: 10px; font-weight: bold; font-size: 14px;"></p>
+            <div class="spinner"></div>
             
             <button type="button" id="setup-btn" class="upload-btn" onclick="document.getElementById('folder-input').click()" style="display:none; background: var(--snap-black); color: var(--snap-white); font-weight: bold; padding: 15px 30px; border-radius: 30px; margin-top: 30px; cursor: pointer; border: none;">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:8px;"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Importer mon archive
@@ -376,15 +530,21 @@
             <!-- VUE CHAT -->
             <div id="view-chat" class="view active">
                 <div class="sticky-chat-header">
-                    <div class="chat-tabs">
-                        <div class="chat-tab active" id="tab-amis" onclick="Chat.switchTab('amis')">Amis</div>
-                        <div class="chat-tab" id="tab-groupes" onclick="Chat.switchTab('groupes')">Groupes</div>
-                    </div>
-                    <!-- Barre de recherche avec le bouton Emoji Réglages à droite -->
-                    <div style="display: flex; align-items: center; padding: 0 20px 10px; gap: 15px;">
-                        <div class="top-glyph" onclick="AccountInfo.open()" title="Mon profil" style="cursor: pointer; color: var(--snap-black); display: flex; align-items: center;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg></div>
-                        <input type="text" class="search-bar" id="chat-search" placeholder="Nom, mot, date (ex: 2015-05-29)..." oninput="Chat.onSearchInput()" style="margin: 0; flex: 1;">
-                        <div class="top-glyph" onclick="Settings.open()" title="Réglages" style="cursor: pointer; padding-bottom: 2px; color: var(--snap-black); display: flex; align-items: center;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                    <!-- Une seule ligne : pastille AMIS / GROUPES + profil, loupe (recherche), réglages -->
+                    <div class="search-row" id="top-row">
+                        <div class="top-left"><div class="top-glyph" onclick="AccountInfo.page=null; AccountInfo.open()" title="Mon profil"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg></div></div>
+                        <div class="chat-tabs">
+                            <div class="chat-tab active" id="tab-amis" onclick="Chat.switchTab('amis')">Amis</div>
+                            <div class="chat-tab" id="tab-groupes" onclick="Chat.switchTab('groupes')">Groupes</div>
+                        </div>
+                        <div class="top-actions">
+                            <div class="top-glyph" onclick="Chat.openSearch()" title="Rechercher"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.2" y2="16.2"></line></svg></div>
+                            <div class="top-glyph" onclick="Settings.open()" title="Réglages"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                        </div>
+                        <div class="search-field">
+                            <input type="text" class="search-bar" id="chat-search" placeholder="Nom, mot, date (ex: 2015-05-29)..." oninput="Chat.onSearchInput()">
+                            <div class="top-glyph" onclick="Chat.closeSearch()" title="Fermer la recherche"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+                        </div>
                     </div>
                 </div>
                 <div id="chat-list-scroll-area">
@@ -400,9 +560,9 @@
                     <div class="sort-btn" id="conv-sort-btn" onclick="Chat.toggleSort()">▾</div>
                 </div>
                 <div class="conv-filters">
-                    <div class="conv-filter active" id="f-tout" onclick="Chat.setFilter('tout')">Tout<br><span id="c-count-tout">(0)</span></div>
-                    <div class="conv-filter" id="f-medias" onclick="Chat.setFilter('medias')">Médias<br><span id="c-count-med">(0)</span></div>
-                    <div class="conv-filter" id="f-audios" onclick="Chat.setFilter('audios')">Audios<br><span id="c-count-aud">(0)</span></div>
+                    <div class="conv-filter active" id="f-tout" onclick="Chat.setFilter('tout')">Tout</div>
+                    <div class="conv-filter" id="f-medias" onclick="Chat.setFilter('medias')">Médias</div>
+                    <div class="conv-filter" id="f-audios" onclick="Chat.setFilter('audios')">Audios</div>
                 </div>
                 
                 <div id="chat-loading-overlay">
@@ -435,9 +595,9 @@
                 <div id="map-scroll-area">
                     <div id="map-wrap" style="padding: 2px 12px 12px; position: relative;">
                         <div id="leaflet-map"></div>
-                        <div id="map-overlay-info"><div id="tl-place">—</div><div id="tl-date">—</div></div>
                         <div id="map-focus-bar"><div class="mf-btn" onclick="MapView.focusBack()">‹ Retour au memory</div><div class="mf-btn alt" onclick="MapView.focusAll()">Voir tous les points</div></div>
                         <div id="map-timeline" style="display:none; margin-top: 6px;">
+                            <div id="map-overlay-info"><div id="tl-place">—</div><div id="tl-date">—</div></div>
                             <div style="display:flex; align-items:center; gap:6px;">
                                 <button id="tl-prev" class="tl-btn" aria-label="Précédent">‹</button>
                                 <button id="tl-play" class="tl-btn" aria-label="Lecture/Pause"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
@@ -483,6 +643,12 @@
                         <div class="friend-info-close" onclick="Viewer.cancelMerge()">Fermer</div>
                     </div>
                 </div>
+                <div id="viewer-date-choice" onclick="if(event.target===this) Viewer.closeDateChoice()">
+                    <div class="vmc-sheet">
+                        <div class="friend-info-merge-btn" style="margin-top:0" onclick="MemoOrder.open()">Modifier l'ordre des memories pour cette date</div>
+                        <div class="friend-info-close" onclick="Viewer.closeDateChoice()">Fermer</div>
+                    </div>
+                </div>
                 <div id="viewer-map-choice" onclick="if(event.target===this) Viewer.closeMapChoice()">
                     <div class="vmc-sheet">
                         <div class="friend-info-merge-btn" style="margin-top:0" onclick="Viewer.showOnMap()">Carte Memories</div>
@@ -492,23 +658,34 @@
                 </div>
             </div>
 
+            <!-- ORDRE DES MEMORIES D'UNE DATE -->
+            <div id="memo-order-overlay">
+                <div id="mo-head"><h3>Ordre des memories</h3><div id="mo-sub"></div></div>
+                <div id="mo-list"></div>
+                <div id="mo-foot">
+                    <div class="friend-info-merge-btn" onclick="MemoOrder.save()">Enregistrer</div>
+                    <div class="friend-info-merge-btn" onclick="MemoOrder.reset()">Rétablir l'ordre par défaut</div>
+                    <div class="friend-info-close" onclick="MemoOrder.close()">Fermer</div>
+                </div>
+            </div>
+
             <!-- PANNEAU INFOS AMI / GROUPE -->
             <div id="friend-info-overlay" onclick="if(event.target===this) FriendInfo.close()">
-                <div id="friend-info-sheet">
-                    <h3 id="fi-name">Nom</h3>
+                <div id="friend-info-sheet" onclick="if(event.target===this) FriendInfo.close()">
+                    <div class="fi-card"><h3 id="fi-name">Nom</h3>
                     <div id="fi-sub" style="color:#888; font-weight:600; font-size:13px; margin-bottom:14px;"></div>
-                    <div id="fi-rows"></div>
+                    <div id="fi-rows"></div></div>
                     <div id="fi-merge-action"></div>
-                    <div class="sheet-footer"><div class="friend-info-close" onclick="FriendInfo.close()">Fermer</div></div>
+                    <div class="sheet-footer"><div class="friend-info-close" id="fi-close-btn" onclick="FriendInfo.onBottom()">Fermer</div></div>
                 </div>
             </div>
 
             <!-- RÉGLAGES -->
             <div id="settings-overlay" onclick="if(event.target===this) Settings.close()">
-                <div id="settings-sheet" class="sticky-close">
+                <div id="settings-sheet" class="sticky-close" onclick="if(event.target===this) Settings.close()">
                     <h3 id="settings-title">Réglages</h3>
                     <div id="settings-body"></div>
-                    <div class="sheet-footer"><div class="friend-info-close" onclick="Settings.close()">Fermer</div></div>
+                    <div class="sheet-footer"><div id="settings-foot-actions"></div><div class="friend-info-close" id="settings-close-btn" onclick="Settings.onBottom()">Fermer</div></div>
                 </div>
             </div>
 
@@ -662,6 +839,52 @@
             root.backgroundPosition = 'top';
             document.body.style.backgroundColor = 'transparent';
         }
+        // Hauteur réelle de l'en-tête flottant -> --hdr-h (la liste commence juste en dessous et défile derrière les pastilles)
+        function fitHeaders() { document.querySelectorAll('.sticky-chat-header').forEach(h => { if (h.parentElement && h.offsetHeight) h.parentElement.style.setProperty('--hdr-h', h.offsetHeight + 'px'); }); }
+
+        // --- Pastilles animées (barre du bas, AMIS/GROUPES, MEMORIES/LOCALISATION, TOUT/MÉDIAS/AUDIOS) ---
+        const PillAnim = {
+            ITEM: '.nav-item, .chat-tab, .conv-filter',
+            setup: (box) => {
+                if (box._pill) return;
+                const ind = document.createElement('div'); ind.className = 'pill-ind';
+                box.insertBefore(ind, box.firstChild); box.classList.add('has-ind');
+                const st = box._pill = { ind, placed: false, x: 0 };
+                const active = () => Array.from(box.children).find(el => el !== ind && el.classList.contains('active'));
+                const place = (animate) => {
+                    const act = active();
+                    if (!act || !act.offsetWidth) { ind.style.opacity = '0'; st.placed = false; return; }
+                    const instant = !animate || !st.placed;
+                    const x = act.offsetLeft;
+                    if (instant) ind.style.transition = 'none';
+                    ind.style.opacity = '1';
+                    ind.style.top = act.offsetTop + 'px'; ind.style.height = act.offsetHeight + 'px';
+                    ind.style.width = act.offsetWidth + 'px'; ind.style.translate = x + 'px 0';
+                    if (instant) { void ind.offsetWidth; ind.style.transition = ''; }
+                    else if (x !== st.x && ind.animate) ind.animate([{ scale: '1 1' }, { scale: '1.14 1.28', offset: .4 }, { scale: '1 1' }], { duration: 480, easing: 'ease-out' });
+                    st.x = x; st.placed = true;
+                };
+                new MutationObserver((recs) => {
+                    const rel = recs.filter(r => r.target !== ind);
+                    if (!rel.length) return;
+                    place(rel.some(r => r.attributeName === 'class' && r.target.parentElement === box));
+                }).observe(box, { attributes: true, attributeFilter: ['class', 'style'], subtree: true });
+                if (window.ResizeObserver) new ResizeObserver(() => place(false)).observe(box);
+                window.addEventListener('resize', () => place(false));
+                window.addEventListener('load', () => place(false));
+                box.addEventListener('click', (e) => {
+                    const it = e.target.closest(PillAnim.ITEM);
+                    if (it && it.parentElement === box && it.animate) it.animate([{ transform: 'scale(1)' }, { transform: 'scale(.86)', offset: .22 }, { transform: 'scale(1.18)', offset: .58 }, { transform: 'scale(.97)', offset: .8 }, { transform: 'scale(1)' }], { duration: 460, easing: 'ease-out' });
+                });
+                place(false);
+            },
+            init: () => document.querySelectorAll('.bottom-nav, .chat-tabs, .conv-filters').forEach(PillAnim.setup)
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', PillAnim.init); else PillAnim.init();
+        window.addEventListener('DOMContentLoaded', () => {
+            fitHeaders(); window.addEventListener('resize', fitHeaders); window.addEventListener('load', fitHeaders);
+            if (window.ResizeObserver) { const ro = new ResizeObserver(fitHeaders); document.querySelectorAll('.sticky-chat-header').forEach(h => ro.observe(h)); }
+        });
         window.addEventListener('DOMContentLoaded', () => {
             const mo = new MutationObserver(syncChromeColor);
             ['#loading-screen', '#main-ui', '#viewer', '#view-conversation'].forEach(q => { const e = document.querySelector(q); if (e) mo.observe(e, { attributes: true, attributeFilter: ['style', 'class'] }); });
@@ -1069,7 +1292,7 @@
         // et n'enregistre friends.json qu'en dernier : un import interrompu ne laisse donc jamais une app à moitié remplie.
         async function importFolder(files, log) {
             const report = { date: new Date().toISOString(), found: [], missing: [], invalid: [], notes: [],
-                             counts: { total: 0, saved: 0, failed: 0, skipped: 0, memories: 0, chatMedia: 0 } };
+                             counts: { total: 0, saved: 0, failed: 0, skipped: 0, memories: 0, chatMedia: 0, savedMemories: 0, savedChat: 0 } };
             const relPath = (f) => (f.webkitRelativePath || f.name || '').toLowerCase();
 
             const byKey = {};
@@ -1139,7 +1362,8 @@
                         base = base.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
                         cleanKey = ext ? `${base}.${ext}` : base;
                     } else report.counts.memories++;
-                    mediaToSave.push({ key: cleanKey, file });
+                    const isChat = path.includes('/chat_media/');
+                    mediaToSave.push({ key: cleanKey, file, chat: isChat });
                 }
                 if (i % 500 === 0) { log(`Analyse... ${i}/${files.length}`); await new Promise(r => setTimeout(r, 0)); }
             }
@@ -1159,7 +1383,8 @@
                     hiddenFriends: uniq(prev.hiddenFriends, modsToSave.hiddenFriends),
                     hiddenGroups: uniq(prev.hiddenGroups, modsToSave.hiddenGroups),
                     hiddenPostals: uniq(prev.hiddenPostals, modsToSave.hiddenPostals),
-                    shownPostals: uniq(prev.shownPostals, modsToSave.shownPostals) };
+                    shownPostals: uniq(prev.shownPostals, modsToSave.shownPostals),
+                    memoryOrder: { ...(prev.memoryOrder || {}), ...(modsToSave.memoryOrder || {}) } };
                 await saveJSON('modifications', merged);
                 report.mods = { ok: true, merges: Object.keys(modsToSave.merges || {}).length, renames: Object.keys(modsToSave.renames || {}).length,
                                 hidden: (modsToSave.hiddenFriends || []).length + (modsToSave.hiddenGroups || []).length + (modsToSave.hiddenPostals || []).length };
@@ -1172,7 +1397,7 @@
             await saveJSON('friends', friends);
             let quota = false;
             for (let i = 0; i < mediaToSave.length; i++) {
-                try { await saveMedia(mediaToSave[i].key, mediaToSave[i].file); report.counts.saved++; }
+                try { await saveMedia(mediaToSave[i].key, mediaToSave[i].file); report.counts.saved++; report.counts[mediaToSave[i].chat ? 'savedChat' : 'savedMemories']++; }
                 catch (e) {
                     report.counts.failed++;
                     if (isQuotaError(e)) { quota = true; report.counts.skipped = mediaToSave.length - i - 1; break; }
@@ -1197,7 +1422,11 @@
             const logEl = document.getElementById('init-log');
             logEl.innerText = "Vérification du dossier...";
             try {
-                await importFolder(files, (m) => { logEl.innerText = m; });
+                await importFolder(files, (m) => {
+                    logEl.innerText = m;
+                    const sp = document.querySelector('#loading-screen .spinner'), mm = /(\d+)\s*\/\s*(\d+)/.exec(m);
+                    if (sp) { sp.classList.toggle('det', !!(mm && +mm[2])); if (mm && +mm[2]) sp.style.setProperty('--p', Math.min(1, +mm[1] / +mm[2])); }
+                });
                 window.location.reload();
             } catch (err) {
                 console.error(err);
@@ -1480,6 +1709,8 @@
                 }
             }
             if (memCacheDirty) { try { await saveJSON('memDateCache', memDateCache); } catch (e) { console.warn('cache des horodatages non enregistré', e); } }
+            // Attribution par défaut (créneau = position du fichier dans sa journée, json d'origine) : base des corrections manuelles
+            { const cnt = {}; State.memories.forEach(m => { const d = MemoOrder.dayOf(m); cnt[d] = cnt[d] === undefined ? 0 : cnt[d] + 1; m._slot = cnt[d]; m._defJson = m.json; }); }
             State.memories.sort((a, b) => Util.date(b.json.Date) - Util.date(a.json.Date));
 
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1504,6 +1735,8 @@
                 { merges: {}, renames: {}, hiddenFriends: [], hiddenGroups: [], hiddenPostals: [] },
                 savedMods || (legacyMerges ? { merges: legacyMerges } : {})
             );
+            MemoOrder.applyAll();   // ordres de memories corrigés à la main (modifications.json)
+            State.memories.sort((a, b) => Util.date(b.json.Date) - Util.date(a.json.Date));
             for (const secondary in State.modifications.merges) {
                 const primary = State.modifications.merges[secondary];
                 if (mergedChats[secondary]) {
@@ -1805,9 +2038,82 @@
 
         let chatActiveTab = 'amis';
         let searchTimeout;
+        // Aperçu des liens (carte sous le message). Le domaine et le chemin s'affichent tout de suite, sans réseau ; le titre, la
+        // description et l'image sont ensuite chargés pour les liens visibles via l'API publique microlink.io (l'adresse du lien lui est
+        // alors transmise). Pour tout couper : localStorage.setItem('linkPreviewOnline', '0') ou LinkPreview.ONLINE = false.
+        const LinkPreview = {
+            ONLINE: (() => { try { return localStorage.getItem('linkPreviewOnline') !== '0'; } catch (e) { return true; } })(),
+            mem: new Map(), io: null,
+            ICON: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.7-1.7"></path></svg>',
+            firstUrl: (text) => {
+                const m = (text || '').match(/(https?:\/\/|www\.)[^\s<]+/i);
+                if (!m) return null;
+                let u = m[0].replace(/[.,!?;:)\]]+$/, '');
+                if (!/^https?:\/\//i.test(u)) u = 'http://' + u;
+                try { new URL(u); return u; } catch (e) { return null; }
+            },
+            // Texte du message sans le 1er lien (la carte le remplace) ; les autres liens éventuels restent cliquables.
+            strip: (text) => (text || '').replace(/(https?:\/\/|www\.)[^\s<]+/i, '').replace(/[ \t]{2,}/g, ' ').trim(),
+            card: (text) => {
+                const u = LinkPreview.firstUrl(text);
+                if (!u) return '';
+                let host = u, path = '';
+                try { const x = new URL(u); host = x.hostname.replace(/^www\./, ''); path = decodeURIComponent((x.pathname + x.search).replace(/^\/$/, '')); } catch (e) {}
+                const esc = Util.escapeHTML;
+                return `<a class="link-card" href="${esc(u)}" target="_blank" rel="noopener noreferrer" data-url="${esc(u)}" onclick="event.stopPropagation()"><div class="lc-img"></div><div class="lc-body"><div class="lc-domain"><span class="lc-ico">${LinkPreview.ICON}</span><span class="lc-host">${esc(host)}</span></div><div class="lc-title">${esc(path.slice(0, 90) || host)}</div><div class="lc-desc"></div></div></a>`;
+            },
+            fill: (card, d) => {
+                if (!d) return;
+                const t = card.querySelector('.lc-title'), ds = card.querySelector('.lc-desc');
+                if (d.t) t.textContent = d.t;
+                if (d.d) ds.textContent = d.d;
+                if (d.p) card.querySelector('.lc-host').textContent = d.p;
+                if (d.l) { const im = new Image(); im.onload = () => { const ic = card.querySelector('.lc-ico'); ic.innerHTML = ''; im.width = 12; im.height = 12; im.style.borderRadius = '3px'; ic.appendChild(im); }; im.src = d.l; }
+                if (d.i) { const im = new Image(); im.onload = () => { const box = card.querySelector('.lc-img'); box.style.backgroundImage = `url("${d.i}")`; card.classList.add('has-img'); }; im.src = d.i; }
+            },
+            load: async (card) => {
+                const u = card.dataset.url;
+                if (LinkPreview.mem.has(u)) { LinkPreview.fill(card, LinkPreview.mem.get(u)); return; }
+                try { const c = localStorage.getItem('lp:' + u); if (c) { const d = JSON.parse(c); LinkPreview.mem.set(u, d); LinkPreview.fill(card, d); return; } } catch (e) {}
+                try {
+                    const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 7000);
+                    const r = await fetch('https://api.microlink.io/?url=' + encodeURIComponent(u), { signal: ctrl.signal });
+                    clearTimeout(to);
+                    const j = await r.json();
+                    if (j && j.status === 'success' && j.data) {
+                        const x = j.data, d = { t: x.title || '', d: x.description || '', p: x.publisher || '', i: x.image && x.image.url || '', l: x.logo && x.logo.url || '' };
+                        LinkPreview.mem.set(u, d);
+                        try { localStorage.setItem('lp:' + u, JSON.stringify(d)); } catch (e) {}
+                        LinkPreview.fill(card, d);
+                    }
+                } catch (e) { /* hors ligne / quota dépassé : la carte reste en version simple (domaine + chemin) */ }
+            },
+            scan: () => {
+                if (!LinkPreview.ONLINE) return;
+                if (!LinkPreview.io) LinkPreview.io = new IntersectionObserver((entries) => {
+                    entries.forEach(en => { if (en.isIntersecting) { LinkPreview.io.unobserve(en.target); LinkPreview.load(en.target); } });
+                }, { root: document.getElementById('conv-scroll-area'), rootMargin: '250px' });
+                document.querySelectorAll('#conv-inner .link-card:not([data-seen])').forEach(c => { c.dataset.seen = '1'; LinkPreview.io.observe(c); });
+            }
+        };
+
+        // Compteurs empilés à droite du nom : messages (texte), médias, audios - trois petites lignes
+        const CountStack = {
+            P: {
+                msg: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>',
+                med: '<rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>',
+                aud: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line>'
+            },
+            ic: (path) => `<svg class="meta-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`,
+            html: (c) => [['msg', c.txtCount], ['med', c.medCount], ['aud', c.audCount]]
+                .map(([k, n]) => `<div class="cm-line${n ? '' : ' zero'}">${CountStack.ic(CountStack.P[k])}<span>${n || 0}</span></div>`).join('')
+        };
+
         const Chat = {
             switchTab: (tab) => { chatActiveTab = tab; document.querySelectorAll('.chat-tab').forEach(e => e.classList.remove('active')); document.getElementById(`tab-${tab}`).classList.add('active'); Chat.renderList(); },
             
+            openSearch: () => { document.getElementById('top-row').classList.add('searching'); setTimeout(() => { const i = document.getElementById('chat-search'); if (i) i.focus(); }, 30); },
+            closeSearch: () => { const i = document.getElementById('chat-search'); if (i) { i.value = ''; i.blur(); } document.getElementById('top-row').classList.remove('searching'); Chat.renderList(); },
             onSearchInput: () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => Chat.renderList(), 300); },
 
             renderList: () => {
@@ -1843,7 +2149,7 @@
                         <div class="chat-info" style="display:flex; flex-direction:column; width:100%;">
                             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                                 <div class="chat-name">${c.name}</div>
-                                <div class="chat-meta">${c.txtCount ? `<svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> ${c.txtCount}` : ''}${c.medCount ? `<svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-5-5L5 21"></path></svg> ${c.medCount}` : ''}</div>
+                                <div class="chat-meta stack">${CountStack.html(c)}</div>
                             </div>
                             ${matchText}
                         </div>
@@ -1864,13 +2170,11 @@
                 const target = (chatActiveTab === 'amis' ? State.friendsList : State.groups).find(c => c.id === id);
                 // Aucun contenu (0 message) : pas de conversation à afficher, on ouvre directement la fiche info.
                 if (target && !target.mCount) { State.returnToGroup = null; FriendInfo.open(id); return; }
+                // Mot cherché (pour le mettre en gras dans le message trouvé)
+                State.pendingHit = targetMsgIndex !== -1 ? (((document.getElementById('chat-search') || {}).value) || '').trim() : '';
                 State.returnToGroup = null;
                 State.currentChat = target;
                 document.getElementById('conv-title').innerText = State.currentChat.name;
-                
-                document.getElementById('c-count-tout').innerText = `(${State.currentChat.mCount})`;
-                document.getElementById('c-count-med').innerText = `(${State.currentChat.medCount})`;
-                document.getElementById('c-count-aud').innerText = `(${State.currentChat.audCount})`;
                 // Onglets Tout / Médias / Audios : un onglet n'existe que s'il contient quelque chose de DIFFÉRENT de « Tout »
                 // (ex. si tout est média, « Médias » = « Tout »). S'il ne reste que « Tout », la barre entière est inutile : on la masque.
                 const cc = State.currentChat;
@@ -1880,6 +2184,7 @@
                 document.getElementById('f-medias').style.display = showMed ? '' : 'none';
                 document.getElementById('f-audios').style.display = showAud ? '' : 'none';
                 document.querySelector('.conv-filters').style.display = (showMed || showAud) ? '' : 'none';
+                document.querySelector('.conv-filters').classList.toggle('two', showMed !== showAud);
                 
                 State.chatSortOrder = 'bottom_up'; document.getElementById('conv-sort-btn').innerText = '▾';
                 
@@ -1963,7 +2268,7 @@
                         const isAudio = m["Media Type"] && (m["Media Type"].includes("AUDIO") || m["Media Type"].includes("NOTE") || m["Media Type"].includes("VOICE"));
                         const isMedia = m["Media Type"] && (m["Media Type"].includes("MEDIA") || m["Media Type"].includes("VIDEO") || m["Media Type"].includes("SNAP"));
                         
-                        let msgHtml = m.Content ? Util.linkify(Util.escapeHTML(m.Content)) : "";
+                        let msgHtml = m.Content ? (() => { const card = LinkPreview.card(m.Content); const txt = card ? LinkPreview.strip(m.Content) : m.Content; return (txt ? Util.linkify(Util.escapeHTML(txt)) : '') + card; })() : "";
                         
                         if ((isAudio || isMedia) && m["Media IDs"]) {
                             const mediaKey = findChatMediaKey(m["Media IDs"]);
@@ -2042,10 +2347,48 @@
                 if (mode === 'init') {
                     inner.innerHTML = html;
                     if (targetMsgIndex !== -1) {
-                        setTimeout(() => {
+                        // Arrivée depuis une recherche : saut INSTANTANÉ (pas de défilement doux) sur le message trouvé, puis on le garde
+                        // centré tant que le contenu se met en place. Avant, le défilement doux partait du haut -> déclenchait le
+                        // chargement des anciens messages en plein trajet -> la page se re-dessinait et on arrivait au mauvais endroit
+                        // (au 2e essai ça marchait car la position de défilement était déjà proche).
+                        State.isFetchingChat = true;
+                        const centerOn = () => {
                             const el = document.getElementById(`msg-${targetMsgIndex}`);
-                            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.backgroundColor = 'rgba(255, 252, 0, 0.4)'; setTimeout(() => el.style.backgroundColor = 'transparent', 1500); }
-                        }, 50);
+                            if (!el) return null;
+                            const r = el.getBoundingClientRect(), a = scrollArea.getBoundingClientRect();
+                            scrollArea.scrollTop += (r.top - a.top) - (a.height / 2 - r.height / 2);
+                            return el;
+                        };
+                        const el = centerOn();
+                        if (el) {
+                            const term = State.pendingHit || ''; State.pendingHit = '';
+                            const bubble = el.querySelector('.msg-bubble');
+                            if (bubble && term) {
+                                const low = term.toLowerCase();
+                                const walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement.closest('.link-card') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+                                const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+                                nodes.forEach(n => {
+                                    const t = n.nodeValue, tl = t.toLowerCase(); let i = tl.indexOf(low); if (i < 0) return;
+                                    const frag = document.createDocumentFragment(); let last = 0;
+                                    while (i >= 0) { frag.append(t.slice(last, i)); const b = document.createElement('b'); b.className = 'hit'; b.textContent = t.slice(i, i + low.length); frag.append(b); last = i + low.length; i = tl.indexOf(low, last); }
+                                    frag.append(t.slice(last)); n.replaceWith(frag);
+                                });
+                            }
+                            // Rebond d'arrivée sur la bulle (WAAPI : n'ajoute aucune classe, ne touche pas à la mise en page)
+                            if (bubble && bubble.animate) {
+                                bubble.style.transformOrigin = el.classList.contains('me') ? 'right center' : 'left center';
+                                setTimeout(() => bubble.animate(
+                                    [{ transform: 'scale(1)' }, { transform: 'scale(.94)', offset: .14 }, { transform: 'scale(1.1)', offset: .42 }, { transform: 'scale(.98)', offset: .66 }, { transform: 'scale(1.03)', offset: .84 }, { transform: 'scale(1)' }],
+                                    { duration: 750, easing: 'ease-out' }), 260);
+                            }
+                        }
+                        let pinned = true, done = false;
+                        const release = () => { if (done) return; done = true; pinned = false; ro.disconnect(); State.isFetchingChat = false; };
+                        const ro = new ResizeObserver(() => { if (pinned) centerOn(); });
+                        ro.observe(inner);
+                        scrollArea.addEventListener('touchstart', release, { passive: true, once: true });
+                        scrollArea.addEventListener('wheel', release, { passive: true, once: true });
+                        setTimeout(release, 1800);   // le temps que miniatures / aperçus de liens finissent de charger
                     } else if (State.chatSortOrder === 'bottom_up') {
                         // Les médias (photos/vidéos) chargent après coup et augmentent la hauteur du contenu,
                         // donc un seul scrollTop = scrollHeight trop tôt ne va pas jusqu'en bas. On reste
@@ -2073,6 +2416,7 @@
                 document.getElementById('chat-scroll-loader').style.display = 'none';
                 document.querySelectorAll('#conv-inner .lazy-media:not([src])').forEach(el => LazyMediaObserver.observe(el));
                 document.querySelectorAll('#conv-inner .custom-audio[data-media-key]').forEach(el => AudioDurationObserver.observe(el));
+                LinkPreview.scan();
             }
         };
 
@@ -2491,12 +2835,12 @@
             ICON_PAUSE: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
 
             // Masquer / réafficher un code postal (clé = "pays|code") : mémorisé dans les modifications, exportable avec elles.
-            // Déplacement fluide vers un point, SANS changer le zoom : glissement doux s'il est proche,
-            // vol progressif (au même niveau de zoom) s'il est loin.
+            // Déplacement fluide vers un point, SANS changer le zoom : glissement doux (un peu plus long si le point est hors de la vue).
             smoothTo: (lat, lng) => {
                 const map = MapView.map, ll = L.latLng(lat, lng);
-                if (map.getBounds().pad(-0.1).contains(ll)) map.panTo(ll, { animate: true, duration: 0.7, easeLinearity: 0.2 });
-                else map.flyTo(ll, map.getZoom(), { duration: 1.6 });
+                // Toujours un simple glissement (panTo), jamais flyTo : flyTo dézoome en cours de route quand le point est loin.
+                const inView = map.getBounds().pad(-0.1).contains(ll);
+                map.panTo(ll, { animate: true, duration: inView ? 0.7 : 1.3, easeLinearity: 0.2 });
             },
 
             // Les codes postaux présents une seule fois dans location.json sont masqués par défaut :
@@ -2875,14 +3219,17 @@
             open: (instant) => {
                 const ov = document.getElementById('settings-overlay');
                 ov.classList.toggle('no-anim', !!instant);
+                if (!instant) Settings.page = null;
                 Settings.render();
-                ov.style.display = 'flex';
+                OverlayFx.show(ov);
                 document.getElementById('settings-sheet').scrollTop = Settings.scrollPos || 0;
             },
             close: (keep) => {
+                const ov = document.getElementById('settings-overlay');
                 if (keep === true) Settings.scrollPos = document.getElementById('settings-sheet').scrollTop;
                 else { Object.keys(Settings.expanded).forEach(k => Settings.expanded[k] = false); Settings.scrollPos = 0; }
-                document.getElementById('settings-overlay').style.display = 'none';
+                ov.classList.remove('no-anim');
+                OverlayFx.hide(ov, () => { if (keep !== true) Settings.page = null; });
             },
 
             setSort: async (crit) => {
@@ -2893,7 +3240,18 @@
                 Settings.render();
             },
 
-            expanded: { friends: false, groups: false, hidden: false, dissoc: false, sort: false, postal: false, importReport: false, mods: false },
+            page: null, _pages: {},
+            // Une pastille ouvre sa liste seule, en pleine hauteur (glisse du bas vers le haut) ; « Retour » revient aux pastilles.
+            openPage: (k) => {
+                const pgd = Settings._pages[k]; if (!pgd || (!pgd.rows.length && k !== 'mods')) return;
+                const sh = document.getElementById('settings-sheet');
+                Settings.mainScroll = sh.scrollTop; Settings.page = k;
+                Settings.render(); sh.scrollTop = 0;
+                OverlayFx.slide(sh, 100);
+            },
+            back: () => { Settings.page = null; Settings.render(); const sh = document.getElementById('settings-sheet'); sh.scrollTop = Settings.mainScroll || 0; OverlayFx.slide(sh, -100); },
+            onBottom: () => Settings.page ? Settings.back() : Settings.close(),
+            expanded: { g_conv: false, g_data: false, friends: false, groups: false, hidden: false, dissoc: false, sort: false, postal: false, importReport: false, mods: false },
             toggle: (k) => { Settings.expanded[k] = !Settings.expanded[k]; Settings.render(); },
 
             // Un clic sur une conversation de la liste l'ouvre directement.
@@ -2906,13 +3264,35 @@
                 Chat.openConv(id, -1);
             },
 
+            // Clic sur une modification : ouvre la conversation de la personne (ou du groupe), sinon sa fiche profil
+            openMod: (id, altId) => {
+                const all = [...State.friendsList.map(c => [c, false]), ...State.groups.map(c => [c, true])];
+                const hit = (k) => all.find(([c]) => c.id === k || (c.aliases || []).includes(k));
+                const found = hit(id) || (altId && hit(altId));
+                if (found) { Settings.openConv(found[0].id, found[1]); return; }
+                Settings.close(true);
+                State.settingsInfoReturn = true;
+                UI.switchTab('chat');
+                FriendInfo.open(id);
+            },
+            // Clic sur une modification d'ordre de memories : ouvre le premier memory de ce jour dans la visionneuse
+            openMemoryDay: (d) => {
+                const i = State.memories.findIndex(m => MemoOrder.dayOf(m) === d);
+                if (i < 0) return;
+                Settings.close(true);
+                UI.switchTab('memories');
+                State.viewerReturnToSettings = true;
+                Viewer.open(i, 'memories');
+            },
+
             listRow: (c, isGroup, hidden) => {
                 const ic = (path) => `<svg class="meta-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
                 const msgIc = ic('<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>');
                 const medIc = ic('<rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>');
                 // Compteurs à droite du nom (rien si 0)
                 const micIc = ic('<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line>');
-                const counts = [c.txtCount ? `${msgIc} ${c.txtCount}` : '', c.medCount ? `${medIc} ${c.medCount}` : '', c.audCount ? `${micIc} ${c.audCount}` : ''].filter(Boolean).join('&nbsp;&nbsp;');
+                const cell = (icon, n) => `<span class="sc-cell${n ? '' : ' zero'}">${icon}<span>${n || 0}</span></span>`;
+                const counts = `<span class="sc-grid">${cell(msgIc, c.txtCount)}${cell(medIc, c.medCount)}${cell(micIc, c.audCount)}</span>`;
                 return `<div class="settings-row sub-row" onclick="Settings.openConv('${c.id}', ${isGroup})"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${Util.escapeHTML(c.name)}</span><span style="display:flex; align-items:center; gap:10px; flex-shrink:0;"><span class="sub" style="white-space:nowrap;">${counts}</span>${hidden ? `<span style="color:var(--snap-yellow); background:var(--snap-black); padding:4px 10px; border-radius:12px; font-size:11px;" onclick="event.stopPropagation(); ModsManager.toggleHide('${c.id}', ${isGroup}); Settings.render();">Afficher</span>` : ''}</span></div>`;
             },
 
@@ -2939,16 +3319,20 @@
             },
             dissocList: () => {
                 const hid = State.modifications.hiddenFriends || [];
+                // Déjà fusionnés (dans un sens ou dans l'autre) : jamais proposés
+                const mg = State.modifications.merges || {};
+                const merged = new Set([...Object.keys(mg), ...Object.values(mg)]);
+                const isMerged = (c) => merged.has(c.id) || (c.aliases || []).length > 0 || (c.aliases || []).some(a => merged.has(a));
                 const ai = State.accountInfo || {};
                 const meIds = [State.myUsername, ai.username].filter(Boolean).map(x => x.toLowerCase());
                 const meName = (ai.name || '').toLowerCase();
                 const isMe = (c) => meIds.includes(c.id.toLowerCase()) || (meName && ((State.friendsInfo[c.id] || {}).displayName || '').toLowerCase() === meName);
                 // Ancien pseudo : a des messages, aucune fiche ami, non masqué.
-                const orphans = State.friendsList.filter(c => !State.friendsInfo[c.id] && !hid.includes(c.id) && !isMe(c) && c.messages.length > 0);
+                const orphans = State.friendsList.filter(c => !State.friendsInfo[c.id] && !hid.includes(c.id) && !isMerged(c) && !isMe(c) && c.messages.length > 0);
                 // Nouveau pseudo : fiche ami, zéro message/média/audio, non masqué.
                 const cands = State.friendsList.filter(c => {
                     const i = State.friendsInfo[c.id];
-                    return i && i.category === 'Friends' && i.since && !hid.includes(c.id) && !isMe(c)
+                    return i && i.category === 'Friends' && i.since && !hid.includes(c.id) && !isMerged(c) && !isMe(c)
                         && c.messages.length === 0 && !c.mCount && !c.medCount && !c.audCount;
                 });
                 // Impossible si l'ami a été ajouté APRÈS le 1er message de l'ancien pseudo.
@@ -2962,7 +3346,7 @@
                             return { c, score, rank: score + (gap <= 2 ? 15 : gap <= 14 ? 10 : gap <= 60 ? 5 : 0) };
                         }).sort((a, b) => b.rank - a.rank);
                 });
-                return orphans.map((o, k) => ({ o, sugg: scores[k].slice(0, 3) })).sort((a, b) => b.o.mCount - a.o.mCount);
+                return orphans.map((o, k) => ({ o, sugg: scores[k].slice(0, 2) })).sort((a, b) => b.o.mCount - a.o.mCount);
             },
             dissocMerge: (orphanId, friendId) => {
                 const o = State.friendsList.find(f => f.id === orphanId), f = State.friendsList.find(f => f.id === friendId);
@@ -2971,18 +3355,49 @@
                 MergePicker.applyMerge(friendId, orphanId).then(() => Settings.render());
             },
             dissocRows: () => Settings.dissocList().map(({ o, sugg }) => {
-                const chips = sugg.length ? sugg.map(({ c, score }) => `<span style="display:inline-block; background:${score >= 60 ? 'var(--snap-black)' : 'var(--snap-gray)'}; color:${score >= 60 ? 'var(--snap-yellow)' : '#555'}; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:700; margin:4px 4px 0 0;" onclick="event.stopPropagation(); Settings.dissocMerge('${o.id}', '${c.id}')">${Util.escapeHTML(c.name)} @${Util.escapeHTML(c.id)} · ${score}%</span>`).join('') : '<span class="sub">Aucune correspondance</span>';
+                const chips = sugg.length ? sugg.map(({ c, score }) => `<span style="display:inline-block; background:${score >= 60 ? 'var(--snap-black)' : 'var(--snap-gray)'}; color:${score >= 60 ? 'var(--snap-yellow)' : '#555'}; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:700; margin:4px 4px 0 0;" onclick="event.stopPropagation(); Settings.dissocMerge('${o.id}', '${c.id}')">${Util.escapeHTML(c.name)} @${Util.escapeHTML(c.id)}</span>`).join('') : '<span class="sub">Aucune correspondance</span>';
                 return `<div class="settings-row sub-row" style="padding-top:8px; padding-bottom:8px;" onclick="Settings.openConv('${o.id}', false)"><div><div>@${Util.escapeHTML(o.id)}</div><div>${chips}</div></div><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
             }),
 
+helpRows: () => {
+                const h = (t) => `<div class="sub" style="padding:14px 4px 2px; font-weight:800; letter-spacing:.5px;">${t}</div>`;
+                const p = (title, body) => `<div class="settings-row sub-row" style="cursor:default; display:block;"><div>${title}</div><div class="sub">${body}</div></div>`;
+                return [
+                    h('CE QUE ÇA FAIT'),
+                    p('Une archive Snapchat lisible hors ligne', "Tu importes l'export de tes données Snapchat une seule fois. L'app range tes conversations, tes Memories et tes positions, puis les affiche comme Snapchat : amis et groupes, grille de Memories, carte. Tout est enregistré dans le navigateur de ton appareil (pas de compte, pas de serveur). Seuls le fond de carte, les aperçus de liens et la recherche de codes postaux inconnus passent par internet."),
+                    h('COMMENT L\u2019UTILISER'),
+                    p('1 · Importer', "Demande tes données sur Snapchat, décompresse l'archive, puis choisis le dossier racine (celui qui contient json, memories et chat_media). Le résultat est détaillé dans Réglages ▸ Import."),
+                    p('2 · Chat', "Amis / Groupes en haut. La loupe cherche d'abord un nom d'ami, puis le contenu des conversations (mot ou date, ex : 2015-05-29). Touche une conversation pour l'ouvrir ; appui long (ou touche le nom en conversation) pour les infos, renommer, masquer ou fusionner. Tout / Médias / Audios filtrent la conversation."),
+                    p('3 · Memories', "Grille de toutes tes Memories. Touche pour ouvrir ; glisse à gauche ou à droite pour changer de Memory, vers le haut ou le bas pour fermer. Tu peux enregistrer (avec ou sans calque) ou voir le lieu sur la carte (Carte Memories ou Google Maps). Touche la date en haut pour corriger l'ordre des memories d'un même jour : elles sont rangées de la plus ancienne à la plus récente, glisse ou touche deux memories pour les échanger, puis Enregistrer."),
+                    p('4 · Map', "Memories : tes Memories géolocalisées en aperçus, regroupées en petits points quand tu dézoomes. Localisation : les codes postaux visités (plus le cercle est gros, plus il y a de jours) et une frise avec lecture, vitesse ×1 à ×10 et curseur."),
+                    p('5 · Réglages', "Affichage (tri des conversations), Amis, Groupes, Personnes masquées, Synchronisation (anciens pseudos : les deux amis les plus probables à fusionner), Carte (masquer des codes postaux), Modifications (touche une ligne pour ouvrir la conversation, le profil ou le memory concerné) et Import (résultat du dernier import)."),
+                    p('6 · Garder tes modifications', "Renommages, fusions, masquages, codes postaux masqués et ordres de memories sont mémorisés. Exporte modifications.json (Réglages ▸ Modifications) et place-le dans le dossier d'archive : il sera repris au prochain import."),
+                    p('Navigation', "Glisse à gauche ou à droite pour changer d'onglet (Chat, Memories, Map). En conversation, un glissement revient à la liste."),
+                    h('PROBLÈMES NON RÉSOLUS'),
+                    p('Pseudo changé : deux profils pour une même personne', "Quand quelqu'un change de nom d'utilisateur, l'export contient deux profils sans lien entre eux : l'ancien (avec les messages) et le nouveau (sans message). L'app ne peut pas savoir qu'il s'agit de la même personne. La fusion se fait à la main (Réglages ▸ Synchronisation, ou Fusionner dans la fiche d'un ami)."),
+                    p('Points de carte erronés', "L'onglet Localisation place chaque code postal visité et chaque position GPS de l'export. Une position imprécise peut y mettre des points très éloignés de ta vraie position, et les points de la carte Memories ne sont pas filtrés. Les codes postaux vus une seule fois sont masqués par défaut ; les autres se masquent ou se réaffichent à la main (Réglages ▸ Carte)."),
+                    p('Memories interverties', "Les fichiers de Memories n'ont qu'un identifiant aléatoire, sans heure. Pour un même jour, rien ne permet de différencier les snaps avec certitude : l'app les associe un à un aux entrées de memories_history.json, dans l'ordre, après avoir lu l'heure réelle dans le fichier quand elle existe (vidéo, EXIF des photos). Si cet ordre est faux, la date et le lieu d'une Memory se retrouvent sur une autre du même jour.<br>Jours à vérifier : 6 oct. 2017, 19 oct. 2017 (mal trié), 17 déc. 2018, 20 juin 2019, 20 juil. 2019, 18 juil. 2025 (doublon, mauvais ordre sur VC Paris).<br>Contrôle : Réglages ▸ Import compare, jour par jour, le nombre d'entrées du json et de fichiers.<br>Correction à la main : ouvre une Memory, touche sa date puis « Modifier l'ordre des memories pour cette date ».")
+                ];
+            },
             accordion: (key, label, rows, subText) => {
+                Settings._pages[key] = { label, rows };
+                if (!rows.length && key !== 'mods') {   // rien à afficher : pastille grisée, la page ne s'ouvre pas
+                    const n = subText !== undefined ? (subText ? ` <span class="sub">· ${subText}</span>` : '') : ` <span class="sub">(0)</span>`;
+                    return `<div class="sheet-pill sub disabled"><span>${label}${n}</span></div>`;
+                }
+                const info = subText !== undefined ? (subText ? ` <span class="sub">· ${subText}</span>` : '') : ` <span class="sub">(${rows.length})</span>`;
+                return `<div class="sheet-pill sub" onclick="Settings.openPage('${key}')"><span>${label}${info}</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
+            },
+            // Pastille de 1er niveau (Conversations, Données) : ses pastilles n'apparaissent qu'au clic
+            group: (key, label, inner) => {
                 const open = Settings.expanded[key];
-                return `<div class="settings-row" onclick="Settings.toggle('${key}')"><span>${label} <span class="sub">${subText !== undefined ? '' : `(${rows.length})`}</span></span><span style="display:flex; align-items:center; gap:8px;"><span class="sub">${subText || ''}</span><svg class="chev ${open ? 'open' : ''}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div>`
-                    + (open ? `<div class="settings-sublist">${rows.join('') || '<div class="settings-row"><span class="sub">Aucun</span></div>'}</div>` : '');
+                return `<div class="sheet-pill ${open ? 'open' : ''}" onclick="Settings.toggle('${key}')"><span>${label}</span><svg class="chev ${open ? 'open' : ''}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`
+                    + (open ? `<div class="sheet-group">${inner}</div>` : '');
             },
 
             render: () => {
                 const body = document.getElementById('settings-body');
+                Settings._pages = {};
                 const hidF = State.modifications.hiddenFriends, hidG = State.modifications.hiddenGroups;
                 const friends = Settings.sortChats(State.friendsList.filter(c => !hidF.includes(c.id))).map(c => Settings.listRow(c, false, false));
                 const groups = Settings.sortChats(State.groups.filter(c => !hidG.includes(c.id))).map(c => Settings.listRow(c, true, false));
@@ -3001,7 +3416,7 @@
                     return `<div class="settings-row sub-row ${active ? 'active' : ''}" onclick="Settings.setSort('${c}')"><div>${l} <span class="sub">· ${msgs[dir]}</span></div><span class="sort-arrow ${active ? 'on' : ''}">${arrow(dir)}</span></div>`;
                 });
 
-                const modRows = Settings.expanded.mods ? ModsManager.rows() : [];
+                const modRows = Settings.page === 'mods' ? ModsManager.rows() : [];
                 const modSub = `${ModsManager.count()}`;
                 const ir = State.importReport;
                 const importRows = [];
@@ -3013,19 +3428,33 @@
                     const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
                     const c = ir.counts || {};
                     // Résumé de l'import
-                    if (ir.date) importRows.push(row('Importé le ' + new Date(ir.date).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }), ''));
-                    importRows.push(row(`Médias enregistrés : ${c.saved || 0} / ${c.total || 0}`, `Memories : ${c.memories || 0} · Médias de chat : ${c.chatMedia || 0}`));
-                    if (ir.mods && ir.mods.ok) importRows.push(row('modifications.json repris du dossier', [plural(ir.mods.merges, 'fusion'), plural(ir.mods.renames, 'renommage'), plural(ir.mods.hidden, 'masquage')].join(' · ')));
-                    // Dates memories.json / fichiers
+                    if (ir.date) importRows.push(row('Importé le ' + new Date(ir.date).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }), '').replace('style="cursor:default;', 'style="cursor:default; border-bottom:none;'));
+                    // Arborescence sobre : un glyphe par dossier / fichier, le nombre importé en gris à côté du nom
+                    const nf = (n) => (n || 0).toLocaleString('fr-FR');
+                    const glyph = (path) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8a8a8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;">${path}</svg>`;
+                    const folderG = glyph('<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>');
+                    const fileG = glyph('<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>');
+                    const line = '#d4d4d8';
+                    const leaf = (icon, name, count, o = {}) => `<div style="position:relative; display:flex; align-items:center; gap:8px; padding:6px 0;${o.dim ? ' opacity:.5;' : ''}"><span style="position:absolute; left:-14px; top:0; bottom:${o.last ? '50%' : '0'}; width:2px; background:${line};"></span><span style="position:absolute; left:-14px; top:50%; width:10px; height:2px; margin-top:-1px; background:${line};"></span>${icon}<span style="min-width:0; font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(name)}</span><span style="flex:none; font-weight:700; font-size:14px; color:#9a9a9f; white-space:nowrap;">${esc(count)}</span></div>`;
+                    const outOf = (saved, total) => saved === undefined ? nf(total) : `${nf(saved)} / ${nf(total)}`;
+                    const modsOk = !!(ir.mods && ir.mods.ok);
+                    const nMods = modsOk ? (ir.mods.merges || 0) + (ir.mods.renames || 0) + (ir.mods.hidden || 0) : 0;
+                    importRows.push(`<div style="padding:10px 4px 6px;"><div style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px;">${folderG}<span>Dossier importé</span></div><div style="margin:0 0 0 8px; padding-left:14px;">`
+                        + leaf(folderG, 'memories', outOf(c.savedMemories, c.memories))
+                        + leaf(folderG, 'chat_media', outOf(c.savedChat, c.chatMedia))
+                        + leaf(folderG, 'json', `${(ir.found || []).length} / ${IMPORT_SPEC.length}`, { last: true })
+                        + `<div style="margin:0 0 0 8px; padding-left:14px;">${leaf(fileG, 'modifications.json', modsOk ? nf(nMods) : 'absent', { last: true, dim: !modsOk })}</div>`
+                        + `</div></div>`);
+                    // Dates memories.json / fichiers : pastilles compactes + une phrase
                     const md = State.memoryDiffs;
                     if (md) {
-                        const fmtDay = (d) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                        if (!md.days.length) importRows.push(row('Dates memories.json / fichiers', `${md.json} entrées · ${md.files} fichiers : aucune différence`));
+                        const shortDay = (d) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                        if (!md.days.length) importRows.push(row('Dates memories.json / memories', `${md.json} entrées · ${md.files} fichiers : aucune différence`));
                         else {
                             importProblems++;
-                            importRows.push(row('Dates memories.json / fichiers', `${md.json} entrées · ${md.files} fichiers · ${plural(md.days.length, 'jour')} avec différence`));
-                            md.days.slice(0, 40).forEach(x => importRows.push(row(fmtDay(x.d), `memories.json : ${x.json} · fichiers : ${x.files}${x.files === 0 ? ' (aucun fichier ce jour-là)' : x.json === 0 ? ' (absent de memories.json : heure et lieu inconnus)' : ''}`, { indent: true })));
-                            if (md.days.length > 40) importRows.push(row(`et ${md.days.length - 40} autre${md.days.length - 40 > 1 ? 's' : ''} jour${md.days.length - 40 > 1 ? 's' : ''}`, '', { muted: true, indent: true }));
+                            const chip = (t) => `<span style="display:inline-block; background:var(--snap-gray); color:var(--snap-black); padding:4px 9px; border-radius:12px; font-size:11px; font-weight:700; margin:4px 4px 0 0; white-space:nowrap;">${t}</span>`;
+                            const chips = md.days.slice(0, 40).map(x => chip(`${esc(shortDay(x.d))} · ${x.json}/${x.files}`)).join('') + (md.days.length > 40 ? chip(`+${md.days.length - 40}`) : '');
+                            importRows.push(`<div class="settings-row sub-row" style="cursor:default; display:block;"><div>Dates memories.json / memories</div><div class="sub">${md.json} entrées · ${md.files} fichiers · ${plural(md.days.length, 'jour')} avec écart<br>Causes possibles : problème d\u2019import, memories supprimés ou placés dans My Eyes Only.</div><div style="margin-top:4px;">${chips}</div></div>`);
                         }
                     }
                     // À vérifier : uniquement ce qui pose problème ou manque (les json bien importés ne sont pas listés)
@@ -3050,23 +3479,47 @@
                 const postalSub = postalHidden ? `${postalHidden} masqué${postalHidden > 1 ? 's' : ''} / ${postalAll.length}` : `${postalAll.length}`;
                 document.getElementById('settings-title').innerText = 'Réglages';
                 body.innerHTML = `
-                    <div class="settings-section">Listes</div>
-                    ${Settings.accordion('friends', 'Amis', friends)}
-                    ${Settings.accordion('groups', 'Groupes', groups)}
-                    ${Settings.accordion('hidden', 'Personnes masquées', hidden)}
-                    ${Settings.accordion('dissoc', 'Synchronisation des amis', Settings.dissocRows())}
-                    <div class="settings-section">Affichage</div>
-                    ${Settings.accordion('sort', 'Tri des chats', sortRows, curSort)}
-                    <div class="settings-section" id="settings-postal-anchor">Carte</div>
-                    ${Settings.accordion('postal', 'Codes postaux affichés', postalRows, postalSub)}
-                    <div class="settings-section">Données</div>
-                    ${Settings.accordion('mods', 'Gérer les modifications', modRows, modSub)}
-                    ${Settings.accordion('importReport', 'Dernier import', importRows, importSub)}
-                    <div class="settings-danger" onclick="resetDB()">Supprimer les données</div>`;
+                    ${`
+                        ${Settings.accordion('help', 'Utilisation', Settings.helpRows(), '')}
+                        ${Settings.accordion('sort', 'Affichage', sortRows, '')}
+                        ${Settings.accordion('friends', 'Amis', friends)}
+                        ${Settings.accordion('groups', 'Groupes', groups)}
+                        ${Settings.accordion('hidden', 'Personnes masquées', hidden)}
+                        ${Settings.accordion('dissoc', 'Synchronisation', Settings.dissocRows())}`}${`
+                        ${Settings.accordion('postal', 'Carte', postalRows, postalSub)}
+                        ${Settings.accordion('mods', 'Modifications', modRows, modSub)}
+                        ${Settings.accordion('importReport', 'Import', importRows, importSub)}
+                        <div class="settings-danger" onclick="resetDB()">Supprimer les données</div>`}`;
+                const pg = Settings.page && Settings._pages[Settings.page];
+                if (Settings.page && !pg) Settings.page = null;
+                if (pg && !pg.rows.length && Settings.page !== 'mods') { Settings.page = null; Settings.render(); return; }   // liste devenue vide : retour aux pastilles
+                document.getElementById('settings-sheet').classList.toggle('page-mode', !!pg);
+                document.getElementById('settings-close-btn').textContent = pg ? 'Retour' : 'Fermer';
+                document.getElementById('settings-foot-actions').innerHTML = (pg && Settings.page === 'mods')
+                    ? `<div class="friend-info-merge-btn" onclick="ModsManager.exportJSON()">Exporter modifications.json</div><div class="friend-info-merge-btn" onclick="document.getElementById('mods-import-input').click()">Importer modifications.json</div><input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">` : '';
+                if (pg) {
+                    document.getElementById('settings-title').innerText = pg.label;
+                    body.innerHTML = `<div class="settings-sublist">${pg.rows.join('') || '<div class="settings-row"><span class="sub">Aucun</span></div>'}</div>`;
+                }
             }
         };
 
         // --- INFOS AMI / GROUPE (clic sur le nom en conv, ou appui long dans la liste) ---
+        // Ouverture / fermeture des voiles flous (la fermeture rejoue l'animation à l'envers)
+        const OverlayFx = {
+            // Glissement horizontal d'une page de liste : de la droite à l'aller (from = 100), de la gauche au retour (from = -100)
+            slide: (el, from) => {
+                if (el.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+                    el.animate([{ transform: `translateX(${from}%)`, opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1)' });
+            },
+            show: (ov) => { clearTimeout(ov._t); ov.classList.remove('closing'); ov.style.display = 'flex'; },
+            hide: (ov, done) => {
+                if (getComputedStyle(ov).display === 'none') { if (done) done(); return; }
+                if (matchMedia('(prefers-reduced-motion: reduce)').matches) { ov.style.display = 'none'; if (done) done(); return; }
+                clearTimeout(ov._t); ov.classList.add('closing');
+                ov._t = setTimeout(() => { ov.classList.remove('closing'); ov.style.display = 'none'; if (done) done(); }, 300);
+            }
+        };
         const FriendInfo = {
             sourceLabels: {
                 'added by shared username': 'Ajouté via nom d\'utilisateur partagé',
@@ -3092,6 +3545,7 @@
             },
 
             open: (id, backId) => {
+                FriendInfo.resetPage();
                 const chatMeta = [...State.friendsList, ...State.groups].find(c => c.id === id);
                 const aliasIds = (chatMeta && chatMeta.aliases) || [];
                 const allIds = [id, ...aliasIds];
@@ -3114,7 +3568,7 @@
                     if (info.source) rows += FriendInfo.row('Ajout', FriendInfo.sourceLabels[info.source.toLowerCase()] || info.source);
                     if (info.category && info.category !== 'Friends') rows += FriendInfo.row('Statut', FriendInfo.categoryLabels[info.category] || info.category);
                 } else {
-                    document.getElementById('fi-sub').innerText = isGroup ? 'Conversation de groupe' : ('@' + id + ' · pas dans tes amis');
+                    document.getElementById('fi-sub').innerText = isGroup ? 'Conversation de groupe' : ('@' + id);
                     if (!isGroup) rows += FriendInfo.row('Infos', "Ami supprimé ou pseudo changé. Fusionne-le avec son nouveau compte.");
                 }
                 if (chatMeta && id !== 'account') {
@@ -3148,15 +3602,15 @@
                         aliases.forEach(aliasId => {
                             actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.unmerge('${id}', '${aliasId}')">Défusionner @${Util.escapeHTML((State.friendsInfo[aliasId] && State.friendsInfo[aliasId].username) || aliasId)}</div>`;
                         });
-                        actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.open('${id}')">Fusionner avec un autre contact</div>`;
+                        if (!aliases.length) actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.open('${id}')">Fusionner avec un autre contact</div>`;   // déjà fusionné : plus de proposition
                     }
                     actionsEl.innerHTML = backHtml + actionsHtml;
                 } else {
                     actionsEl.innerHTML = backHtml;
                 }
 
-                document.getElementById('friend-info-sheet').classList.toggle('sticky-close', isGroup);
-                document.getElementById('friend-info-overlay').style.display = 'flex';
+                document.getElementById('friend-info-sheet').classList.add('sticky-close');
+                OverlayFx.show(document.getElementById('friend-info-overlay'));
             },
 
             // L'export ne contient pas la liste des membres d'un groupe : on les déduit des expéditeurs des messages.
@@ -3222,10 +3676,16 @@
                 State.returnToGroup = backId || null;
             },
 
+            resetPage: () => {
+                AccountInfo.page = null;
+                document.getElementById('friend-info-sheet').classList.remove('page-mode');
+                document.getElementById('fi-close-btn').textContent = 'Fermer';
+            },
+            onBottom: () => AccountInfo.page ? AccountInfo.back() : FriendInfo.close(),
             openCurrent: () => { if (State.currentChat) FriendInfo.open(State.currentChat.id); },
 
             close: () => {
-                document.getElementById('friend-info-overlay').style.display = 'none';
+                OverlayFx.hide(document.getElementById('friend-info-overlay'), () => FriendInfo.resetPage());
                 Object.keys(AccountInfo.expanded).forEach(k => AccountInfo.expanded[k] = false);   // la fiche Compte se replie à la fermeture
                 if (State.settingsInfoReturn) { State.settingsInfoReturn = false; Settings.open(true); }   // fiche ouverte depuis Réglages
             }
@@ -3321,6 +3781,9 @@
                     State.modifications.shownPostals = Array.from(new Set([...(State.modifications.shownPostals || []), ...(parsed.shownPostals || [])]));
                     await saveModifications();
 
+                    State.modifications.memoryOrder = { ...(State.modifications.memoryOrder || {}), ...(parsed.memoryOrder || {}) };
+                    await saveModifications();
+                    if (Object.keys(parsed.memoryOrder || {}).length) { MemoOrder.applyAll(); MemoOrder.refresh(); }
                     // Les renommages peuvent s'appliquer tout de suite sur la liste déjà chargée.
                     Object.keys(parsed.renames || {}).forEach(id => {
                         const chatMeta = [...State.friendsList, ...State.groups].find(c => c.id === id);
@@ -3338,7 +3801,7 @@
 
             count: () => {
                 const m = State.modifications;
-                return Object.keys(m.merges || {}).length + Object.keys(m.renames || {}).length + (m.hiddenFriends || []).length + (m.hiddenGroups || []).length + (m.hiddenPostals || []).length;
+                return Object.keys(m.merges || {}).length + Object.keys(m.renames || {}).length + (m.hiddenFriends || []).length + (m.hiddenGroups || []).length + (m.hiddenPostals || []).length + Object.keys(m.memoryOrder || {}).length;
             },
 
             // Lignes du menu « Gérer les modifications » : export / import, puis chaque modification avec un bouton Supprimer.
@@ -3347,33 +3810,37 @@
                 const find = (id) => [...State.friendsList, ...State.groups].find(c => c.id === id);
                 const nameOf = (id) => { const c = find(id); return c ? c.name : (State.friends[id] || id); };
                 const eye = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px; opacity:.6;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
-                const entry = (titleHtml, action) => `<div class="settings-row sub-row" style="cursor:default; padding-top:9px; padding-bottom:9px;"><div style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${titleHtml}</div><span onclick="${action}" style="flex:none; background:var(--snap-gray); color:#c0392b; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">Supprimer</span></div>`;
+                const entry = (titleHtml, action, openAct) => `<div class="settings-row sub-row" style="cursor:default; padding-top:9px; padding-bottom:9px;"><div style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;${openAct ? ' cursor:pointer;' : ''}"${openAct ? ` onclick="${openAct}"` : ''}>${titleHtml}</div><span onclick="${action}" style="flex:none; background:var(--snap-gray); color:#c0392b; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">Supprimer</span></div>`;
 
-                const out = [
-                    `<div class="settings-row sub-row" onclick="ModsManager.exportJSON()"><span>Exporter modifications.json</span></div>`,
-                    `<div class="settings-row sub-row" onclick="document.getElementById('mods-import-input').click()"><span>Importer modifications.json</span></div><input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">`
-                ];
+                const out = [];
                 const renames = Object.keys(m.renames || {}), merges = Object.keys(m.merges || {});
                 const hidF = m.hiddenFriends || [], hidG = m.hiddenGroups || [], hidP = m.hiddenPostals || [];
                 if (!ModsManager.count()) { out.push(`<div class="settings-row sub-row" style="cursor:default;"><span class="sub">Aucune modification enregistrée</span></div>`); return out; }
 
                 if (renames.length) {
-                    renames.forEach(id => { const c = find(id); out.push(entry(`${esc(c ? RenameBox.originalName(c) : id)} → ${esc(m.renames[id])}`, `ModsManager.removeRename('${id}')`)); });
+                    renames.forEach(id => { const c = find(id); out.push(entry(`${esc(c ? RenameBox.originalName(c) : id)} → ${esc(m.renames[id])}`, `ModsManager.removeRename('${id}')`, `Settings.openMod('${id}')`)); });
                 }
                 if (merges.length) {
-                    merges.forEach(sec => out.push(entry(`@${esc(sec)} ↔ @${esc(m.merges[sec])}`, `ModsManager.removeMerge('${sec}')`)));
+                    merges.forEach(sec => out.push(entry(`@${esc(sec)} ↔ @${esc(m.merges[sec])}`, `ModsManager.removeMerge('${sec}')`, `Settings.openMod('${m.merges[sec]}', '${sec}')`)));
                 }
                 if (hidF.length) {
-                    hidF.forEach(id => out.push(entry(eye + esc(nameOf(id)), `ModsManager.removeHidden('${id}', false)`)));
+                    hidF.forEach(id => out.push(entry(eye + esc(nameOf(id)), `ModsManager.removeHidden('${id}', false)`, `Settings.openMod('${id}')`)));
                 }
                 if (hidG.length) {
-                    hidG.forEach(id => out.push(entry(eye + esc(nameOf(id)), `ModsManager.removeHidden('${id}', true)`)));
+                    hidG.forEach(id => out.push(entry(eye + esc(nameOf(id)), `ModsManager.removeHidden('${id}', true)`, `Settings.openMod('${id}')`)));
                 }
                 if (hidP.length) {
                     const labels = {};
                     if (State.areas.length) MapView.getAreaStats().forEach(c => { labels[c.geoKey] = c.label; });
                     hidP.forEach(k => out.push(entry(eye + esc(labels[k] || k.split('|')[1] || k), `MapView.togglePostal('${k}')`)));
                 }
+                const swapIc = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px; opacity:.6;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
+                Object.keys(m.memoryOrder || {}).sort().forEach(d => {
+                    const def = MemoOrder.entries(d).map(e => e.mainKey), ord = m.memoryOrder[d];
+                    const moved = ord.filter((k, j) => k !== def[j]).length || ord.length;
+                    const day = new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                    out.push(entry(`${swapIc}Memories ${moved} · ${esc(day)}`, `MemoOrder.remove('${d}')`, `Settings.openMemoryDay('${d}')`));
+                });
                 return out;
             },
 
@@ -3501,8 +3968,15 @@
 
         // --- INFOS DU COMPTE (clic sur "SNAPCHAT" en haut) ---
         const AccountInfo = {
-            expanded: { profile: false, time: false, names: false, places: false, calls: false },
-            toggle: (k) => { AccountInfo.expanded[k] = !AccountInfo.expanded[k]; AccountInfo.open(); },
+            expanded: { profile: false, time: false, places: false, calls: false },
+            page: null, _pages: {},
+            openPage: (k) => {
+                const sh = document.getElementById('friend-info-sheet');
+                AccountInfo.mainScroll = sh.scrollTop; AccountInfo.page = k;
+                AccountInfo.open(); sh.scrollTop = 0;
+                OverlayFx.slide(sh, 100);
+            },
+            back: () => { AccountInfo.page = null; AccountInfo.open(); const sh = document.getElementById('friend-info-sheet'); sh.scrollTop = AccountInfo.mainScroll || 0; OverlayFx.slide(sh, -100); },
 
             duration: (sec) => {
                 sec = Math.round(sec);
@@ -3514,10 +3988,11 @@
             cap: (str) => { const s = String(str || ''); return s.charAt(0).toUpperCase() + s.slice(1); },
 
             accordion: (key, label, count, items, subText) => {
-                const open = AccountInfo.expanded[key];
-                return `<div class="settings-row" onclick="AccountInfo.toggle('${key}')"><div><div>${label} <span class="sub">(${count})</span></div>${subText ? `<div class="sub">${subText}</div>` : ''}</div><svg class="chev ${open ? 'open' : ''}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`
-                    + (open ? `<div class="settings-sublist">${items.join('')}</div>` : '');
+                AccountInfo._pages[key] = { label, items };
+                const info = count === null ? '' : ` <span class="sub">(${count})</span>`;
+                return `<div class="sheet-pill" onclick="AccountInfo.openPage('${key}')"><span>${label}${info}${subText ? ` <span class="sub">· ${subText}</span>` : ''}</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
             },
+
 
             sections: (acc) => {
                 const row = (title, sub) => `<div class="settings-row sub-row" style="cursor:default;"><div><div>${Util.escapeHTML(title)}</div><div class="sub">${Util.escapeHTML(sub)}</div></div></div>`;
@@ -3532,34 +4007,35 @@
                 if (acc.bitmojiGender) profileRows.push(row('Bitmoji', acc.bitmojiGender));
                 if (acc.stickerCount) profileRows.push(row('Autocollants créés', String(acc.stickerCount)));
                 if (acc.snapProSince) profileRows.push(row('Profil public depuis', Util.formatDate(acc.snapProSince)));
-                if (profileRows.length) html += AccountInfo.accordion('profile', 'Profil', profileRows.length, profileRows);
+                const nameRows = acc.displayNames ? acc.displayNames.map(n => row(n.name, n.date ? Util.formatDate(n.date) : 'Date inconnue')) : [];
+                if (profileRows.length) html += AccountInfo.accordion('profile', 'Profil', null, profileRows);
+                const userRows = [];
+                userRows.push(...nameRows);
+                if (userRows.length) html += AccountInfo.accordion('names', 'Pseudos', userRows.length, userRows);
 
                 if (acc.timeSpent) {
-                    html += AccountInfo.accordion('time', 'Répartition du temps', acc.timeSpent.length,
+                    html += AccountInfo.accordion('time', 'Répartition du temps', null,
                         acc.timeSpent.map(t => `<div class="settings-row sub-row" style="cursor:default; display:block;"><div style="display:flex; justify-content:space-between;"><span>${Util.escapeHTML(t.label)}</span><span>${t.pct.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} %</span></div><div class="time-bar"><div style="width:${Math.max(t.pct, 1)}%;"></div></div></div>`));
                 }
 
-                if (acc.displayNames) {
-                    html += AccountInfo.accordion('names', 'Noms d\'affichage utilisés', acc.displayNames.length,
-                        acc.displayNames.map(n => row(n.name, n.date ? Util.formatDate(n.date) : 'Date inconnue')));
-                }
                 if (acc.mapShares) {
-                    html += AccountInfo.accordion('places', 'Lieux partagés (stories, snaps)', acc.mapShares.length,
+                    html += AccountInfo.accordion('places', 'Lieux partagés', acc.mapShares.length,
                         acc.mapShares.map(s => row(s.place, `${s.type === 'Story Post' ? 'Story' : (s.type === 'Snap Send' ? 'Snap' : s.type)} · ${s.location} · ${s.date ? Util.formatDate(s.date) : ''}`)));
                 }
                 if (acc.calls) {
                     const typeLabel = { VIDEO: 'Vidéo', AUDIO: 'Audio' };
                     const resLabel = { 'Call Succeeded': 'réussi', 'Call Initiated': 'lancé', 'Call Received': 'reçu' };
                     const callsSub = acc.callsCompleted ? `${acc.callsCompleted} terminé${acc.callsCompleted > 1 ? 's' : ''} · ${AccountInfo.duration(acc.callsTotalSec || 0)}` : '';
-                    html += AccountInfo.accordion('calls', 'Appels', acc.calls.length,
+                    html += AccountInfo.accordion('calls', 'Appels', null,
                         acc.calls.map(c => row(
                             `${typeLabel[c.type] || c.type} · ${c.dir}${c.result ? ' (' + (resLabel[c.result] || c.result) + ')' : ''}`,
-                            `${c.date ? Util.formatDate(c.date) : ''} · ${AccountInfo.duration(c.sec)}${c.city ? ' · ' + AccountInfo.cap(c.city) : ''}${c.people ? ' · ' + c.people + ' pers.' : ''}`)), callsSub);
+                            `${c.date ? Util.formatDate(c.date) : ''} · ${AccountInfo.duration(c.sec)}${c.city ? ' · ' + AccountInfo.cap(c.city) : ''}${c.people ? ' · ' + c.people + ' pers.' : ''}`)));
                 }
                 return html + '</div>';
             },
 
             open: () => {
+                AccountInfo._pages = {};
                 const acc = State.accountInfo || {};
                 document.getElementById('friend-info-sheet').classList.add('sticky-close');
 
@@ -3568,7 +4044,7 @@
                     document.getElementById('fi-sub').innerText = '';
                     document.getElementById('fi-rows').innerHTML = FriendInfo.row('Infos', 'Réimporte le dossier (via l\'icône ⚙) pour charger account.json, ranking.json et les autres fichiers de profil.');
                     document.getElementById('fi-merge-action').innerHTML = '';
-                    document.getElementById('friend-info-overlay').style.display = 'flex';
+                    OverlayFx.show(document.getElementById('friend-info-overlay'));
                     return;
                 }
 
@@ -3581,11 +4057,16 @@
                 if (acc.accountsFollowed) rows += FriendInfo.row('Comptes suivis', acc.accountsFollowed);
                 if (!rows) rows = FriendInfo.row('Infos', 'Aucune information disponible');
 
-                rows += AccountInfo.sections(acc);
+                const pills = AccountInfo.sections(acc);
+                const pg = AccountInfo.page && AccountInfo._pages[AccountInfo.page];
+                if (AccountInfo.page && !pg) AccountInfo.page = null;
+                document.getElementById('friend-info-sheet').classList.toggle('page-mode', !!pg);
+                document.getElementById('fi-close-btn').textContent = pg ? 'Retour' : 'Fermer';
+                if (pg) { document.getElementById('fi-name').innerText = pg.label; document.getElementById('fi-sub').innerText = ''; rows = `<div class="settings-sublist">${pg.items.join('')}</div>`; }
 
                 document.getElementById('fi-rows').innerHTML = rows;
-                document.getElementById('fi-merge-action').innerHTML = '';
-                document.getElementById('friend-info-overlay').style.display = 'flex';
+                document.getElementById('fi-merge-action').innerHTML = pg ? '' : pills;
+                OverlayFx.show(document.getElementById('friend-info-overlay'));
             }
         };
 
@@ -3640,6 +4121,7 @@
                 const deltaY = touch.clientY - touchStartY;
 
                 if (multiTouch) return;
+                if (touchTarget && touchTarget.closest && touchTarget.closest('#memo-order-overlay, #viewer-date-choice')) return;
                 if (document.getElementById('viewer').style.display === 'flex') {
                     if (ZoomPan.scale > 1.01) return;   // image zoomée : le geste sert à la déplacer
                     // Visionneuse ouverte : glisser vers le haut OU le bas la ferme ; vers la gauche / droite : photo suivante / précédente
@@ -3827,10 +4309,131 @@
         };
         ZoomPan.init();
 
+        // --- ORDRE D'ATTRIBUTION json / memories pour une date (glisser-déposer) ---
+        const MemoOrder = {
+            day: null, def: [], order: [], sel: null, viewKey: null, _d: null, _init: false,
+            dayOf: (m) => (String(m.mainKey).match(/^(\d{4}-\d{2}-\d{2})_/) || [])[1] || String(m.json.Date).split(' ')[0],
+            entries: (d) => State.memories.filter(m => MemoOrder.dayOf(m) === d).sort((a, b) => a._slot - b._slot),
+            // Le fichier ord[j] reçoit les infos (date, lieu) du créneau j ; sans ordre valide : attribution par défaut
+            apply: (d) => {
+                const E = MemoOrder.entries(d), ord = (State.modifications.memoryOrder || {})[d];
+                const ok = Array.isArray(ord) && ord.length === E.length && E.every(e => ord.includes(e.mainKey));
+                const byKey = new Map(E.map(e => [e.mainKey, e]));
+                E.forEach((e, j) => { (ok ? byKey.get(ord[j]) : e).json = e._defJson; });
+            },
+            applyAll: () => Object.keys(State.modifications.memoryOrder || {}).forEach(d => MemoOrder.apply(d)),
+            refresh: () => {
+                State.memories.sort((a, b) => Util.date(b.json.Date) - Util.date(a.json.Date));
+                const n = State.memoriesRendered;
+                document.getElementById('memories-grid').innerHTML = ''; State.memoriesRendered = 0;
+                do { Memories.render(); } while (State.memoriesRendered < n && State.memoriesRendered < State.memories.length);
+                if (document.getElementById('view-map').classList.contains('active')) MapView.render();
+            },
+            remove: (d) => {
+                delete (State.modifications.memoryOrder || {})[d];
+                saveModifications(); MemoOrder.apply(d); MemoOrder.refresh(); Settings.render();
+            },
+            open: () => {
+                const cur = State.memories[Viewer.currentIndex]; if (!cur) return;
+                Viewer.closeDateChoice();
+                const d = MemoOrder.day = MemoOrder.dayOf(cur), E = MemoOrder.entries(d);
+                if (E.length < 2) { MergePicker.showToast('Une seule memory ce jour-là : rien à intervertir'); return; }
+                MemoOrder.viewKey = cur.mainKey;
+                MemoOrder.def = E.map(e => e.mainKey);
+                const saved = (State.modifications.memoryOrder || {})[d];
+                MemoOrder.order = (Array.isArray(saved) && saved.length === E.length && E.every(e => saved.includes(e.mainKey))) ? saved.slice() : MemoOrder.def.slice();
+                MemoOrder.sel = null;
+                if (!MemoOrder._init) { MemoOrder._init = true; document.getElementById('mo-list').addEventListener('pointerdown', MemoOrder.down); }
+                MemoOrder.render();
+                MemoOrder._paused = [...document.querySelectorAll('#viewer-media video')].filter(v => !v.paused);
+                MemoOrder._paused.forEach(v => { try { v.pause(); } catch (err) {} });
+                document.getElementById('memo-order-overlay').style.display = 'flex';
+            },
+            _paused: [],
+            close: (resume = true) => {
+                document.getElementById('memo-order-overlay').style.display = 'none';
+                if (resume !== false) MemoOrder._paused.forEach(v => { try { const r = v.play(); if (r && r.catch) r.catch(() => {}); } catch (err) {} });
+                MemoOrder._paused = [];
+            },
+            reset: () => { MemoOrder.order = MemoOrder.def.slice(); MemoOrder.sel = null; MemoOrder.render(); },
+            save: () => {
+                const d = MemoOrder.day, m = State.modifications;
+                m.memoryOrder = m.memoryOrder || {};
+                if (MemoOrder.order.join('|') === MemoOrder.def.join('|')) delete m.memoryOrder[d]; else m.memoryOrder[d] = MemoOrder.order.slice();
+                saveModifications();
+                MemoOrder.apply(d); MemoOrder.refresh(); MemoOrder.close(false);
+                const i = State.memories.findIndex(x => x.mainKey === MemoOrder.viewKey);
+                if (i >= 0) { Viewer.currentIndex = i; Viewer.renderCurrent(); }
+                MergePicker.showToast('Ordre enregistré ✓');
+            },
+            render: () => {
+                const d = MemoOrder.day, E = MemoOrder.entries(d), byKey = new Map(E.map(e => [e.mainKey, e]));
+                const list = document.getElementById('mo-list'), st = list.scrollTop;
+                document.getElementById('mo-sub').innerHTML = `${Util.formatDate(d + ' 12:00:00 UTC', 'short-year')} · ${E.length} memories<br>Glisse ou touche deux memories pour les échanger.`;
+                // Affichage trié par ordre croissant (date et heure du créneau) ; le créneau j reste l'identifiant pour les échanges
+                const asc = E.map((e, j) => ({ e, j, t: Util.date(e._defJson.Date) })).sort((a, b) => (a.t - b.t) || (a.j - b.j));
+                list.innerHTML = asc.map(({ e, j }, rank) => {
+                    const js = e._defJson, f = byKey.get(MemoOrder.order[j]);
+                    const isVid = /\.(mp4|mov)$/i.test(f.mainKey);
+                    const media = isVid ? `<video class="lazy-media" data-media-key="${f.mainKey}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${f.mainKey}" data-thumb="260" style="pointer-events:none;">`;
+                    const over = f.overlayKey ? `<img class="grid-overlay lazy-media" data-media-key="${f.overlayKey}" data-thumb="260" style="pointer-events:none;">` : '';
+                    const hm = (() => { try { const dt = new Date(String(js.Date).replace(' UTC', 'Z').replace(' ', 'T')); return isNaN(dt.getTime()) ? '' : dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (err) { return ''; } })();
+                    return `<div class="mo-row" data-slot="${j}"><div class="mo-thumb${MemoOrder.sel === j ? ' sel' : ''}" data-slot="${j}">${media}${over}<div class="mo-tag"><span class="mo-num">${rank + 1}</span><span class="mo-time">${hm}</span></div></div></div>`;
+                }).join('');
+                list.scrollTop = st;
+                list.querySelectorAll('.lazy-media:not([src])').forEach(el => LazyMediaObserver.observe(el));
+            },
+            swap: (a, b) => { const o = MemoOrder.order; [o[a], o[b]] = [o[b], o[a]]; MemoOrder.sel = null; MemoOrder.render(); },
+            tap: (j) => {
+                if (MemoOrder.sel === null) MemoOrder.sel = j;
+                else if (MemoOrder.sel === j) MemoOrder.sel = null;
+                else return MemoOrder.swap(MemoOrder.sel, j);
+                MemoOrder.render();
+            },
+            down: (e) => {
+                const th = e.target.closest('.mo-thumb'); if (!th) return;
+                MemoOrder._d = { slot: +th.dataset.slot, x: e.clientX, y: e.clientY, id: e.pointerId, th, moved: false, ghost: null, target: null };
+                try { th.setPointerCapture(e.pointerId); } catch (err) {}
+                th.onpointermove = MemoOrder.move; th.onpointerup = MemoOrder.up; th.onpointercancel = MemoOrder.cancel;
+            },
+            move: (e) => {
+                const d = MemoOrder._d; if (!d || e.pointerId !== d.id) return;
+                if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
+                const list = document.getElementById('mo-list');
+                if (!d.moved) {
+                    d.moved = true;
+                    const r = d.th.getBoundingClientRect(), g = d.th.cloneNode(true);
+                    g.classList.add('mo-ghost'); g.classList.remove('sel'); g.style.width = r.width + 'px'; g.style.height = r.height + 'px';
+                    document.body.appendChild(g); d.ghost = g; d.w = r.width; d.h = r.height;
+                }
+                d.ghost.style.left = (e.clientX - d.w / 2) + 'px'; d.ghost.style.top = (e.clientY - d.h / 2) + 'px';
+                const t = document.elementFromPoint(e.clientX, e.clientY), row = t && t.closest ? t.closest('.mo-row') : null;
+                list.querySelectorAll('.mo-row.over').forEach(x => x.classList.remove('over'));
+                d.target = row ? +row.dataset.slot : null;
+                if (row) row.classList.add('over');
+                const lr = list.getBoundingClientRect();
+                if (e.clientY < lr.top + 60) list.scrollTop -= 10; else if (e.clientY > lr.bottom - 60) list.scrollTop += 10;
+            },
+            up: () => {
+                const d = MemoOrder._d; MemoOrder._d = null; if (!d) return;
+                if (d.ghost) d.ghost.remove();
+                document.querySelectorAll('#mo-list .mo-row.over').forEach(x => x.classList.remove('over'));
+                if (!d.moved) MemoOrder.tap(d.slot);
+                else if (d.target !== null && d.target !== d.slot) MemoOrder.swap(d.slot, d.target);
+            },
+            cancel: () => {
+                const d = MemoOrder._d; MemoOrder._d = null;
+                if (d && d.ghost) d.ghost.remove();
+                document.querySelectorAll('#mo-list .mo-row.over').forEach(x => x.classList.remove('over'));
+            }
+        };
+
         const Viewer = {
             contextType: 'memories', currentIndex: 0,
             renderToken: 0,
             // --- Point GPS d'un memory : lien Google Maps OU affichage seul sur la carte Memories ---
+            dateChoice: () => { document.getElementById('viewer-date-choice').style.display = 'flex'; },
+            closeDateChoice: () => { document.getElementById('viewer-date-choice').style.display = 'none'; },
             mapChoice: () => { document.getElementById('viewer-map-choice').style.display = 'flex'; },
             closeMapChoice: () => { const el = document.getElementById('viewer-map-choice'); if (el) el.style.display = 'none'; Viewer.answerSave(null); },
             // Choix « Avec calque / Sans calque / Fermer » à l'enregistrement d'un memory qui a un filtre : renvoie true, false ou null (fermé)
@@ -3959,11 +4562,11 @@
                 }
                 
                 document.getElementById('viewer-header-dynamic').innerHTML = `
-                    <button class="viewer-btn" style="position:absolute; left:10px; top:calc(4px + env(safe-area-inset-top, 0px)); pointer-events:auto;" onclick="Viewer.close()">✕</button>
-                    <div class="viewer-date-container" style="position:absolute; left:50%; transform:translateX(-50%); top:calc(4px + env(safe-area-inset-top, 0px)); height:45px; display:flex; justify-content:center; align-items:center; pointer-events:none;">
-                        <div class="viewer-date-bubble">${Util.formatDate(dateStr)}</div>
+                    <button class="viewer-btn" style="position:absolute; left:18px; top:calc(18px + env(safe-area-inset-top, 0px)); pointer-events:auto;" onclick="Viewer.close()">✕</button>
+                    <div class="viewer-date-container" style="position:absolute; left:50%; transform:translateX(-50%); top:calc(18px + env(safe-area-inset-top, 0px)); height:45px; display:flex; justify-content:center; align-items:center; pointer-events:none;">
+                        <div class="viewer-date-bubble"${memChoice ? ' style="pointer-events:auto; cursor:pointer;" onclick="Viewer.dateChoice()"' : ''}>${Util.formatDate(dateStr)}</div>
                     </div>
-                    <div class="viewer-actions-pill" style="position:absolute; right:10px; top:calc(4px + env(safe-area-inset-top, 0px));">
+                    <div class="viewer-actions-pill" style="position:absolute; right:18px; top:calc(18px + env(safe-area-inset-top, 0px));">
                         ${mapBtn}
                         <div class="pill-icon-btn" id="viewer-download">${downloadIcon}</div>
                     </div>
@@ -4054,7 +4657,7 @@
                 }
                 if (prevIdx >= 0) { Viewer.currentIndex = prevIdx; Viewer._dir = 'prev'; Viewer.renderCurrent(); } 
             },
-            close: () => { Viewer.cancelMerge(); Viewer.renderToken++; stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; URLManager.revokeScope('viewer'); Viewer.closeMapChoice(); }
+            close: () => { Viewer.cancelMerge(); Viewer.renderToken++; stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; URLManager.revokeScope('viewer'); Viewer.closeMapChoice(); if (State.viewerReturnToSettings) { State.viewerReturnToSettings = false; Settings.open(true); } }
         };
 
         window.UI = UI; window.Viewer = Viewer; window.Chat = Chat; window.Memories = Memories; window.AudioEngine = AudioEngine; window.VideoDebugger = VideoDebugger;
