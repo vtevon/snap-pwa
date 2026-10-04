@@ -25,8 +25,7 @@
                     r.classList.add('pwa-standalone');
                     r.style.setProperty('--app-h', h + 'px');
                     r.style.setProperty('--bottom-gap', Math.max(0, gap) + 'px');
-                    /* bande hors viewport (gap > 10) : elle contient déjà la zone du home indicator -> pas de marge en plus */
-                    if (gap > 10) r.style.setProperty('--sab', '0px');
+                    /* On ne met plus --sab à 0 pour laisser le contenu défiler tout en bas */
                 }
             } catch (e) {}
         })();
@@ -34,14 +33,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <style>
         /* --- VARIABLES & RESET --- */
-        :root { --sab: min(env(safe-area-inset-bottom, 0px), 20px); --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; --snap-yellow-soft: rgba(255, 252, 0, 0.18); }
+        :root { --sab: env(safe-area-inset-bottom, 34px); --snap-yellow: #FFFC00; --snap-black: #111111; --snap-gray: #F2F2F2; --snap-white: #FFFFFF; --snap-yellow-soft: rgba(255, 252, 0, 0.18); }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Avenir Next', -apple-system, sans-serif; }
         html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
-        html { height: 100%; overflow: hidden; overscroll-behavior: none; background: #111111; }
+        html { height: var(--app-h, 100%); overflow: hidden; overscroll-behavior: none; background: #111111; }
         body {
             background-color: #111111; display: flex; justify-content: center; align-items: center;
-            position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+            position: fixed; top: 0; left: 0; right: 0; height: var(--app-h, 100%); overflow: hidden; overscroll-behavior: none;
         }
 
         /* --- RESTE VERTICAL, MÊME SI LE TÉLÉPHONE EST TENU À L'HORIZONTALE --- */
@@ -51,7 +50,7 @@
         #app-container { width: 100%; max-width: 428px; height: 100%; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
         @media (min-width: 600px) and (min-height: 700px) { #app-container { height: min(90vh, 926px); border-radius: 40px; } }
         /* Téléphone : l'app est collée aux 4 bords de l'écran (barres haut/bas comprises), sans dépendre de 100vh/100dvh */
-        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; height: auto; border-radius: 0; } }
+        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; left: 0; width: 100%; height: var(--app-h, 100%); max-width: none; border-radius: 0; } }
 
         /* --- ÉCRAN DE CHARGEMENT PRINCIPAL --- */
         .welcome-logo { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; background: none; box-shadow: none; }
