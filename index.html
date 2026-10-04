@@ -19,6 +19,7 @@
         (function () {
             try {
                 var r = document.documentElement;
+            try { var fx = localStorage.getItem('lowFx'); if (fx === '1' || (fx === null && navigator.deviceMemory && navigator.deviceMemory <= 2)) r.classList.add('low-fx'); } catch (e) {}
                 if (navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
                     var h = Math.max(screen.width, screen.height), gap = h - window.innerHeight;
                     r.classList.add('pwa-standalone');
@@ -332,16 +333,22 @@
         .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2; }
         .memory-date-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 6px; border-radius: 8px; font-weight: bold; z-index: 3;}
         
-        #scroll-track { position: absolute; right: 0; top: calc(46px + env(safe-area-inset-top, 0px)); bottom: calc(92px + var(--sab)); width: 40px; z-index: 50; touch-action: none;}
+        #scroll-track { position: absolute; right: 0; top: calc(46px + env(safe-area-inset-top, 0px)); bottom: calc(92px + var(--sab)); width: 30px; z-index: 50; touch-action: none; cursor: pointer; }
+        #scroll-track[data-on] #scroll-thumb { background: #fff200; box-shadow: 0 0 0 3px rgba(255,252,0,0.35); }
         #memories-scroll-area { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-top: calc(46px + env(safe-area-inset-top, 0px)); padding-bottom: calc(92px + var(--sab)); }
-        #scroll-thumb { position: absolute; right: 2px; top: 0; width: 8px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
+        #mem-order-btn { display: none; position: absolute; right: 12px; top: calc(6px + env(safe-area-inset-top, 0px)); height: 40px; margin: 0; }
+        #scroll-thumb { position: absolute; right: 3px; top: 0; width: 14px; height: 72px; box-sizing: border-box; background: var(--snap-yellow); border: 2px solid var(--snap-black); border-radius: 7px; pointer-events: none; display: flex; align-items: center; justify-content: flex-end; transition: background 0.2s;}
 
         /* --- VISIONNEUSE --- */
         #viewer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; }
         #viewer-media { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; padding-top: 88px; padding-bottom: 80px; }
         #viewer-media img, #viewer-media video { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
         #viewer-zoomable { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; touch-action: none; }
-        #viewer-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; z-index: 201;}
+        #viewer-overlay { position: absolute; top: 0; left: 0; object-fit: fill; pointer-events: none; z-index: 201; opacity: 0; }
+        #viewer-overlay.ready { opacity: 1; }
+        #viewer-zoomable.loading .video-wrapper, #viewer-zoomable.loading #viewer-overlay { visibility: hidden; }
+        .viewer-spin { display: none; position: absolute; top: 50%; left: 50%; width: 42px; height: 42px; margin: -21px 0 0 -21px; border: 4px solid rgba(255,255,255,0.25); border-top-color: var(--snap-yellow); border-radius: 50%; animation: spin 0.9s linear infinite; z-index: 202; pointer-events: none; }
+        #viewer-zoomable.loading .viewer-spin { display: block; }
         
         .viewer-header-dynamic { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; background: linear-gradient(rgba(0,0,0,0.8), transparent); color: white; display: flex; align-items: flex-start; z-index: 202; pointer-events: none;}
         
@@ -496,6 +503,51 @@
         #settings-foot-actions { gap: var(--pill-gap); margin-bottom: var(--pill-gap); }
         #settings-foot-actions .friend-info-merge-btn { margin-top: 0; }
         .rename-actions { gap: var(--pill-gap); }
+
+        /* Même écart entre toutes les pastilles (--pill-gap) */
+        .sheet-group { margin: var(--pill-gap) 0 0 8px; }
+        .sheet-group .settings-sublist { margin: var(--pill-gap) 0 0; }
+        .sheet-group .settings-danger { margin-top: var(--pill-gap); }
+        .sheet-group > .sheet-pill:first-child { margin-top: 0; }
+        #settings-foot-actions { margin-top: var(--pill-gap); margin-bottom: 0; }
+        #mo-foot { padding-top: 0; }
+        #mo-foot > * { margin-top: var(--pill-gap); }
+        .rename-actions { margin-top: var(--pill-gap); }
+        #rename-reset { margin-top: var(--pill-gap); }
+        #map-focus-bar { gap: var(--pill-gap); }
+        #viewer-map-choice .friend-info-close, #viewer-save-choice .friend-info-close, #viewer-save-progress .friend-info-close, #viewer-date-choice .friend-info-close { margin-top: var(--pill-gap); }
+        #viewer-map-choice .friend-info-merge-btn, #viewer-save-choice .friend-info-merge-btn, #viewer-save-progress .friend-info-merge-btn, #viewer-date-choice .friend-info-merge-btn { margin-top: var(--pill-gap); }
+        #viewer-map-choice .vmc-sheet > :first-child, #viewer-save-choice .vmc-sheet > :first-child, #viewer-save-progress .vmc-sheet > :first-child, #viewer-date-choice .vmc-sheet > :first-child { margin-top: 0; }
+
+        /* Pas de surbrillance au toucher, et aucune réaction sur les lignes d'information (ex : « Importé le ... ») */
+        * { -webkit-tap-highlight-color: transparent; }
+        .settings-row[style*="cursor:default"]:active, .settings-row[style*="cursor: default"]:active { background: transparent !important; transform: none !important; }
+
+        /* Renommer : même fond flou blanc que la fiche ami, la feuille glisse horizontalement */
+        #rename-overlay { background: rgba(255,255,255,0.6); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); animation: none; overflow: hidden; }
+        #rename-sheet { animation: none; }
+
+        /* Réglages : seule la pastille Fermer flotte ; Exporter / Importer restent dans le défilement */
+        #settings-foot-actions { padding: 0; }
+
+        /* Overlay : le média et son overlay forment un bloc unique, calé sur la LARGEUR de l'écran */
+        #viewer-zoomable.fitted .video-wrapper, #viewer-zoomable.fitted .img-stack { position: relative; display: block !important; flex: none; max-width: none !important; max-height: none !important; }
+        #viewer-zoomable.fitted .video-wrapper > video, #viewer-zoomable.fitted .img-stack > img:not(#viewer-overlay) { display: block; width: 100% !important; height: 100% !important; max-width: none !important; max-height: none !important; object-fit: contain; }
+        #viewer-zoomable.fitted #viewer-overlay { top: 0; left: 0; width: 100%; height: 100%; opacity: 1; }
+        .memory-thumb { content-visibility: auto; contain-intrinsic-size: auto 130px; }
+        html.low-fx * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+        /* Suppression des flous gourmands et buggés sur mobile */
+        .bottom-nav, .chat-tabs, .conv-filters, .sticky-chat-header .top-left .top-glyph, 
+        .sticky-chat-header .top-actions, #map-wrap #map-timeline {
+            background: rgba(17,17,17, 0.98) !important;
+            -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+        }
+        .sticky-chat-header .search-bar {
+            background: rgba(242,242,242, 1) !important;
+            -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+        }
     </style>
 </head>
 <body>
@@ -525,6 +577,7 @@
             
             <div class="top-nav">
                 <div class="top-nav-title">SNAPCHAT</div>
+                <div id="mem-order-btn" class="sort-btn" onclick="Memories.toggleOrder()" title="Du plus récent au plus ancien">▾</div>
             </div>
 
             <!-- VUE CHAT -->
@@ -617,9 +670,9 @@
             </div>
 
             <div class="bottom-nav">
-                <div class="nav-item active" onclick="UI.switchTab('chat')" id="nav-chat">CHAT</div>
+                <div class="nav-item active" onclick="UI.navClick('chat')" id="nav-chat">CHAT</div>
                 <div class="nav-item" onclick="UI.switchTab('memories')" id="nav-memories">MEMORIES</div>
-                <div class="nav-item" onclick="UI.switchTab('map')" id="nav-map">MAP</div>
+                <div class="nav-item" onclick="UI.navClick('map')" id="nav-map">MAP</div>
             </div>
             
             <!-- VISIONNEUSE PLEIN ECRAN -->
@@ -685,7 +738,8 @@
                 <div id="settings-sheet" class="sticky-close" onclick="if(event.target===this) Settings.close()">
                     <h3 id="settings-title">Réglages</h3>
                     <div id="settings-body"></div>
-                    <div class="sheet-footer"><div id="settings-foot-actions"></div><div class="friend-info-close" id="settings-close-btn" onclick="Settings.onBottom()">Fermer</div></div>
+                    <div id="settings-foot-actions"></div>
+                    <div class="sheet-footer"><div class="friend-info-close" id="settings-close-btn" onclick="Settings.onBottom()">Fermer</div></div>
                 </div>
             </div>
 
@@ -726,7 +780,7 @@
                 const target = videoEl.closest('.video-wrapper') || videoEl;
                 target.outerHTML = `<div style="background:#333; color:#FFFC00; padding:15px; border-radius:10px; font-size:12px; text-align:center; max-width: 100%; margin-top:5px;">
                     ⚠️ <b>Vidéo Impossible à lire (Code ${code})</b><br>${msg}<br><br>
-                    <button onclick="VideoDebugger.forceDownload('${key}')" style="background:#FFFC00; color:#000; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">Télécharger le fichier brut</button>
+                    <button onclick="VideoDebugger.forceDownload('${jsq(key)}')" style="background:#FFFC00; color:#000; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">Télécharger le fichier brut</button>
                 </div>`;
             },
             forceDownload: async (key) => {
@@ -828,7 +882,7 @@
             if (vis($('#main-ui')) && !vis($('#viewer'))) {
                 if ($('#view-conversation') && $('#view-conversation').classList.contains('active')) cb = '#FFFFFF';
                 else {
-                    cb = '#FFFFFF';
+                    cb = '#111111';
                 }
             }
             const root = document.documentElement.style;
@@ -894,11 +948,11 @@
         const ICO_PAUSE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg>';
         const State = {
             db: null, allMediaKeys: [], friends: {}, chats: {}, groups: [], friendsList: [], myUsername: null,
-            memories: [], memoriesRendered: 0, locations: [], areas: [], friendsInfo: {}, accountInfo: null,
+            memories: [], memAsc: false, memoriesRendered: 0, locations: [], areas: [], friendsInfo: {}, accountInfo: null,
             modifications: { merges: {}, renames: {}, hiddenFriends: [], hiddenGroups: [], hiddenPostals: [] },
             sortMode: 'msgs_desc',
             mediaIndex: { chatsMap: {} }, 
-            lazyFiles: [], 
+            lazyFiles: [], lazyCount: 0, 
             currentChat: null, chatFilter: 'tout', currentFilteredMessages: [], chatMediasContext: [],
             chatRange: { start: 0, end: 0 }, 
             chatSortOrder: 'bottom_up',
@@ -1067,6 +1121,35 @@
         // Miniatures d'images générées à la volée (canvas) et gardées en mémoire pour la session : la grille et la carte
         // affichent de petites images au lieu de décoder les originaux en pleine résolution. Repli automatique sur l'original.
         const Thumbs = {
+            order: [],
+            url: (id, blob) => { const u = URLManager.create(blob); Thumbs.order.push([id, u]); if (Thumbs.order.length > 500) { const [oid, ou] = Thumbs.order.shift(); Thumbs.cache.delete(oid); URLManager.revoke(ou); } return u; },
+            load: (id) => new Promise(res => { try { const rq = State.db.transaction('thumbs', 'readonly').objectStore('thumbs').get(id); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => res(null); } catch (e) { res(null); } }),
+            video: (key, size) => {
+                const id = key + '|v' + size; let p = Thumbs.cache.get(id);
+                if (!p) {
+                    p = Thumbs.run(async () => {
+                        const cached = await Thumbs.load(id); if (cached) return Thumbs.url(id, cached);
+                        const blob = await getMediaFromDB(key); if (!blob) return null;
+                        const tmp = URL.createObjectURL(blob);
+                        try {
+                            const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = tmp;
+                            await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error('video')); setTimeout(() => rej(new Error('timeout')), 8000); });
+                            v.currentTime = Math.min(0.1, (v.duration || 1) / 2);
+                            await new Promise(res => { v.onseeked = res; setTimeout(res, 2000); });
+                            const W = v.videoWidth, H = v.videoHeight; if (!W || !H) return null;
+                            const sc = Math.min(1, size / Math.max(W, H)), cv = document.createElement('canvas');
+                            cv.width = Math.max(1, Math.round(W * sc)); cv.height = Math.max(1, Math.round(H * sc));
+                            cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+                            const out = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.8));
+                            if (out) { Thumbs.save(id, out); return Thumbs.url(id, out); }
+                            return null;
+                        } finally { URL.revokeObjectURL(tmp); }
+                    });
+                    Thumbs.cache.set(id, p);
+                }
+                return p;
+            },
+            save: (id, blob) => { try { State.db.transaction('thumbs', 'readwrite').objectStore('thumbs').put(blob, id); } catch (e) {} },
             cache: new Map(),     // "clé|taille" -> Promise<url | null>
             active: 0, queue: [],
             next: () => { while (Thumbs.active < 3 && Thumbs.queue.length) { Thumbs.active++; Thumbs.queue.shift()(); } },
@@ -1082,6 +1165,7 @@
                 let p = Thumbs.cache.get(id);
                 if (!p) {
                     p = Thumbs.run(async () => {
+                        const cached = await Thumbs.load(id); if (cached) return Thumbs.url(id, cached);
                         const blob = await getMediaFromDB(key);
                         if (!blob) return null;
                         // Décodage via <img> : même orientation EXIF que l'affichage normal.
@@ -1101,7 +1185,7 @@
                             ctx.drawImage(img, 0, 0, w, h);
                             const alpha = /png|webp|gif/i.test(blob.type || '') || /\.(png|webp|gif)$/i.test(key);   // garde la transparence (filtres/textes)
                             const out = await new Promise(r => canvas.toBlob(r, alpha ? 'image/png' : 'image/jpeg', 0.82));
-                            return out ? URLManager.create(out) : null;
+                            if (out) { Thumbs.save(id, out); return Thumbs.url(id, out); } return null;
                         } finally { URL.revokeObjectURL(tmp); }
                     });
                     Thumbs.cache.set(id, p);
@@ -1117,14 +1201,20 @@
                     const el = entry.target;
                     const mediaKey = el.getAttribute('data-media-key');
                     if (mediaKey && !el.src && !el.dataset.loading) {
-                        el.dataset.loading = "true";
+                        el.dataset.loading = "true"; if (el.tagName === 'IMG') el.decoding = 'async';
                         (async () => {
                             // Images marquées data-thumb : on affiche une miniature légère (repli : le fichier d'origine).
+                            const isVideo = el.getAttribute('data-is-video') === 'true';
                             const size = parseInt(el.dataset.thumb, 10);
-                            if (size && el.tagName === 'IMG') {
+
+                            if (isVideo) {
+                                const thumbUrl = await Thumbs.video(mediaKey, size || 640);
+                                if (thumbUrl) { el.src = thumbUrl; el.classList.add('is-loaded'); return; }
+                            } else if (size && el.tagName === 'IMG') {
                                 const thumbUrl = await Thumbs.get(mediaKey, size);
                                 if (thumbUrl) { el.src = thumbUrl; return; }
                             }
+                            
                             const blob = await getMediaFromDB(mediaKey);
                             if (!blob) { el.dispatchEvent(new Event('error')); return; }
                             const url = URLManager.forKey(mediaKey, blob);
@@ -1204,12 +1294,15 @@
         OrientationGuard.init();
 
         // INIT SYSTEM (Passage à la version 2 pour forcer la recréation si corrompue)
-        const dbReq = indexedDB.open("SnapArchiveDB", 2);
+        if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register('./sw.js').catch(() => {});
+        try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+        const dbReq = indexedDB.open("SnapArchiveDB", 3);
         
         dbReq.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains('json_data')) db.createObjectStore('json_data');
             if (!db.objectStoreNames.contains('media_files')) db.createObjectStore('media_files');
+            if (!db.objectStoreNames.contains('thumbs')) db.createObjectStore('thumbs');
         };
         
         dbReq.onerror = () => showLoadError('Base locale inaccessible', 'Le navigateur refuse d’ouvrir le stockage de l’app (navigation privée ou stockage bloqué ?). Ouvre la page dans un onglet normal.', { retry: true, detail: String(dbReq.error || '') });
@@ -1294,6 +1387,13 @@
             const report = { date: new Date().toISOString(), found: [], missing: [], invalid: [], notes: [],
                              counts: { total: 0, saved: 0, failed: 0, skipped: 0, memories: 0, chatMedia: 0, savedMemories: 0, savedChat: 0 } };
             const relPath = (f) => (f.webkitRelativePath || f.name || '').toLowerCase();
+            try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const est = await navigator.storage.estimate(), need = files.reduce((a, f) => a + (f.size || 0), 0);
+                    if (est.quota && need > (est.quota - est.usage)) report.notes.push('Espace disponible estimé insuffisant pour tout importer : certains médias risquent de ne pas être enregistrés.');
+                }
+            } catch (e) {}
 
             const byKey = {};
             files.forEach(f => { const p = relPath(f); IMPORT_SPEC.forEach(sp => { if (p.includes(sp.path)) byKey[sp.key] = f; }); });
@@ -1348,7 +1448,7 @@
             }
 
             // 3) Médias
-            const mediaToSave = [];
+            const mediaToSave = []; const seenKeys = new Set();
             for (let i = 0; i < files.length; i++) {
                 const file = files[i], path = relPath(file), name = file.name;
                 if (name.match(/\.(mp4|mov|m4a|wav|mp3|aac|jpg|jpeg|png)$/i) && (path.includes('/memories/') || path.includes('/chat_media/'))) {
@@ -1363,11 +1463,13 @@
                         cleanKey = ext ? `${base}.${ext}` : base;
                     } else report.counts.memories++;
                     const isChat = path.includes('/chat_media/');
+                    if (seenKeys.has(cleanKey)) report.counts.dupes = (report.counts.dupes || 0) + 1; seenKeys.add(cleanKey);
                     mediaToSave.push({ key: cleanKey, file, chat: isChat });
                 }
                 if (i % 500 === 0) { log(`Analyse... ${i}/${files.length}`); await new Promise(r => setTimeout(r, 0)); }
             }
             report.counts.total = mediaToSave.length;
+            if (report.counts.dupes) report.notes.push(`${report.counts.dupes} média${report.counts.dupes > 1 ? 's' : ''} ont un nom identique à un autre (le dernier écrase le précédent).`);
             if (!mediaToSave.length) report.notes.push('Aucune photo ni vidéo trouvée (dossiers memories et chat_media absents ou vides) : seuls les textes seront affichés.');
 
             // 4) Écriture
@@ -1391,12 +1493,23 @@
             }
             // Les textes (conversations, amis) sont écrits AVANT les médias : sur mobile le stockage se remplit vite avec les vidéos,
             // et un échec sur les médias ne doit jamais empêcher l'app d'avoir ses conversations.
-            await saveJSON('memDateCache', {});        // les médias vont changer : on recalcule les horodatages
+            await saveJSON('memDateCache', {});
+            try { await new Promise(r => { const t = State.db.transaction('thumbs', 'readwrite'); t.objectStore('thumbs').clear(); t.oncomplete = t.onerror = t.onabort = () => r(); }); } catch (e) {}
+                   // les médias vont changer : on recalcule les horodatages
             await saveJSON('chats', chats);
             await saveJSON('importReport', report);    // rapport provisoire, mis à jour à la fin
             await saveJSON('friends', friends);
             let quota = false;
+            let okUntil = -1;
             for (let i = 0; i < mediaToSave.length; i++) {
+                if (i % 25 === 0 && i > okUntil) {
+                    try {
+                        await saveMediaBatch(mediaToSave.slice(i, i + 25));
+                        okUntil = Math.min(i + 24, mediaToSave.length - 1);
+                        for (let j = i; j <= okUntil; j++) { report.counts.saved++; report.counts[mediaToSave[j].chat ? 'savedChat' : 'savedMemories']++; }
+                    } catch (e) { /* repli : enregistrement un par un pour ce lot */ }
+                }
+                if (i <= okUntil) { if (i % 50 === 0) { log(`Sauvegarde... ${i}/${mediaToSave.length}`); await new Promise(r => setTimeout(r, 0)); } continue; }
                 try { await saveMedia(mediaToSave[i].key, mediaToSave[i].file); report.counts.saved++; report.counts[mediaToSave[i].chat ? 'savedChat' : 'savedMemories']++; }
                 catch (e) {
                     report.counts.failed++;
@@ -1503,6 +1616,13 @@
             return saveJSON('modifications', State.modifications);
         }
         function saveMedia(key, file) { return idbPut('media_files', file, key); }
+        function saveMediaBatch(items) {
+            return new Promise((resolve, reject) => {
+                const tx = State.db.transaction('media_files', 'readwrite'); const st = tx.objectStore('media_files'); let err = null;
+                items.forEach(it => { const r = st.put(it.file, it.key); r.onerror = () => { err = r.error; }; });
+                tx.oncomplete = () => resolve(); tx.onerror = tx.onabort = () => reject(err || tx.error);
+            });
+        }
 
         async function initApp() {
             try { await _initApp(); }
@@ -1711,7 +1831,7 @@
             if (memCacheDirty) { try { await saveJSON('memDateCache', memDateCache); } catch (e) { console.warn('cache des horodatages non enregistré', e); } }
             // Attribution par défaut (créneau = position du fichier dans sa journée, json d'origine) : base des corrections manuelles
             { const cnt = {}; State.memories.forEach(m => { const d = MemoOrder.dayOf(m); cnt[d] = cnt[d] === undefined ? 0 : cnt[d] + 1; m._slot = cnt[d]; m._defJson = m.json; }); }
-            State.memories.sort((a, b) => Util.date(b.json.Date) - Util.date(a.json.Date));
+            State.memories.sort((a, b) => State.memAsc ? Util.date(a.json.Date) - Util.date(b.json.Date) : Util.date(b.json.Date) - Util.date(a.json.Date));
 
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -1736,7 +1856,7 @@
                 savedMods || (legacyMerges ? { merges: legacyMerges } : {})
             );
             MemoOrder.applyAll();   // ordres de memories corrigés à la main (modifications.json)
-            State.memories.sort((a, b) => Util.date(b.json.Date) - Util.date(a.json.Date));
+            State.memories.sort((a, b) => State.memAsc ? Util.date(a.json.Date) - Util.date(b.json.Date) : Util.date(b.json.Date) - Util.date(a.json.Date));
             for (const secondary in State.modifications.merges) {
                 const primary = State.modifications.merges[secondary];
                 if (mergedChats[secondary]) {
@@ -1843,8 +1963,10 @@
         // Les Intl.DateTimeFormat sont coûteux à créer : on les construit une seule fois (même rendu qu'avant).
         const DATE_FMT_SHORT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
         const DATE_FMT_FULL = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        function jsq(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
         const Util = {
-            date: (str) => new Date(String(str == null ? '' : str).replace(/\//g, '-').replace(' UTC', 'Z').replace(' ', 'T')),
+            date: (str) => { const k = String(str == null ? '' : str); let t = Util._dc.get(k); if (t === undefined) { t = new Date(k.replace(/\//g, '-').replace(' UTC', 'Z').replace(' ', 'T')).getTime(); Util._dc.set(k, t); } return new Date(t); },
+            _dc: new Map(),
             formatTime: (seconds) => {
                 if (!isFinite(seconds) || seconds < 0) return '0:00';
                 const s = Math.floor(seconds);
@@ -1881,17 +2003,25 @@
         };
 
         const Memories = {
+            // Flèche jaune : inverse l'ordre d'affichage (récent -> ancien / ancien -> récent)
+            toggleOrder: () => {
+                State.memAsc = !State.memAsc;
+                const b = document.getElementById('mem-order-btn');
+                if (b) { b.innerText = State.memAsc ? '▴' : '▾'; b.title = State.memAsc ? 'Du plus ancien au plus récent' : 'Du plus récent au plus ancien'; }
+                MemoOrder.refresh();
+                const area = document.getElementById('memories-scroll-area'); if (area) area.scrollTop = 0;
+            },
             render: () => {
                 const grid = document.getElementById('memories-grid');
                 const limit = Math.min(State.memoriesRendered + 90, State.memories.length);
 
                 for (let i = State.memoriesRendered; i < limit; i++) {
                     const item = State.memories[i];
-                    State.lazyFiles.push(item.mainKey); const idxMain = State.lazyFiles.length - 1;
+                    const idxMain = State.lazyCount++;
                     const isVideo = item.mainKey.match(/\.(mp4|mov)$/i);
                     let overHtml = '';
                     if (item.overlayKey) {
-                        State.lazyFiles.push(item.overlayKey); const idxOver = State.lazyFiles.length - 1;
+                        const idxOver = State.lazyCount++;
                         overHtml = `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-lazy-idx="${idxOver}" data-thumb="640">`;
                     }
                     
@@ -1901,7 +2031,8 @@
                     
                     // Bloque la lecture vidéo en miniature
                     thumb.innerHTML = `
-                        ${isVideo ? `<video class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" data-thumb="640">`}
+                        <img class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" data-thumb="640" data-is-video="${isVideo ? 'true' : 'false'}">
+                        ${isVideo ? '<div class="video-play-overlay" style="width:30px; height:30px; font-size:12px;">▶</div>' : ''}
                         ${overHtml}
                         <div class="memory-date-badge">${Util.formatDate(item.json.Date, 'short-year')}</div>
                     `;
@@ -1916,20 +2047,44 @@
         const scrollTrack = document.getElementById('scroll-track');
         const scrollThumb = document.getElementById('scroll-thumb');
 
-        memView.addEventListener('scroll', () => {
-            if (memView.scrollTop + memView.clientHeight >= memView.scrollHeight - 600) Memories.render(); 
-            const ratio = memView.scrollTop / (memView.scrollHeight - memView.clientHeight);
-            const maxTop = scrollTrack.clientHeight - scrollThumb.clientHeight;
-            scrollThumb.style.top = `${ratio * maxTop}px`;
-        });
+        let scrubbing = false;
+        const placeThumb = (ratio) => {
+            const maxTop = Math.max(0, scrollTrack.clientHeight - scrollThumb.clientHeight);
+            scrollThumb.style.top = `${Math.max(0, Math.min(1, ratio)) * maxTop}px`;
+        };
+        let _scrollRaf = 0;
+        memView.addEventListener('scroll', () => { if (_scrollRaf) return; _scrollRaf = requestAnimationFrame(() => { _scrollRaf = 0;
+            if (memView.scrollTop + memView.clientHeight >= memView.scrollHeight - 600) Memories.render();
+            if (scrubbing) return;
+            // Position du curseur = position dans la liste COMPLÈTE (pas seulement ce qui est déjà affiché)
+            const total = State.memories.length, rendered = Math.max(1, State.memoriesRendered);
+            const gh = Math.max(1, document.getElementById('memories-grid').scrollHeight);
+            const topIdx = (memView.scrollTop / gh) * rendered;
+            const visible = (memView.clientHeight / gh) * rendered;
+            placeThumb(topIdx / Math.max(1, total - visible));
+        }); });
 
-        scrollTrack.addEventListener('touchmove', (e) => {
-            e.preventDefault(); 
+        // Appui / glissement sur la barre : saute à l'endroit voulu de la liste (charge les memories manquantes au besoin)
+        const scrubTo = (clientY) => {
             const rect = scrollTrack.getBoundingClientRect();
-            let y = Math.max(0, Math.min(e.touches[0].clientY - rect.top, rect.height - scrollThumb.clientHeight));
-            const ratio = y / (rect.height - scrollThumb.clientHeight);
-            memView.scrollTop = ratio * (memView.scrollHeight - memView.clientHeight);
-        }, { passive: false });
+            const th = scrollThumb.clientHeight;
+            const ratio = Math.max(0, Math.min(1, (clientY - rect.top - th / 2) / Math.max(1, rect.height - th)));
+            placeThumb(ratio);
+            const total = State.memories.length; if (!total) return;
+            const target = Math.round(ratio * (total - 1));
+            while (State.memoriesRendered <= target + 30 && State.memoriesRendered < total) Memories.render();
+            const el = document.getElementById('memories-grid').children[Math.min(target, document.getElementById('memories-grid').children.length - 1)];
+            if (el) memView.scrollTop = Math.max(0, el.offsetTop - document.getElementById('memories-grid').offsetTop);
+        };
+        scrollTrack.addEventListener('pointerdown', (e) => {
+            scrubbing = true; scrollTrack.dataset.on = '1';
+            try { scrollTrack.setPointerCapture(e.pointerId); } catch (err) {}
+            e.preventDefault(); scrubTo(e.clientY);
+        });
+        scrollTrack.addEventListener('pointermove', (e) => { if (scrubbing) { e.preventDefault(); scrubTo(e.clientY); } });
+        const endScrub = (e) => { if (!scrubbing) return; scrubbing = false; delete scrollTrack.dataset.on; try { scrollTrack.releasePointerCapture(e.pointerId); } catch (err) {} };
+        scrollTrack.addEventListener('pointerup', endScrub);
+        scrollTrack.addEventListener('pointercancel', endScrub);
 
         const AudioDurationObserver = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
@@ -2042,7 +2197,7 @@
         // description et l'image sont ensuite chargés pour les liens visibles via l'API publique microlink.io (l'adresse du lien lui est
         // alors transmise). Pour tout couper : localStorage.setItem('linkPreviewOnline', '0') ou LinkPreview.ONLINE = false.
         const LinkPreview = {
-            ONLINE: (() => { try { return localStorage.getItem('linkPreviewOnline') !== '0'; } catch (e) { return true; } })(),
+            ONLINE: (() => { try { return localStorage.getItem('linkPreviewOnline') === '1'; } catch (e) { return true; } })(),
             mem: new Map(), io: null,
             ICON: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.7-1.7"></path></svg>',
             firstUrl: (text) => {
@@ -2128,7 +2283,7 @@
                         const nameMatch = c.name.toLowerCase().includes(search);
                         for(let i = c.messages.length - 1; i >= 0; i--) {
                             const m = c.messages[i];
-                            if ((m.Content && m.Content.toLowerCase().includes(search)) || (m.Created && m.Created.toLowerCase().includes(search))) { msgIndex = i; break; }
+                            if ((m._lc === undefined ? (m._lc = ((m.Content || '') + '\u0001' + (m.Created || '')).toLowerCase()) : m._lc).includes(search)) { msgIndex = i; break; }
                         }
                         if (!nameMatch && msgIndex === -1) return;
                         tier = nameMatch ? (c.name.toLowerCase().startsWith(search) ? 0 : 1) : 2;
@@ -2248,7 +2403,7 @@
                         if (mediaKey) {
                             const dateOnly = Util.formatDate(m.Created, 'short-year');
                             const isVid = mediaKey.match(/\.(mp4|mov)$/i);
-                            State.lazyFiles.push(mediaKey); const lazyIdx = State.lazyFiles.length - 1;
+                            const lazyIdx = State.lazyCount++;
                             
                             html += `<div class="memory-thumb" id="msg-${m.originalIndex}" onclick="Viewer.open(${localIdx}, 'chat')">
                                 ${isVid ? `<video class="lazy-media" data-media-key="${mediaKey}" data-lazy-idx="${lazyIdx}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${mediaKey}" data-lazy-idx="${lazyIdx}">`}
@@ -2274,9 +2429,9 @@
                             const mediaKey = findChatMediaKey(m["Media IDs"]);
                             if (mediaKey) {
                                 if (isAudio) {
-                                    State.lazyFiles.push(mediaKey); const lazyIdx = State.lazyFiles.length - 1;
+                                    const lazyIdx = State.lazyCount++;
                                     const audioId = `audio-${m.originalIndex}`;
-                                    msgHtml += `<div class="custom-audio" id="${audioId}" data-media-key="${mediaKey}" onclick="AudioEngine.play('${audioId}', '${mediaKey}')">
+                                    msgHtml += `<div class="custom-audio" id="${audioId}" data-media-key="${mediaKey}" onclick="AudioEngine.play('${jsq(audioId)}', '${jsq(mediaKey)}')">
                                         <div class="ca-play">${ICO_PLAY}</div><div class="ca-progress-bg"><div class="ca-progress-fill"></div></div><div class="ca-time">--:--</div>
                                     </div>`;
                                 } else {
@@ -2441,6 +2596,12 @@
         });
 
         const UI = {
+            // Clic sur la barre du bas : CHAT revient toujours sur Amis, MAP revient toujours sur Memories
+            navClick: (tabId) => {
+                if (tabId === 'map') MapView.activeTab = 'memories';
+                UI.switchTab(tabId);
+                if (tabId === 'chat') Chat.switchTab('amis');
+            },
             switchTab: (tabId) => {
                 if (tabId !== 'map') { try { MapView.focusMem = null; } catch (e) {} }   // on quitte la carte : fin du mode « ce memory seulement »
                 stopAllMedia();
@@ -2474,6 +2635,7 @@
                     document.querySelector('.top-nav').style.display = 'flex';
                     document.querySelector('.bottom-nav').style.display = 'flex';
                 }
+                { const ob = document.getElementById('mem-order-btn'); if (ob) ob.style.display = tabId === 'memories' ? 'flex' : 'none'; }
                 if (tabId !== 'chat' && tabId !== 'conversation') { State.returnToSettings = false; State.settingsInfoReturn = false; }
                 if (tabId === 'map') MapView.switchTab(MapView.activeTab || 'memories'); // on garde le sous-onglet courant (Memories par défaut)
             }
@@ -3119,9 +3281,8 @@
                 const isVideo = item.mainKey.match(/\.(mp4|mov)$/i);
                 // Si le média est introuvable / illisible : on cache l'élément cassé et la vignette devient une tuile jaune.
                 const fail = `this.style.display='none'; this.parentNode.style.background='#FFFC00';`;
-                const mediaTag = isVideo
-                    ? `<video class="lazy-media" data-media-key="${item.mainKey}" preload="metadata" muted playsinline onplay="this.pause()" onerror="${fail}" style="pointer-events:none;"></video>`
-                    : `<img class="lazy-media" data-media-key="${item.mainKey}" data-thumb="260" onerror="${fail}" style="pointer-events:none;">`;
+                const mediaTag = `<img class="lazy-media" data-media-key="${item.mainKey}" data-thumb="260" data-is-video="${isVideo ? 'true' : 'false'}" onerror="${fail}" style="pointer-events:none;">` +
+                                 (isVideo ? '<div class="video-play-overlay" style="width:24px; height:24px; font-size:10px;">▶</div>' : '');
                 // Filtre / texte / stickers par-dessus, comme dans la grille des memories.
                 const overTag = item.overlayKey
                     ? `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-thumb="260" onerror="this.style.display='none';">`
@@ -3192,6 +3353,59 @@
 
 
         // --- RÉGLAGES (bouton engrenage) ---
+        const Tools = {
+            buttons: () => `<div class="friend-info-merge-btn" onclick="Tools.stats()">Statistiques</div><div class="friend-info-merge-btn" onclick="Tools.exportAll()">Exporter toutes les conversations (.txt)</div><div class="friend-info-merge-btn" onclick="Tools.exportCurrent()">Exporter la conversation ouverte (.txt)</div><div class="friend-info-merge-btn" onclick="Tools.toggleFx()">Activer / désactiver les effets de flou</div><div class="friend-info-merge-btn" onclick="Tools.toggleLinks()">Aperçus de liens en ligne (microlink.io) : activer / désactiver</div><div class="friend-info-merge-btn" onclick="Tools.clearThumbs()">Vider le cache des miniatures</div><div class="friend-info-merge-btn" onclick="Tools.storage()">État du stockage</div>`,
+            _lines: (c) => {
+                const out = [`=== ${c.name} ===`];
+                (c.messages || []).forEach(m => {
+                    const who = (!m.From || (State.myUsername && m.From.toLowerCase() === State.myUsername)) ? 'Moi' : Util.getDisplayName(m.From);
+                    out.push(`[${Util.formatDate(m.Created)}] ${who} : ${m.Content || (m["Media Type"] ? '[' + m["Media Type"] + ']' : '')}`);
+                });
+                return out.join('\n');
+            },
+            _save: (name, text) => DeviceSave.save(new File([text], name, { type: 'text/plain' })),
+            exportAll: () => Tools._save('conversations.txt', [...State.friendsList, ...State.groups].map(Tools._lines).join('\n\n')),
+            exportCurrent: () => {
+                const c = State.currentChat;
+                if (!c) { alert('Ouvre d\u2019abord une conversation.'); return; }
+                Tools._save(String(c.name || 'conversation').replace(/[^\w\-]+/g, '_') + '.txt', Tools._lines(c));
+            },
+            toggleLinks: () => {
+                const on = !LinkPreview.ONLINE;
+                if (on && !confirm('Activer les aperçus de liens ? Les liens présents dans tes conversations seront envoyés au service microlink.io pour récupérer titre et image.')) return;
+                LinkPreview.ONLINE = on; try { localStorage.setItem('linkPreviewOnline', on ? '1' : '0'); } catch (e) {}
+                alert('Aperçus de liens ' + (on ? 'activés' : 'désactivés') + '. Rouvre la conversation pour voir le changement.');
+            },
+            storage: async () => {
+                try {
+                    const est = await navigator.storage.estimate(), per = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+                    const mb = (n) => (n / 1048576).toFixed(0) + ' Mo';
+                    alert(`Stockage utilisé : ${mb(est.usage)} sur ${mb(est.quota)} disponibles.\nProtection contre l\u2019effacement automatique : ${per ? 'active' : 'non accordée par le navigateur'}.`);
+                } catch (e) { alert('Information indisponible sur ce navigateur.'); }
+            },
+            clearThumbs: () => {
+                try { const t = State.db.transaction('thumbs', 'readwrite'); t.objectStore('thumbs').clear(); t.oncomplete = () => { Thumbs.cache.clear(); alert('Miniatures effacées : elles seront recréées à l\u2019affichage.'); }; } catch (e) {}
+            },
+            toggleFx: () => { const on = document.documentElement.classList.toggle('low-fx'); try { localStorage.setItem('lowFx', on ? '1' : '0'); } catch (e) {} },
+            stats: () => {
+                const all = [...State.friendsList, ...State.groups], months = {}, hours = new Array(24).fill(0); let total = 0;
+                all.forEach(c => (c.messages || []).forEach(m => {
+                    const d = Util.date(m.Created); if (isNaN(d)) return;
+                    total++; const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                    months[k] = (months[k] || 0) + 1; hours[d.getHours()]++;
+                }));
+                const mk = Object.keys(months).sort().slice(-24), mx = Math.max(1, ...mk.map(k => months[k])), hx = Math.max(1, ...hours);
+                const bars = (labels, vals, max) => labels.map((l, i) => `<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin:2px 0"><span style="width:58px;flex:none;color:#888">${l}</span><div style="height:10px;border-radius:5px;background:var(--snap-yellow);width:${Math.round(vals[i] / max * 70)}%;min-width:2px"></div><span style="color:#555">${vals[i]}</span></div>`).join('');
+                const top = all.slice().sort((a, b) => (b.messages || []).length - (a.messages || []).length).slice(0, 10)
+                    .map(c => `<div style="display:flex;justify-content:space-between;font-size:13px;margin:3px 0"><span>${Util.escapeHTML(c.name)}</span><b>${(c.messages || []).length}</b></div>`).join('');
+                const old = document.getElementById('stats-overlay'); if (old) old.remove();
+                const el = document.createElement('div'); el.id = 'stats-overlay';
+                el.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(255,255,255,.98);overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 20px 40px;color:#111;';
+                el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Statistiques</h2><div class="friend-info-merge-btn" style="margin:0;padding:8px 16px" onclick="document.getElementById('stats-overlay').remove()">Fermer</div></div><p><b>${total.toLocaleString('fr-FR')}</b> messages</p><h3>Par mois</h3>${bars(mk, mk.map(k => months[k]), mx)}<h3>Par heure</h3>${bars(hours.map((_, h) => h + ' h'), hours, hx)}<h3>Conversations les plus actives</h3>${top}`;
+                document.body.appendChild(el);
+            }
+        };
+
         const Settings = {
             sortModes: [
                 ['last', 'Dernier message', { desc: 'déchronologique', asc: 'chronologique' }],
@@ -3220,6 +3434,7 @@
                 const ov = document.getElementById('settings-overlay');
                 ov.classList.toggle('no-anim', !!instant);
                 if (!instant) Settings.page = null;
+                ModsManager.collapseAll();
                 Settings.render();
                 OverlayFx.show(ov);
                 document.getElementById('settings-sheet').scrollTop = Settings.scrollPos || 0;
@@ -3246,6 +3461,7 @@
                 const pgd = Settings._pages[k]; if (!pgd || (!pgd.rows.length && k !== 'mods')) return;
                 const sh = document.getElementById('settings-sheet');
                 Settings.mainScroll = sh.scrollTop; Settings.page = k;
+                ModsManager.collapseAll();
                 Settings.render(); sh.scrollTop = 0;
                 OverlayFx.slide(sh, 100);
             },
@@ -3293,7 +3509,7 @@
                 const micIc = ic('<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line>');
                 const cell = (icon, n) => `<span class="sc-cell${n ? '' : ' zero'}">${icon}<span>${n || 0}</span></span>`;
                 const counts = `<span class="sc-grid">${cell(msgIc, c.txtCount)}${cell(medIc, c.medCount)}${cell(micIc, c.audCount)}</span>`;
-                return `<div class="settings-row sub-row" onclick="Settings.openConv('${c.id}', ${isGroup})"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${Util.escapeHTML(c.name)}</span><span style="display:flex; align-items:center; gap:10px; flex-shrink:0;"><span class="sub" style="white-space:nowrap;">${counts}</span>${hidden ? `<span style="color:var(--snap-yellow); background:var(--snap-black); padding:4px 10px; border-radius:12px; font-size:11px;" onclick="event.stopPropagation(); ModsManager.toggleHide('${c.id}', ${isGroup}); Settings.render();">Afficher</span>` : ''}</span></div>`;
+                return `<div class="settings-row sub-row" onclick="Settings.openConv('${c.id}', ${isGroup})"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${Util.escapeHTML(c.name)}</span><span style="display:flex; align-items:center; gap:10px; flex-shrink:0;"><span class="sub" style="white-space:nowrap;">${counts}</span>${hidden ? `<span title="Afficher" style="color:var(--snap-yellow); background:var(--snap-black); width:30px; height:26px; border-radius:13px; display:flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); ModsManager.toggleHide('${c.id}', ${isGroup}); Settings.render();"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>` : ''}</span></div>`;
             },
 
 
@@ -3386,23 +3602,22 @@ helpRows: () => {
                     return `<div class="sheet-pill sub disabled"><span>${label}${n}</span></div>`;
                 }
                 const info = subText !== undefined ? (subText ? ` <span class="sub">· ${subText}</span>` : '') : ` <span class="sub">(${rows.length})</span>`;
-                return `<div class="sheet-pill sub" onclick="Settings.openPage('${key}')"><span>${label}${info}</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
+                return `<div class="sheet-pill sub" onclick="Settings.openPage('${jsq(key)}')"><span>${label}${info}</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
             },
             // Pastille de 1er niveau (Conversations, Données) : ses pastilles n'apparaissent qu'au clic
             group: (key, label, inner) => {
                 const open = Settings.expanded[key];
-                return `<div class="sheet-pill ${open ? 'open' : ''}" onclick="Settings.toggle('${key}')"><span>${label}</span><svg class="chev ${open ? 'open' : ''}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`
+                return `<div class="sheet-pill ${open ? 'open' : ''}" onclick="Settings.toggle('${jsq(key)}')"><span>${label}</span><svg class="chev ${open ? 'open' : ''}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`
                     + (open ? `<div class="sheet-group">${inner}</div>` : '');
             },
 
             render: () => {
                 const body = document.getElementById('settings-body');
+                const prevList = document.getElementById('mods-sec-list'), prevTop = prevList ? prevList.scrollTop : 0;
                 Settings._pages = {};
                 const hidF = State.modifications.hiddenFriends, hidG = State.modifications.hiddenGroups;
                 const friends = Settings.sortChats(State.friendsList.filter(c => !hidF.includes(c.id))).map(c => Settings.listRow(c, false, false));
                 const groups = Settings.sortChats(State.groups.filter(c => !hidG.includes(c.id))).map(c => Settings.listRow(c, true, false));
-                const hidden = State.friendsList.filter(c => hidF.includes(c.id)).map(c => Settings.listRow(c, false, true))
-                    .concat(State.groups.filter(c => hidG.includes(c.id)).map(c => Settings.listRow(c, true, true)));
 
                 const [curCrit, curDir] = (State.sortMode || 'msgs_desc').split('_');
                 const cur = Settings.sortModes.find(x => x[0] === curCrit) || Settings.sortModes[2];
@@ -3413,7 +3628,7 @@ helpRows: () => {
                 const sortRows = Settings.sortModes.map(([c, l, msgs]) => {
                     const active = c === curCrit;
                     const dir = active ? curDir : 'desc';
-                    return `<div class="settings-row sub-row ${active ? 'active' : ''}" onclick="Settings.setSort('${c}')"><div>${l} <span class="sub">· ${msgs[dir]}</span></div><span class="sort-arrow ${active ? 'on' : ''}">${arrow(dir)}</span></div>`;
+                    return `<div class="settings-row sub-row ${active ? 'active' : ''}" onclick="Settings.setSort('${jsq(c)}')"><div>${l} <span class="sub">· ${msgs[dir]}</span></div><span class="sort-arrow ${active ? 'on' : ''}">${arrow(dir)}</span></div>`;
                 });
 
                 const modRows = Settings.page === 'mods' ? ModsManager.rows() : [];
@@ -3470,13 +3685,6 @@ helpRows: () => {
                     if (todo.length) importRows.push(head('À vérifier'), ...todo);
                 }
                 const importSub = ir ? (importProblems ? `${importProblems} problème${importProblems > 1 ? 's' : ''}` : 'OK') : 'aucun';
-                const postalAll = State.areas.length ? MapView.getAreaStats() : [];
-                const postalHidden = postalAll.filter(c => c.hidden).length;
-                const postalRows = postalAll.map(c => `<div class="settings-row sub-row" style="${c.hidden ? 'opacity:.55;' : ''}" onclick="MapView.togglePostal('${c.geoKey}')"><div style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${Util.escapeHTML([c.label, c.country].filter(Boolean).join(' · '))} <span class="sub">· ${c.dayCount} j</span></div>${c.hidden
-                    ? '<span style="color:var(--snap-yellow); background:var(--snap-black); padding:4px 10px; border-radius:12px; font-size:11px;">Afficher</span>'
-                    : '<span style="color:#666; background:var(--snap-gray); padding:4px 10px; border-radius:12px; font-size:11px;">Masquer</span>'}</div>`);
-                if (postalHidden) postalRows.unshift('<div class="settings-row sub-row" onclick="MapView.showAllPostals()"><span>Tout afficher</span></div>');
-                const postalSub = postalHidden ? `${postalHidden} masqué${postalHidden > 1 ? 's' : ''} / ${postalAll.length}` : `${postalAll.length}`;
                 document.getElementById('settings-title').innerText = 'Réglages';
                 body.innerHTML = `
                     ${`
@@ -3484,19 +3692,18 @@ helpRows: () => {
                         ${Settings.accordion('sort', 'Affichage', sortRows, '')}
                         ${Settings.accordion('friends', 'Amis', friends)}
                         ${Settings.accordion('groups', 'Groupes', groups)}
-                        ${Settings.accordion('hidden', 'Personnes masquées', hidden)}
-                        ${Settings.accordion('dissoc', 'Synchronisation', Settings.dissocRows())}`}${`
-                        ${Settings.accordion('postal', 'Carte', postalRows, postalSub)}
                         ${Settings.accordion('mods', 'Modifications', modRows, modSub)}
+                        ${Settings.accordion('dissoc', 'Synchronisation', Settings.dissocRows())}`}${`
                         ${Settings.accordion('importReport', 'Import', importRows, importSub)}
                         <div class="settings-danger" onclick="resetDB()">Supprimer les données</div>`}`;
                 const pg = Settings.page && Settings._pages[Settings.page];
                 if (Settings.page && !pg) Settings.page = null;
                 if (pg && !pg.rows.length && Settings.page !== 'mods') { Settings.page = null; Settings.render(); return; }   // liste devenue vide : retour aux pastilles
+                { const nl = document.getElementById('mods-sec-list'); if (nl && prevTop) nl.scrollTop = prevTop; }
                 document.getElementById('settings-sheet').classList.toggle('page-mode', !!pg);
                 document.getElementById('settings-close-btn').textContent = pg ? 'Retour' : 'Fermer';
                 document.getElementById('settings-foot-actions').innerHTML = (pg && Settings.page === 'mods')
-                    ? `<div class="friend-info-merge-btn" onclick="ModsManager.exportJSON()">Exporter modifications.json</div><div class="friend-info-merge-btn" onclick="document.getElementById('mods-import-input').click()">Importer modifications.json</div><input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">` : '';
+                    ? `<div class="friend-info-merge-btn" onclick="ModsManager.exportJSON()">Exporter modifications.json</div><div class="friend-info-merge-btn" onclick="document.getElementById('mods-import-input').click()">Importer modifications.json</div><input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">` : (!pg ? Tools.buttons() : '');
                 if (pg) {
                     document.getElementById('settings-title').innerText = pg.label;
                     body.innerHTML = `<div class="settings-sublist">${pg.rows.join('') || '<div class="settings-row"><span class="sub">Aucun</span></div>'}</div>`;
@@ -3512,11 +3719,15 @@ helpRows: () => {
                 if (el.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches)
                     el.animate([{ transform: `translateX(${from}%)`, opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1)' });
             },
-            show: (ov) => { clearTimeout(ov._t); ov.classList.remove('closing'); ov.style.display = 'flex'; },
+            show: (ov) => {
+                clearTimeout(ov._t); ov.classList.remove('closing');
+                if (getComputedStyle(ov).display === 'none') { ov.style.animation = ''; Array.from(ov.children).forEach(c => c.style.animation = ''); }   // rejoue l'ouverture normale
+                ov.style.display = 'flex';
+            },
             hide: (ov, done) => {
                 if (getComputedStyle(ov).display === 'none') { if (done) done(); return; }
                 if (matchMedia('(prefers-reduced-motion: reduce)').matches) { ov.style.display = 'none'; if (done) done(); return; }
-                clearTimeout(ov._t); ov.classList.add('closing');
+                clearTimeout(ov._t); ov.style.animation = ''; Array.from(ov.children).forEach(c => c.style.animation = ''); ov.classList.add('closing');
                 ov._t = setTimeout(() => { ov.classList.remove('closing'); ov.style.display = 'none'; if (done) done(); }, 300);
             }
         };
@@ -3563,13 +3774,13 @@ helpRows: () => {
                         if (names.length > 1) rows += FriendInfo.row('Noms affichés', names.map(Util.escapeHTML).join('<br>'));
                     }
                     const sinceList = allInfos.map(x => x.since).filter(Boolean).sort();
-                    if (sinceList.length) rows += FriendInfo.row(allIds.length > 1 ? 'Amis depuis (le plus ancien)' : 'Amis depuis', Util.formatDate(sinceList[0]));
+                    if (sinceList.length) rows += FriendInfo.row('Amis depuis', Util.formatDate(sinceList[0]));
                     if (info.lastModified && info.lastModified !== info.since) rows += FriendInfo.row('Dernière mise à jour', Util.formatDate(info.lastModified));
                     if (info.source) rows += FriendInfo.row('Ajout', FriendInfo.sourceLabels[info.source.toLowerCase()] || info.source);
                     if (info.category && info.category !== 'Friends') rows += FriendInfo.row('Statut', FriendInfo.categoryLabels[info.category] || info.category);
                 } else {
                     document.getElementById('fi-sub').innerText = isGroup ? 'Conversation de groupe' : ('@' + id);
-                    if (!isGroup) rows += FriendInfo.row('Infos', "Ami supprimé ou pseudo changé. Fusionne-le avec son nouveau compte.");
+                    if (!isGroup) rows += FriendInfo.note("Ami supprimé ou pseudo changé. Fusionne-le avec son nouveau compte.");
                 }
                 if (chatMeta && id !== 'account') {
                     const orig = RenameBox.originalName(chatMeta);
@@ -3591,18 +3802,18 @@ helpRows: () => {
                 // ami a changé de username après l'ajout, ce qui fait apparaître ses infos/messages séparés
                 // en deux entrées côté export Snapchat).
                 const actionsEl = document.getElementById('fi-merge-action');
-                const backHtml = backId ? `<div class="friend-info-merge-btn" onclick="FriendInfo.open('${backId}')">← Retour au groupe</div>` : '';
+                const backHtml = backId ? `<div class="friend-info-merge-btn" onclick="FriendInfo.open('${jsq(backId)}')">← Retour au groupe</div>` : '';
                 if (chatMeta && id !== 'account') {
                     const hiddenList = isGroup ? State.modifications.hiddenGroups : State.modifications.hiddenFriends;
                     const isHidden = hiddenList.includes(id);
-                    let actionsHtml = `<div class="friend-info-merge-btn" onclick="ModsManager.rename('${id}')">Renommer</div>`;
-                    actionsHtml += `<div class="friend-info-merge-btn" onclick="ModsManager.toggleHide('${id}', ${isGroup})">${isHidden ? 'Afficher (n\'est plus masqué)' : 'Masquer'}</div>`;
+                    let actionsHtml = `<div class="friend-info-merge-btn" onclick="ModsManager.rename('${jsq(id)}')">Renommer</div>`;
+                    actionsHtml += `<div class="friend-info-merge-btn" onclick="ModsManager.toggleHide('${jsq(id)}', ${isGroup})">${isHidden ? 'Afficher (n\'est plus masqué)' : 'Masquer'}</div>`;
                     if (!isGroup) {
                         const aliases = chatMeta.aliases || [];
                         aliases.forEach(aliasId => {
-                            actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.unmerge('${id}', '${aliasId}')">Défusionner @${Util.escapeHTML((State.friendsInfo[aliasId] && State.friendsInfo[aliasId].username) || aliasId)}</div>`;
+                            actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.unmerge('${jsq(id)}', '${jsq(aliasId)}')">Défusionner @${Util.escapeHTML((State.friendsInfo[aliasId] && State.friendsInfo[aliasId].username) || aliasId)}</div>`;
                         });
-                        if (!aliases.length) actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.open('${id}')">Fusionner avec un autre contact</div>`;   // déjà fusionné : plus de proposition
+                        if (!aliases.length) actionsHtml += `<div class="friend-info-merge-btn" onclick="MergePicker.open('${jsq(id)}')">Fusionner avec un autre contact</div>`;   // déjà fusionné : plus de proposition
                     }
                     actionsEl.innerHTML = backHtml + actionsHtml;
                 } else {
@@ -3654,14 +3865,14 @@ helpRows: () => {
                         if (!info) status = 'pas dans tes amis';
                         else if (info.category && info.category !== 'Friends') status = (FriendInfo.categoryLabels[info.category] || info.category).toLowerCase();
                     }
-                    const sub = [`@${e.id}`, status, e.last ? `dernier message ${Util.formatDate(e.last)}` : ''].filter(Boolean).join(' · ');
                     const click = isMe ? '' : ` onclick="FriendInfo.openChat('${e.id}', '${g.id}')" style="cursor:pointer;"`;
-                    html += `<div class="friend-info-row"${click}><span style="min-width:0;"><span style="font-weight:800;">${esc(name)}</span><br><span class="label" style="font-size:11px;">${esc(sub)}</span></span><span style="flex:none; padding-left:10px;">${e.n} msg</span></div>`;
+                    html += `<div class="friend-info-row"${click}><span style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span style="font-weight:800;">${esc(name)}</span> <span class="label" style="font-size:12px;">@${esc(e.id)}</span></span><span style="flex:none; padding-left:10px;">${e.n} msg</span></div>`;
                 });
                 html += `<div style="color:#999; font-size:12px; font-weight:500; padding:10px 2px 0;">L'export ne contient pas la liste des membres : seules les personnes qui ont écrit au moins un message apparaissent.</div>`;
                 return html;
             },
 
+            note: (text) => `<div class="friend-info-row"><span style="flex:1;">${text}</span></div>`,
             row: (label, value) => `<div class="friend-info-row"><span class="label">${label}</span><span>${value}</span></div>`,
 
             // Clic sur un membre dans la liste d'un groupe : ouvre directement la conversation privée avec lui.
@@ -3707,7 +3918,9 @@ helpRows: () => {
                 document.getElementById('rename-reset').style.display = State.modifications.renames[id] ? 'block' : 'none';
                 document.getElementById('friend-info-overlay').style.display = 'none';
                 document.getElementById('rename-overlay').style.display = 'flex';
+                OverlayFx.slide(document.getElementById('rename-sheet'), 100);
                 setTimeout(() => { input.focus(); input.select(); }, 60);
+                
             },
 
             apply: (name) => {
@@ -3734,8 +3947,21 @@ helpRows: () => {
             reset: () => RenameBox.apply(''),
 
             close: () => {
-                document.getElementById('rename-overlay').style.display = 'none';
-                if (RenameBox.id) FriendInfo.open(RenameBox.id);
+                const ro = document.getElementById('rename-overlay'), sh = document.getElementById('rename-sheet');
+                const fin = () => { ro.style.display = 'none'; ro.style.background = ''; ro.style.webkitBackdropFilter = ''; ro.style.backdropFilter = ''; ro.style.pointerEvents = ''; };
+                if (RenameBox.id) {
+                    FriendInfo.open(RenameBox.id);
+                    const fo = document.getElementById('friend-info-overlay'), fs = document.getElementById('friend-info-sheet');
+                    fo.style.animation = 'none'; fs.style.animation = 'none';   // le flou est déjà là : pas de nouveau fondu, donc pas de clignotement
+                    OverlayFx.slide(fs, -100);
+                }
+                const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (sh.animate && !reduced && ro.style.display !== 'none') {
+                    // le voile de Renommer devient transparent (celui de la fiche ami prend le relais) et la feuille repart vers la droite
+                    ro.style.background = 'transparent'; ro.style.webkitBackdropFilter = 'none'; ro.style.backdropFilter = 'none'; ro.style.pointerEvents = 'none';
+                    const a = sh.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(100%)', opacity: 0.4 }], { duration: 240, easing: 'cubic-bezier(.4,0,.2,1)' });
+                    a.onfinish = fin; a.oncancel = fin;
+                } else fin();
             }
         };
 
@@ -3804,44 +4030,59 @@ helpRows: () => {
                 return Object.keys(m.merges || {}).length + Object.keys(m.renames || {}).length + (m.hiddenFriends || []).length + (m.hiddenGroups || []).length + (m.hiddenPostals || []).length + Object.keys(m.memoryOrder || {}).length;
             },
 
-            // Lignes du menu « Gérer les modifications » : export / import, puis chaque modification avec un bouton Supprimer.
+            // Listes déroulantes du menu « Modifications » (masquées / renommées / fusionnées / ordre des memories)
+            openSec: { hidden: false, renamed: false, merged: false, postal: false, memories: false },
+            collapseAll: () => { Object.keys(ModsManager.openSec).forEach(k => ModsManager.openSec[k] = false); },
+            // une seule liste ouverte à la fois : en ouvrir une referme les autres
+            toggleSec: (k) => { const old = document.getElementById('mods-sec-list'); if (old) old.scrollTop = 0; const was = ModsManager.openSec[k]; ModsManager.collapseAll(); ModsManager.openSec[k] = !was; const sh = document.getElementById('settings-sheet'), y = sh ? sh.scrollTop : 0; Settings.render(); if (sh) sh.scrollTop = y; },
+
+            // Lignes du menu : une liste déroulante (et défilante) par catégorie ; croix = supprimer la modification, œil = ré-afficher une personne masquée
             rows: () => {
                 const m = State.modifications, esc = Util.escapeHTML;
                 const find = (id) => [...State.friendsList, ...State.groups].find(c => c.id === id);
                 const nameOf = (id) => { const c = find(id); return c ? c.name : (State.friends[id] || id); };
-                const eye = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px; opacity:.6;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
-                const entry = (titleHtml, action, openAct) => `<div class="settings-row sub-row" style="cursor:default; padding-top:9px; padding-bottom:9px;"><div style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;${openAct ? ' cursor:pointer;' : ''}"${openAct ? ` onclick="${openAct}"` : ''}>${titleHtml}</div><span onclick="${action}" style="flex:none; background:var(--snap-gray); color:#c0392b; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">Supprimer</span></div>`;
+                const LIST_BG = '#ececee';   // fond de la liste déroulante = fond du rond
+                const X = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>';
+                const btn = (kind, action) => `<span onclick="${action}" title="${kind === 'show' ? 'Retirer des masquées (ré-afficher)' : 'Supprimer cette modification'}" style="flex:none; width:28px; height:28px; display:flex; align-items:center; justify-content:center; background:${LIST_BG}; color:#c0392b; border-radius:50%; cursor:pointer;">${X}</span>`;
+                const entry = (titleHtml, action, openAct, kind) => `<div class="settings-row sub-row" style="cursor:default; padding-top:9px; padding-bottom:9px;"><div style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;${openAct ? ' cursor:pointer;' : ''}"${openAct ? ` onclick="${openAct}"` : ''}>${titleHtml}</div>${btn(kind, action)}</div>`;
+                const section = (key, label, items, subText) => {
+                    const n = items.length;
+                    if (!n) return `<div class="settings-row sub-row" style="cursor:default; opacity:.45;"><span>${label} <span class="sub">(0)</span></span></div>`;
+                    const open = ModsManager.openSec[key];
+                    return `<div class="settings-row sub-row" onclick="ModsManager.toggleSec('${jsq(key)}')"><span>${label} <span class="sub">(${subText !== undefined ? subText : n})</span></span>${open ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><polyline points="18 15 12 9 6 15"></polyline></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><polyline points="6 9 12 15 18 9"></polyline></svg>'}</div>`
+                        + (open ? `<div id="mods-sec-list" style="max-height:36vh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:${LIST_BG}; border-radius:14px; margin:var(--pill-gap) 0 0; padding:0 8px;">${items.join('')}</div>` : '');
+                };
 
-                const out = [];
                 const renames = Object.keys(m.renames || {}), merges = Object.keys(m.merges || {});
                 const hidF = m.hiddenFriends || [], hidG = m.hiddenGroups || [], hidP = m.hiddenPostals || [];
-                if (!ModsManager.count()) { out.push(`<div class="settings-row sub-row" style="cursor:default;"><span class="sub">Aucune modification enregistrée</span></div>`); return out; }
 
-                if (renames.length) {
-                    renames.forEach(id => { const c = find(id); out.push(entry(`${esc(c ? RenameBox.originalName(c) : id)} → ${esc(m.renames[id])}`, `ModsManager.removeRename('${id}')`, `Settings.openMod('${id}')`)); });
-                }
-                if (merges.length) {
-                    merges.forEach(sec => out.push(entry(`@${esc(sec)} ↔ @${esc(m.merges[sec])}`, `ModsManager.removeMerge('${sec}')`, `Settings.openMod('${m.merges[sec]}', '${sec}')`)));
-                }
-                if (hidF.length) {
-                    hidF.forEach(id => out.push(entry(eye + esc(nameOf(id)), `ModsManager.removeHidden('${id}', false)`, `Settings.openMod('${id}')`)));
-                }
-                if (hidG.length) {
-                    hidG.forEach(id => out.push(entry(eye + esc(nameOf(id)), `ModsManager.removeHidden('${id}', true)`, `Settings.openMod('${id}')`)));
-                }
-                if (hidP.length) {
-                    const labels = {};
-                    if (State.areas.length) MapView.getAreaStats().forEach(c => { labels[c.geoKey] = c.label; });
-                    hidP.forEach(k => out.push(entry(eye + esc(labels[k] || k.split('|')[1] || k), `MapView.togglePostal('${k}')`)));
-                }
+                const hidden = [];
+                hidF.forEach(id => hidden.push(entry(esc(nameOf(id)), `ModsManager.removeHidden('${jsq(id)}', false)`, `Settings.openMod('${jsq(id)}')`, 'show')));
+                hidG.forEach(id => hidden.push(entry(esc(nameOf(id)), `ModsManager.removeHidden('${jsq(id)}', true)`, `Settings.openMod('${jsq(id)}')`, 'show')));
+                // Carte : tous les points (affichés = œil, masqués = œil barré) ; un appui bascule l'état
+                const EYE_ON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>', EYE_OFF = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+                const areas = State.areas.length ? MapView.getAreaStats() : [];
+                const nHid = areas.filter(c => c.hidden).length;
+                const carte = areas.map(c => `<div class="settings-row sub-row" style="cursor:default; padding-top:9px; padding-bottom:9px;${c.hidden ? ' opacity:.6;' : ''}"><div style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc([c.label, c.country].filter(Boolean).join(' · '))} <span class="sub">· ${c.dayCount} j</span></div><span onclick="MapView.togglePostal('${c.geoKey}')" title="${c.hidden ? 'Masqué : afficher' : 'Affiché : masquer'}" style="flex:none; width:28px; height:28px; display:flex; align-items:center; justify-content:center; background:${LIST_BG}; color:${c.hidden ? '#8a8a8e' : 'var(--snap-black)'}; border-radius:50%; cursor:pointer;">${c.hidden ? EYE_OFF : EYE_ON}</span></div>`);
+                if (nHid) carte.unshift(`<div class="settings-row sub-row" style="padding-top:9px; padding-bottom:9px;" onclick="MapView.showAllPostals()"><span>Tout afficher</span></div>`);
+                const carteSub = nHid ? `${nHid} masqué${nHid > 1 ? 's' : ''} / ${areas.length}` : `${areas.length}`;
+                const renamed = renames.map(id => { const c = find(id); return entry(`${esc(c ? RenameBox.originalName(c) : id)} → ${esc(m.renames[id])}`, `ModsManager.removeRename('${jsq(id)}')`, `Settings.openMod('${jsq(id)}')`, 'del'); });
+                const merged = merges.map(sec => entry(`@${esc(sec)} ↔ @${esc(m.merges[sec])}`, `ModsManager.removeMerge('${jsq(sec)}')`, `Settings.openMod('${m.merges[sec]}', '${jsq(sec)}')`, 'del'));
                 const swapIc = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px; opacity:.6;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
-                Object.keys(m.memoryOrder || {}).sort().forEach(d => {
+                const memos = Object.keys(m.memoryOrder || {}).sort().map(d => {
                     const def = MemoOrder.entries(d).map(e => e.mainKey), ord = m.memoryOrder[d];
                     const moved = ord.filter((k, j) => k !== def[j]).length || ord.length;
                     const day = new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                    out.push(entry(`${swapIc}Memories ${moved} · ${esc(day)}`, `MemoOrder.remove('${d}')`, `Settings.openMemoryDay('${d}')`));
+                    return entry(`${swapIc}Memories ${moved} · ${esc(day)}`, `MemoOrder.remove('${jsq(d)}')`, `Settings.openMemoryDay('${jsq(d)}')`, 'del');
                 });
-                return out;
+
+                return [
+                    section('hidden', 'Masquées', hidden),
+                    section('renamed', 'Renommées', renamed),
+                    section('merged', 'Fusionnées', merged),
+                    section('postal', 'Carte', carte, carteSub),
+                    section('memories', 'Ordre des memories', memos)
+                ];
             },
 
             removeRename: (id) => {
@@ -4122,7 +4363,7 @@ helpRows: () => {
 
                 if (multiTouch) return;
                 if (touchTarget && touchTarget.closest && touchTarget.closest('#memo-order-overlay, #viewer-date-choice')) return;
-                if (document.getElementById('viewer').style.display === 'flex') {
+                if (getComputedStyle(document.getElementById('viewer')).display !== 'none') {
                     if (ZoomPan.scale > 1.01) return;   // image zoomée : le geste sert à la déplacer
                     // Visionneuse ouverte : glisser vers le haut OU le bas la ferme ; vers la gauche / droite : photo suivante / précédente
                     if (Math.abs(deltaY) >= SWIPE_MIN_DISTANCE && Math.abs(deltaX) <= SWIPE_MAX_OFFAXIS) {
@@ -4134,6 +4375,8 @@ helpRows: () => {
                 }
 
                 if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE || Math.abs(deltaY) > SWIPE_MAX_OFFAXIS) return;
+                // Une fenêtre (fiche ami, réglages, renommer...) est ouverte : le glissement ne change pas d'onglet derrière
+                if (['friend-info-overlay', 'settings-overlay', 'rename-overlay', 'merge-picker-overlay', 'memo-order-overlay'].some(id => { const el = document.getElementById(id); return el && getComputedStyle(el).display !== 'none'; })) return;
                 // Sur la carte, la frise et les curseurs, le glissement horizontal sert à la carte elle-même
                 if (touchTarget && touchTarget.closest && touchTarget.closest('#leaflet-map, #map-timeline, input[type=range], #map-focus-bar')) return;
 
@@ -4157,38 +4400,45 @@ helpRows: () => {
             const LONG_PRESS_MS = 500;
             const MOVE_TOLERANCE = 10;
 
-            function showCopyToast() {
+            function showCopyToast(msg) {
                 let toast = document.getElementById('copy-toast');
                 if (!toast) {
                     toast = document.createElement('div');
                     toast.id = 'copy-toast';
-                    toast.style.cssText = 'position:fixed; bottom:110px; left:50%; transform:translateX(-50%); background:rgba(17,17,17,0.9); color:var(--snap-yellow); padding:10px 22px; border-radius:20px; font-weight:bold; font-size:14px; z-index:500; pointer-events:none; opacity:0; transition:opacity 0.25s;';
+                    toast.style.cssText = 'position:fixed; bottom:110px; left:50%; transform:translateX(-50%); background:rgba(17,17,17,0.9); color:var(--snap-yellow); padding:10px 22px; border-radius:20px; font-weight:bold; font-size:14px; z-index:99999; pointer-events:none; transition:opacity .25s;';
                     document.body.appendChild(toast);
                 }
-                toast.innerText = 'Copié !';
+                toast.innerText = msg || 'Copié !';
                 toast.style.opacity = '1';
                 clearTimeout(toast._hideTimeout);
                 toast._hideTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 1200);
             }
 
-            function fallbackCopy(text) {
+            // Copie synchrone (méthode compatible iPhone : sélection explicite + execCommand) ; renvoie true si elle a réussi
+            function legacyCopy(text) {
                 const ta = document.createElement('textarea');
-                ta.value = text;
-                ta.style.position = 'fixed'; ta.style.opacity = '0';
+                ta.value = text; ta.setAttribute('readonly', '');
+                ta.style.cssText = 'position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; font-size:16px; pointer-events:none;';
                 document.body.appendChild(ta);
-                ta.select();
-                try { document.execCommand('copy'); showCopyToast(); } catch(e) {}
+                let ok = false;
+                try {
+                    const sel = window.getSelection(), range = document.createRange();
+                    range.selectNodeContents(ta); sel.removeAllRanges(); sel.addRange(range);
+                    ta.setSelectionRange(0, text.length);
+                    ok = document.execCommand('copy');
+                    sel.removeAllRanges();
+                } catch (e) { ok = false; }
                 document.body.removeChild(ta);
+                return ok;
             }
 
             function copyBubble(bubble) {
                 const text = bubble.dataset.rawText || '';
                 if (!text.trim()) return;
+                if (legacyCopy(text)) { showCopyToast(); return; }
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(showCopyToast).catch(() => fallbackCopy(text));
-                } else {
-                    fallbackCopy(text);
-                }
+                    navigator.clipboard.writeText(text).then(() => showCopyToast()).catch(() => showCopyToast('Copie impossible'));
+                } else showCopyToast('Copie impossible');
             }
 
             function clearPress() { clearTimeout(pressTimer); pressTimer = null; pressTarget = null; }
@@ -4323,7 +4573,7 @@ helpRows: () => {
             },
             applyAll: () => Object.keys(State.modifications.memoryOrder || {}).forEach(d => MemoOrder.apply(d)),
             refresh: () => {
-                State.memories.sort((a, b) => Util.date(b.json.Date) - Util.date(a.json.Date));
+                State.memories.sort((a, b) => State.memAsc ? Util.date(a.json.Date) - Util.date(b.json.Date) : Util.date(b.json.Date) - Util.date(a.json.Date));
                 const n = State.memoriesRendered;
                 document.getElementById('memories-grid').innerHTML = ''; State.memoriesRendered = 0;
                 do { Memories.render(); } while (State.memoriesRendered < n && State.memoriesRendered < State.memories.length);
@@ -4573,6 +4823,29 @@ helpRows: () => {
                 `;
             },
 
+            // Ajuste média + overlay (même bloc) : priorité à la LARGEUR de l'écran ; si cela dépasse trop en hauteur, on revient à un ajustement complet
+            syncOverlay: () => {
+                const z = document.getElementById('viewer-zoomable');
+                if (!z || !z.classList.contains('fitted')) return;
+                const m = z.querySelector('video, .img-stack > img:not(#viewer-overlay)');
+                const box = m && m.parentElement;
+                if (!m || !box) return;
+                const ov = z.querySelector('#viewer-overlay');   // le bloc prend le format de l'overlay (même cadre que la vidéo d'origine) : rien n'est étiré
+                const nw = (ov && ov.naturalWidth) || m.videoWidth || m.naturalWidth, nh = (ov && ov.naturalHeight) || m.videoHeight || m.naturalHeight;
+                if (!nw || !nh) return;
+                const W = z.clientWidth || z.parentElement.clientWidth;
+                const H = z.clientHeight || Math.max(100, z.parentElement.clientHeight - 168);
+                let w = W, h = W * nh / nw;
+                if (h > H * 1.12) { const k = Math.min(W / nw, H / nh); w = nw * k; h = nh * k; }
+                box.style.width = w + 'px'; box.style.height = h + 'px';
+            },
+            revealVideo: () => {
+                const z = document.getElementById('viewer-zoomable');
+                if (!z || !z.classList.contains('loading')) return;
+                z.classList.remove('loading');
+                Viewer.syncOverlay();
+            },
+
             renderCurrent: async () => {
                 const list = Viewer.contextType === 'memories' ? State.memories : State.chatMediasContext;
                 if (!list[Viewer.currentIndex] || list[Viewer.currentIndex] === null) return;
@@ -4598,12 +4871,22 @@ helpRows: () => {
                 const url = URLManager.scoped('viewer', mainFile);
                 const isVideo = mainKey.match(/\.(mp4|mov)$/i);
                 
-                let mediaHtml = isVideo ? `<div class="video-wrapper" style="max-width:100%; max-height:100%;" onclick="VideoPlayer.toggle(this)"><video src="${url}" autoplay playsinline style="max-width:100%; max-height:100%;" ontimeupdate="VideoPlayer.updateProgress(this)" onended="VideoPlayer.onEnded(this)" onerror="VideoDebugger.handleError(this, '${mainKey}')"></video><div class="video-play-overlay" style="display:none;">▶</div><div class="video-progress-hitarea" onclick="event.stopPropagation()" onmousedown="VideoPlayer.seekStart(event, this.parentElement)" ontouchstart="VideoPlayer.seekStart(event, this.parentElement)" ontouchmove="VideoPlayer.seekMove(event, this.parentElement)" ontouchend="VideoPlayer.seekEnd(event)"><div class="video-progress-bg"><div class="video-progress-fill"></div></div></div></div>` : `<img src="${url}">`;
-                if (overlayFile) mediaHtml += `<img src="${URLManager.scoped('viewer', overlayFile)}" id="viewer-overlay">`;
-                container.innerHTML = `<div id="viewer-zoomable"${Viewer._dir ? ` data-dir="${Viewer._dir}"` : ''}>${mediaHtml}</div>`;
+                let mediaHtml = isVideo ? `<div class="video-wrapper" style="max-width:100%; max-height:100%;" onclick="VideoPlayer.toggle(this)"><video src="${url}" autoplay playsinline style="max-width:100%; max-height:100%;" ontimeupdate="VideoPlayer.updateProgress(this)" onended="VideoPlayer.onEnded(this)" onloadedmetadata="Viewer.syncOverlay()" onloadeddata="Viewer.revealVideo()" onerror="Viewer.revealVideo(); VideoDebugger.handleError(this, '${jsq(mainKey)}')"></video><div class="video-play-overlay" style="display:none;">▶</div><div class="video-progress-hitarea" onclick="event.stopPropagation()" onmousedown="VideoPlayer.seekStart(event, this.parentElement)" ontouchstart="VideoPlayer.seekStart(event, this.parentElement)" ontouchmove="VideoPlayer.seekMove(event, this.parentElement)" ontouchend="VideoPlayer.seekEnd(event)"><div class="video-progress-bg"><div class="video-progress-fill"></div></div></div></div>` : `<img src="${url}">`;
+                if (overlayFile) {
+                    const ovImg = `<img src="${URLManager.scoped('viewer', overlayFile)}" id="viewer-overlay" onload="Viewer.syncOverlay()">`;
+                    if (isVideo) mediaHtml = mediaHtml.replace('<div class="video-play-overlay"', ovImg + '<div class="video-play-overlay"');
+                    else mediaHtml = `<div class="img-stack">${mediaHtml}${ovImg}</div>`;
+                }
+                container.innerHTML = `<div id="viewer-zoomable" class="${isVideo ? 'loading ' : ''}${overlayFile ? 'fitted' : ''}"${Viewer._dir ? ` data-dir="${Viewer._dir}"` : ''}>${mediaHtml}${isVideo ? '<div class="viewer-spin"></div>' : ''}</div>`;
                 Viewer._dir = null;
                 prevUrls.forEach(URLManager.revoke);
                 ZoomPan.reset();
+                {   // l'overlay est recalé sur la taille réelle du média ; pour une vidéo, lecteur + overlay n'apparaissent qu'une fois chargée
+                    const z = document.getElementById('viewer-zoomable');
+                    const m = z && z.querySelector('img:not(#viewer-overlay)');
+                    if (m) { if (m.complete) Viewer.syncOverlay(); else m.addEventListener('load', Viewer.syncOverlay); }
+                    if (isVideo) setTimeout(() => { if (token === Viewer.renderToken) Viewer.revealVideo(); }, 12000);
+                }
 
                 Viewer.closeMapChoice();
                 Viewer.buildHeader(dateStr, locStr, Viewer.contextType === 'memories');
@@ -4660,6 +4943,7 @@ helpRows: () => {
             close: () => { Viewer.cancelMerge(); Viewer.renderToken++; stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; URLManager.revokeScope('viewer'); Viewer.closeMapChoice(); if (State.viewerReturnToSettings) { State.viewerReturnToSettings = false; Settings.open(true); } }
         };
 
+        window.addEventListener('resize', () => Viewer.syncOverlay());
         window.UI = UI; window.Viewer = Viewer; window.Chat = Chat; window.Memories = Memories; window.AudioEngine = AudioEngine; window.VideoDebugger = VideoDebugger;
     
         // --- DIAGNOSTIC ÉCRAN (ajouter ?debug à l'adresse) : affiche les mesures réelles de l'iPhone ---
