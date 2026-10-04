@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#111111">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Snapchat">
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./Snapchat.png">
@@ -547,6 +547,15 @@
             background: rgba(242,242,242, 1) !important;
             -webkit-backdrop-filter: none !important;
             backdrop-filter: none !important;
+        }
+        /* Permettre au contenu de défiler sous la barre iOS (Home Indicator) */
+        :root {
+            --sab: env(safe-area-inset-bottom, 34px) !important;
+        }
+        @media (max-width: 599px), (max-height: 699px) {
+            #app-container {
+                height: var(--app-h, 100dvh) !important;
+            }
         }
     </style>
 </head>
