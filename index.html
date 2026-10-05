@@ -50,7 +50,7 @@
         #app-container { width: 100%; max-width: 428px; height: 100%; background-color: var(--snap-white); position: relative; display: flex; flex-direction: column; overflow: hidden; }
         @media (min-width: 600px) and (min-height: 700px) { #app-container { height: min(90vh, 926px); border-radius: 40px; } }
         /* Téléphone : l'app est collée aux 4 bords de l'écran (barres haut/bas comprises), sans dépendre de 100vh/100dvh */
-        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; left: 0; width: 100%; height: var(--app-h, 100%); max-width: none; border-radius: 0; } }
+        @media (max-width: 599px), (max-height: 699px) { #app-container { position: fixed; top: 0; right: 0; left: 0; width: 100%; height: var(--app-h, 100dvh); max-width: none; border-radius: 0; } }
 
         /* --- ÉCRAN DE CHARGEMENT PRINCIPAL --- */
         .welcome-logo { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; background: none; box-shadow: none; }
@@ -370,7 +370,7 @@
         .top-glyph:active { transform: scale(.88); opacity: .7; }
         .top-glyph svg { pointer-events: none; }
         .nav-item, .chat-tab, .conv-filter, .friend-info-close, .friend-info-merge-btn, .tl-btn, .pill-icon-btn, .viewer-btn, .memory-thumb, .city-row, .chat-item, .settings-row, .sort-btn, .back-btn, .mf-btn { transition: transform .15s ease, color .2s ease, background-color .2s ease, opacity .2s ease; -webkit-tap-highlight-color: transparent; }
-        .nav-item:active, .chat-tab:active, .conv-filter:active, .friend-info-close:active, .friend-info-merge-btn:active, .memory-thumb:active, .city-row:active, .mf-btn:active { transform: scale(.96); }
+        .nav-item:active, .chat-tab:active, .conv-filter:active, .friend-info-close:active, .friend-info-merge-btn:active, .city-row:active, .mf-btn:active { transform: scale(.96); }
         .tl-btn:active, .pill-icon-btn:active, .viewer-btn:active, .sort-btn:active, .back-btn:active { transform: scale(.88); }
         .chat-item:active, .settings-row:active { transform: scale(.985); }
         @media (prefers-reduced-motion: no-preference) {
@@ -386,7 +386,7 @@
             #friend-info-overlay, #settings-overlay, #rename-overlay, #merge-picker-overlay, #viewer-map-choice, #viewer-save-choice, #viewer-save-progress { animation: fadeIn .2s ease-out; }
             #friend-info-sheet, #settings-sheet, #rename-sheet, #merge-picker-sheet, #viewer-map-choice .vmc-sheet, #viewer-save-choice .vmc-sheet, #viewer-save-progress .vmc-sheet { animation: sheetUp .3s cubic-bezier(.2,.9,.3,1); }
             /* Visionneuse : ouverture en fondu + léger zoom, fondu à chaque changement de média */
-            @keyframes viewerIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+            @keyframes viewerIn { from { opacity: 0; } to { opacity: 1; } }
             #settings-overlay.no-anim, #settings-overlay.no-anim #settings-sheet { animation: none !important; }
             #viewer { animation: viewerIn .22s ease-out; }
             #viewer-zoomable { animation: fadeIn .2s ease-out; }
@@ -547,15 +547,56 @@
             -webkit-backdrop-filter: none !important;
             backdrop-filter: none !important;
         }
-        /* Permettre au contenu de défiler sous la barre iOS (Home Indicator) */
-        :root {
-            --sab: env(safe-area-inset-bottom, 34px) !important;
-        }
-        @media (max-width: 599px), (max-height: 699px) {
-            #app-container {
-                height: var(--app-h, 100dvh) !important;
-            }
-        }
+        img.lazy-media.thumb-fail { background: #2a2a2a; }
+        #memories-scroll-area { scrollbar-width: none; -ms-overflow-style: none; }
+        #memories-scroll-area::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .memory-thumb, .mo-thumb { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        #viewer-zoomable.fitted:not(.synced) .img-stack { visibility: hidden; animation: revealFallback 0s 1.2s forwards; }
+        @keyframes revealFallback { to { visibility: visible; } }
+
+        /* Statistiques */
+        .st { padding: 6px 4px 12px; }
+        .st-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .st-graph { margin-top: 16px; }
+        .st-kpi { background: var(--snap-gray); border-radius: 14px; padding: 9px 8px; min-width: 0; text-align: center; }
+        .st-kpi b { display: block; font-size: 17px; font-weight: 900; line-height: 1.15; }
+        .st-kpi span { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 600; color: #8a8a8e; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .st-kpi small { font-size: 11px; font-weight: 600; opacity: .85; }
+        .st-block { margin-top: 18px; }
+        .st-split { display: flex; height: 11px; border-radius: 7px; overflow: hidden; box-shadow: 0 0 0 1.5px var(--snap-black); }
+        .st-split i { display: block; min-width: 3px; }
+        .st-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 7px; font-size: 10.5px; font-weight: 700; }
+        .st-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+        .st-legend em { font-style: normal; color: #555; font-weight: 700; }
+        .st-g { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1.5px var(--snap-black); flex: none; }
+        .st-g svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+        .st-sec { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--snap-gray); }
+        .st-line { display: flex; justify-content: space-between; gap: 14px; padding: 10px 2px; border-top: 1px solid var(--snap-gray); font-size: 13px; }
+        .st-line span { color: #8a8a8e; font-weight: 600; flex: none; }
+        .st-line b { font-weight: 800; text-align: right; }
+        .st-chart { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 130px; }
+        .st-cell { flex: 1; max-width: 44px; height: 100%; display: flex; align-items: flex-end; cursor: pointer; border-radius: 6px; }
+        .st-col { width: 100%; background: var(--snap-yellow); box-shadow: inset 0 0 0 1.5px rgba(17,17,17,0.35); border-radius: 4px 4px 0 0; }
+        .st-cell.sel { background: var(--snap-yellow-soft); }
+        .st-cell.sel .st-col { box-shadow: inset 0 0 0 2.5px var(--snap-black); }
+        .st-ax { display: flex; justify-content: center; gap: 3px; margin-top: 5px; }
+        .st-ax span { flex: 1; max-width: 44px; text-align: center; font-size: 10px; font-weight: 700; color: #999; white-space: nowrap; overflow: visible; }
+        .st-read { margin-top: 10px; min-height: 17px; text-align: center; font-size: 12px; font-weight: 700; color: #555; }
+        .st-chips { display: flex; gap: 6px; margin-bottom: 4px; }
+        .st-kpi.wide { grid-column: 1 / -1; }
+        .st-chip { padding: 7px 14px; border-radius: 16px; background: var(--snap-gray); font-size: 12px; font-weight: 800; color: #777; cursor: pointer; }
+        .st-chip.on { background: var(--snap-black); color: var(--snap-yellow); }
+        .st-rk { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--snap-gray); }
+        .st-block .st-rk:first-child { border-top: none; }
+        .st-n { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--snap-gray); font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .st-rk:nth-child(-n+3) .st-n { background: var(--snap-yellow); box-shadow: inset 0 0 0 1.5px var(--snap-black); }
+        .st-rb { flex: 1; min-width: 0; }
+        .st-rt { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; font-weight: 700; }
+        .st-rt span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .st-rt b { flex: none; font-weight: 900; }
+        .st-bar { height: 6px; border-radius: 3px; background: var(--snap-gray); margin-top: 6px; overflow: hidden; }
+        .st-bar div { height: 100%; background: var(--snap-yellow); border-right: 2px solid var(--snap-black); border-radius: 3px; }
+        .st-empty { padding: 22px 8px; text-align: center; color: #999; font-size: 13px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -585,7 +626,7 @@
             
             <div class="top-nav">
                 <div class="top-nav-title">SNAPCHAT</div>
-                <div id="mem-order-btn" class="sort-btn" onclick="Memories.toggleOrder()" title="Du plus récent au plus ancien">▾</div>
+                <div id="mem-order-btn" class="sort-btn" data-act="Memories.toggleOrder" title="Du plus récent au plus ancien">▾</div>
             </div>
 
             <!-- VUE CHAT -->
@@ -595,16 +636,16 @@
                     <div class="search-row" id="top-row">
                         <div class="top-left"><div class="top-glyph" onclick="AccountInfo.page=null; AccountInfo.open()" title="Mon profil"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg></div></div>
                         <div class="chat-tabs">
-                            <div class="chat-tab active" id="tab-amis" onclick="Chat.switchTab('amis')">Amis</div>
-                            <div class="chat-tab" id="tab-groupes" onclick="Chat.switchTab('groupes')">Groupes</div>
+                            <div class="chat-tab active" id="tab-amis" data-act="Chat.switchTab" data-args="[&quot;amis&quot;]">Amis</div>
+                            <div class="chat-tab" id="tab-groupes" data-act="Chat.switchTab" data-args="[&quot;groupes&quot;]">Groupes</div>
                         </div>
                         <div class="top-actions">
-                            <div class="top-glyph" onclick="Chat.openSearch()" title="Rechercher"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.2" y2="16.2"></line></svg></div>
-                            <div class="top-glyph" onclick="Settings.open()" title="Réglages"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                            <div class="top-glyph" data-act="Chat.openSearch" title="Rechercher"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.2" y2="16.2"></line></svg></div>
+                            <div class="top-glyph" data-act="Settings.open" title="Réglages"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
                         </div>
                         <div class="search-field">
                             <input type="text" class="search-bar" id="chat-search" placeholder="Nom, mot, date (ex: 2015-05-29)..." oninput="Chat.onSearchInput()">
-                            <div class="top-glyph" onclick="Chat.closeSearch()" title="Fermer la recherche"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+                            <div class="top-glyph" data-act="Chat.closeSearch" title="Fermer la recherche"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
                         </div>
                     </div>
                 </div>
@@ -616,14 +657,14 @@
             <!-- VUE CONVERSATION (Prend 100% de l'espace) -->
             <div id="view-conversation" class="view">
                 <div class="conv-header">
-                    <div class="back-btn" onclick="Chat.back()">‹</div>
-                    <div id="conv-title" onclick="FriendInfo.openCurrent()" style="cursor:pointer;">Nom</div>
-                    <div class="sort-btn" id="conv-sort-btn" onclick="Chat.toggleSort()">▾</div>
+                    <div class="back-btn" data-act="Chat.back">‹</div>
+                    <div id="conv-title" data-act="FriendInfo.openCurrent" style="cursor:pointer;">Nom</div>
+                    <div class="sort-btn" id="conv-sort-btn" data-act="Chat.toggleSort">▾</div>
                 </div>
                 <div class="conv-filters">
-                    <div class="conv-filter active" id="f-tout" onclick="Chat.setFilter('tout')">Tout</div>
-                    <div class="conv-filter" id="f-medias" onclick="Chat.setFilter('medias')">Médias</div>
-                    <div class="conv-filter" id="f-audios" onclick="Chat.setFilter('audios')">Audios</div>
+                    <div class="conv-filter active" id="f-tout" data-act="Chat.setFilter" data-args="[&quot;tout&quot;]">Tout</div>
+                    <div class="conv-filter" id="f-medias" data-act="Chat.setFilter" data-args="[&quot;medias&quot;]">Médias</div>
+                    <div class="conv-filter" id="f-audios" data-act="Chat.setFilter" data-args="[&quot;audios&quot;]">Audios</div>
                 </div>
                 
                 <div id="chat-loading-overlay">
@@ -649,14 +690,14 @@
             <div id="view-map" class="view">
                 <div class="sticky-chat-header">
                     <div class="chat-tabs">
-                        <div class="chat-tab active" id="map-tab-memories" onclick="MapView.switchTab('memories')">Memories</div>
-                        <div class="chat-tab" id="map-tab-localisation" onclick="MapView.switchTab('localisation')">Localisation</div>
+                        <div class="chat-tab active" id="map-tab-memories" data-act="MapView.switchTab" data-args="[&quot;memories&quot;]">Memories</div>
+                        <div class="chat-tab" id="map-tab-localisation" data-act="MapView.switchTab" data-args="[&quot;localisation&quot;]">Localisation</div>
                     </div>
                 </div>
                 <div id="map-scroll-area">
                     <div id="map-wrap" style="padding: 2px 12px 12px; position: relative;">
                         <div id="leaflet-map"></div>
-                        <div id="map-focus-bar"><div class="mf-btn" onclick="MapView.focusBack()">‹ Retour au memory</div><div class="mf-btn alt" onclick="MapView.focusAll()">Voir tous les points</div></div>
+                        <div id="map-focus-bar"><div class="mf-btn" data-act="MapView.focusBack">‹ Retour au memory</div><div class="mf-btn alt" data-act="MapView.focusAll">Voir tous les points</div></div>
                         <div id="map-timeline" style="display:none; margin-top: 6px;">
                             <div id="map-overlay-info"><div id="tl-place">—</div><div id="tl-date">—</div></div>
                             <div style="display:flex; align-items:center; gap:6px;">
@@ -678,43 +719,43 @@
             </div>
 
             <div class="bottom-nav">
-                <div class="nav-item active" onclick="UI.navClick('chat')" id="nav-chat">CHAT</div>
-                <div class="nav-item" onclick="UI.switchTab('memories')" id="nav-memories">MEMORIES</div>
-                <div class="nav-item" onclick="UI.navClick('map')" id="nav-map">MAP</div>
+                <div class="nav-item active" data-act="UI.navClick" data-args="[&quot;chat&quot;]" id="nav-chat">CHAT</div>
+                <div class="nav-item" data-act="UI.switchTab" data-args="[&quot;memories&quot;]" id="nav-memories">MEMORIES</div>
+                <div class="nav-item" data-act="UI.navClick" data-args="[&quot;map&quot;]" id="nav-map">MAP</div>
             </div>
             
             <!-- VISIONNEUSE PLEIN ECRAN -->
             <div id="viewer">
                 <div class="viewer-header-dynamic" id="viewer-header-dynamic"></div>
-                <div class="nav-zone left" onclick="Viewer.prev()"><div class="nav-arrow">‹</div></div>
+                <div class="nav-zone left" data-act="Viewer.prev"><div class="nav-arrow">‹</div></div>
                 <div id="viewer-media"></div>
-                <div class="nav-zone right" onclick="Viewer.next()"><div class="nav-arrow">›</div></div>
+                <div class="nav-zone right" data-act="Viewer.next"><div class="nav-arrow">›</div></div>
                 <div id="viewer-save-choice" onclick="if(event.target===this) Viewer.answerSave(null)">
                     <div class="vmc-sheet">
-                        <div class="friend-info-merge-btn" style="margin-top:0" onclick="Viewer.answerSave(true)">Avec calque</div>
-                        <div class="friend-info-merge-btn" onclick="Viewer.answerSave(false)">Sans calque</div>
-                        <div class="friend-info-close" onclick="Viewer.answerSave(null)">Fermer</div>
+                        <div class="friend-info-merge-btn" style="margin-top:0" data-act="Viewer.answerSave" data-args="[true]">Avec calque</div>
+                        <div class="friend-info-merge-btn" data-act="Viewer.answerSave" data-args="[false]">Sans calque</div>
+                        <div class="friend-info-close" data-act="Viewer.answerSave" data-args="[null]">Fermer</div>
                     </div>
                 </div>
                 <div id="viewer-save-progress">
                     <div class="vmc-sheet">
                         <div id="vsp-text" style="font-weight:800; font-size:14px; text-align:center; margin-bottom:12px;"></div>
                         <div id="vsp-bar" style="height:8px; border-radius:4px; background:var(--snap-gray); overflow:hidden;"><div id="vsp-fill" style="height:100%; width:0; background:var(--snap-black); transition:width .2s;"></div></div>
-                        <div class="friend-info-merge-btn" id="vsp-save" style="display:none;" onclick="Viewer.saveMerged()">Enregistrer</div>
-                        <div class="friend-info-close" onclick="Viewer.cancelMerge()">Fermer</div>
+                        <div class="friend-info-merge-btn" id="vsp-save" style="display:none;" data-act="Viewer.saveMerged">Enregistrer</div>
+                        <div class="friend-info-close" data-act="Viewer.cancelMerge">Fermer</div>
                     </div>
                 </div>
                 <div id="viewer-date-choice" onclick="if(event.target===this) Viewer.closeDateChoice()">
                     <div class="vmc-sheet">
-                        <div class="friend-info-merge-btn" style="margin-top:0" onclick="MemoOrder.open()">Modifier l'ordre des memories pour cette date</div>
-                        <div class="friend-info-close" onclick="Viewer.closeDateChoice()">Fermer</div>
+                        <div class="friend-info-merge-btn" style="margin-top:0" data-act="MemoOrder.open">Modifier l'ordre des memories pour cette date</div>
+                        <div class="friend-info-close" data-act="Viewer.closeDateChoice">Fermer</div>
                     </div>
                 </div>
                 <div id="viewer-map-choice" onclick="if(event.target===this) Viewer.closeMapChoice()">
                     <div class="vmc-sheet">
-                        <div class="friend-info-merge-btn" style="margin-top:0" onclick="Viewer.showOnMap()">Carte Memories</div>
-                        <div class="friend-info-merge-btn" onclick="Viewer.openGpsLink()">Google Maps</div>
-                        <div class="friend-info-close" onclick="Viewer.closeMapChoice()">Fermer</div>
+                        <div class="friend-info-merge-btn" style="margin-top:0" data-act="Viewer.showOnMap">Carte Memories</div>
+                        <div class="friend-info-merge-btn" data-act="Viewer.openGpsLink">Google Maps</div>
+                        <div class="friend-info-close" data-act="Viewer.closeMapChoice">Fermer</div>
                     </div>
                 </div>
             </div>
@@ -724,9 +765,9 @@
                 <div id="mo-head"><h3>Ordre des memories</h3><div id="mo-sub"></div></div>
                 <div id="mo-list"></div>
                 <div id="mo-foot">
-                    <div class="friend-info-merge-btn" onclick="MemoOrder.save()">Enregistrer</div>
-                    <div class="friend-info-merge-btn" onclick="MemoOrder.reset()">Rétablir l'ordre par défaut</div>
-                    <div class="friend-info-close" onclick="MemoOrder.close()">Fermer</div>
+                    <div class="friend-info-merge-btn" data-act="MemoOrder.save">Enregistrer</div>
+                    <div class="friend-info-merge-btn" data-act="MemoOrder.reset">Rétablir l'ordre par défaut</div>
+                    <div class="friend-info-close" data-act="MemoOrder.close">Fermer</div>
                 </div>
             </div>
 
@@ -737,7 +778,7 @@
                     <div id="fi-sub" style="color:#888; font-weight:600; font-size:13px; margin-bottom:14px;"></div>
                     <div id="fi-rows"></div></div>
                     <div id="fi-merge-action"></div>
-                    <div class="sheet-footer"><div class="friend-info-close" id="fi-close-btn" onclick="FriendInfo.onBottom()">Fermer</div></div>
+                    <div class="sheet-footer"><div class="friend-info-close" id="fi-close-btn" data-act="FriendInfo.onBottom">Fermer</div></div>
                 </div>
             </div>
 
@@ -747,7 +788,7 @@
                     <h3 id="settings-title">Réglages</h3>
                     <div id="settings-body"></div>
                     <div id="settings-foot-actions"></div>
-                    <div class="sheet-footer"><div class="friend-info-close" id="settings-close-btn" onclick="Settings.onBottom()">Fermer</div></div>
+                    <div class="sheet-footer"><div class="friend-info-close" id="settings-close-btn" data-act="Settings.onBottom">Fermer</div></div>
                 </div>
             </div>
 
@@ -758,10 +799,9 @@
                     <p id="rename-orig"></p>
                     <input id="rename-input" type="text" maxlength="60" autocomplete="off" placeholder="Nouveau nom" onkeydown="if(event.key==='Enter') RenameBox.save()">
                     <div class="rename-actions">
-                        <div class="friend-info-close secondary" onclick="RenameBox.close()">Annuler</div>
-                        <div class="friend-info-close" onclick="RenameBox.save()">Enregistrer</div>
+                        <div class="friend-info-close secondary" data-act="RenameBox.close">Annuler</div>
+                        <div class="friend-info-close" data-act="RenameBox.save">Enregistrer</div>
                     </div>
-                    <div id="rename-reset" onclick="RenameBox.reset()">Rétablir le nom d'origine</div>
                 </div>
             </div>
 
@@ -772,7 +812,7 @@
                     <p>Choisis l'autre contact à fusionner avec celui-ci. Leurs messages seront réunis, et ça restera appliqué aux prochains imports du même dossier.</p>
                     <input id="merge-picker-search" type="text" placeholder="Rechercher un contact..." oninput="MergePicker.filter(this.value)">
                     <div id="merge-picker-list"></div>
-                    <div class="friend-info-close secondary" onclick="MergePicker.close()">Annuler</div>
+                    <div class="friend-info-close secondary" data-act="MergePicker.close">Annuler</div>
                 </div>
             </div>
         </div>
@@ -780,6 +820,19 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
+        const _actObj = (n) => { switch (n) { case 'Chat': return Chat; case 'FriendInfo': return FriendInfo; case 'MapView': return MapView; case 'MemoOrder': return MemoOrder; case 'Memories': return Memories; case 'MergePicker': return MergePicker; case 'ModsManager': return ModsManager; case 'RenameBox': return RenameBox; case 'Settings': return Settings; case 'Tools': return Tools; case 'UI': return UI; case 'Viewer': return Viewer; default: return null; } };
+        document.addEventListener('click', (e) => {
+            let el = e.target && (e.target.nodeType === 1 ? e.target : e.target.parentElement);
+            for (; el && el !== document; el = el.parentElement) {
+                const a = el.getAttribute && el.getAttribute('data-act');
+                if (!a) continue;
+                const i = a.indexOf('.'), o = _actObj(a.slice(0, i)), f = o && o[a.slice(i + 1)];
+                if (typeof f !== 'function') continue;
+                let args = []; try { args = JSON.parse(el.getAttribute('data-args') || '[]'); } catch (err) {}
+                try { const r = f.apply(o, args); if (r && r.catch) r.catch(console.error); } catch (err) { console.error(err); }
+                if (e.cancelBubble) break;
+            }
+        });
         const VideoDebugger = {
             handleError: (videoEl, key) => {
                 const err = videoEl.error;
@@ -1129,8 +1182,18 @@
         // Miniatures d'images générées à la volée (canvas) et gardées en mémoire pour la session : la grille et la carte
         // affichent de petites images au lieu de décoder les originaux en pleine résolution. Repli automatique sur l'original.
         const Thumbs = {
+            known: new Map(),
+            bmpOk: () => Thumbs._bmp || (Thumbs._bmp = (async () => {
+                try {
+                    if (!window.createImageBitmap || localStorage.getItem('useBitmap') !== '1') return false;   // désactivé par défaut : à activer avec localStorage.setItem('useBitmap','1')
+                    const u8 = Uint8Array.from(atob('/9j/4AAQSkZJRgABAQAAAQABAAD/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDi6KKK+ZP3E//Z'), c => c.charCodeAt(0)), blob = new Blob([u8], { type: 'image/jpeg' });
+                    const bmp = await createImageBitmap(blob), im = new Image(), url = URL.createObjectURL(blob);
+                    im.src = url; await im.decode(); URL.revokeObjectURL(url);
+                    return bmp.width === im.naturalWidth && bmp.height === im.naturalHeight;   // même orientation EXIF que l'affichage normal
+                } catch (e) { return false; }
+            })()),
             order: [],
-            url: (id, blob) => { const u = URLManager.create(blob); Thumbs.order.push([id, u]); if (Thumbs.order.length > 500) { const [oid, ou] = Thumbs.order.shift(); Thumbs.cache.delete(oid); URLManager.revoke(ou); } return u; },
+            url: (id, blob) => { const u = URLManager.create(blob); Thumbs.order.push([id, u]); Thumbs.known.set(id, u); if (Thumbs.order.length > 500) { const [oid, ou] = Thumbs.order.shift(); Thumbs.cache.delete(oid); Thumbs.known.delete(oid); URLManager.revoke(ou); } return u; },
             load: (id) => new Promise(res => { try { const rq = State.db.transaction('thumbs', 'readonly').objectStore('thumbs').get(id); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => res(null); } catch (e) { res(null); } }),
             video: (key, size) => {
                 const id = key + '|v' + size; let p = Thumbs.cache.get(id);
@@ -1160,7 +1223,7 @@
             save: (id, blob) => { try { State.db.transaction('thumbs', 'readwrite').objectStore('thumbs').put(blob, id); } catch (e) {} },
             cache: new Map(),     // "clé|taille" -> Promise<url | null>
             active: 0, queue: [],
-            next: () => { while (Thumbs.active < 3 && Thumbs.queue.length) { Thumbs.active++; Thumbs.queue.shift()(); } },
+            next: () => { while (Thumbs.active < 3 && Thumbs.queue.length) { Thumbs.active++; Thumbs.queue.pop()(); } },
             run: (task) => new Promise(resolve => {
                 Thumbs.queue.push(async () => {
                     try { resolve(await task()); } catch (e) { resolve(null); }
@@ -1179,10 +1242,10 @@
                         // Décodage via <img> : même orientation EXIF que l'affichage normal.
                         const tmp = URL.createObjectURL(blob);
                         try {
-                            const img = new Image();
-                            img.src = tmp;
-                            await img.decode();
-                            const W = img.naturalWidth, H = img.naturalHeight;
+                            let img = null;
+                            if (await Thumbs.bmpOk()) { try { img = await createImageBitmap(blob); } catch (e) { img = null; } }
+                            if (!img) { img = new Image(); img.src = tmp; await img.decode(); }
+                            const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height;
                             const scale = Math.min(1, size / Math.max(W, H));
                             if (!W || !H || scale >= 1) return null;          // déjà petite : on garde l'original
                             const w = Math.max(1, Math.round(W * scale)), h = Math.max(1, Math.round(H * scale));
@@ -1190,7 +1253,7 @@
                             canvas.width = w; canvas.height = h;
                             const ctx = canvas.getContext('2d');
                             ctx.imageSmoothingQuality = 'high';
-                            ctx.drawImage(img, 0, 0, w, h);
+                            ctx.drawImage(img, 0, 0, w, h); if (img.close) img.close();
                             const alpha = /png|webp|gif/i.test(blob.type || '') || /\.(png|webp|gif)$/i.test(key);   // garde la transparence (filtres/textes)
                             const out = await new Promise(r => canvas.toBlob(r, alpha ? 'image/png' : 'image/jpeg', 0.82));
                             if (out) { Thumbs.save(id, out); return Thumbs.url(id, out); } return null;
@@ -1218,6 +1281,7 @@
                             if (isVideo) {
                                 const thumbUrl = await Thumbs.video(mediaKey, size || 640);
                                 if (thumbUrl) { el.src = thumbUrl; el.classList.add('is-loaded'); return; }
+                                el.classList.add('is-loaded', 'thumb-fail'); return;
                             } else if (size && el.tagName === 'IMG') {
                                 const thumbUrl = await Thumbs.get(mediaKey, size);
                                 if (thumbUrl) { el.src = thumbUrl; return; }
@@ -1404,9 +1468,16 @@
             } catch (e) {}
 
             const byKey = {};
-            files.forEach(f => { const p = relPath(f); IMPORT_SPEC.forEach(sp => { if (p.includes(sp.path)) byKey[sp.key] = f; }); });
+            const baseOf = (p) => p.split('/').pop(), LOC_RE = /^(location_history|localisation|localization|location)[\w \-().]*\.json$/, locFiles = [];
+            files.forEach(f => {
+                const p = relPath(f), b = baseOf(p);
+                IMPORT_SPEC.forEach(sp => { if (p.includes(sp.path) || b === baseOf(sp.path)) byKey[sp.key] = f; });
+                if (LOC_RE.test(b)) locFiles.push(f);
+            });
+            locFiles.sort((x, y) => x.name.localeCompare(y.name, undefined, { numeric: true }));
+            if (locFiles.length) byKey.locations = locFiles[0];
 
-            if (!files.some(f => /(^|\/)json\//.test(relPath(f)))) {
+            if (!files.some(f => /(^|\/)json\//.test(relPath(f))) && !byKey.friends && !byKey.chats) {
                 throw new ImportError('Mauvais dossier', 'Je ne trouve pas de sous-dossier « json » dans ce dossier. Sélectionne le dossier racine de l\u2019export Snapchat, une fois décompressé (celui qui contient json, memories et chat_media).');
             }
             const missingReq = IMPORT_SPEC.filter(sp => sp.required && !byKey[sp.key]);
@@ -1439,7 +1510,22 @@
             for (const sp of IMPORT_SPEC.filter(x => !x.required)) {
                 if (!byKey[sp.key]) { report.missing.push(sp.path); continue; }
                 log(`Lecture de ${sp.path.replace('json/', '')}...`);
-                try { optional.push([sp.key, await read(sp)]); report.found.push(sp.path); }
+                try {
+                    if (sp.key === 'locations' && locFiles.length > 1) {
+                        const merged = {}, seen = new Set();
+                        for (const lf of locFiles) {
+                            log(`Lecture de ${lf.name}...`);
+                            let obj; try { obj = JSON.parse(await lf.text()); } catch (e) { report.invalid.push({ file: lf.name, message: `Fichier ignoré : ${e.message}` }); continue; }
+                            if (!isObject(obj)) continue;
+                            for (const k of Object.keys(obj)) {
+                                if (Array.isArray(obj[k])) { merged[k] = merged[k] || []; for (const it of obj[k]) { const sig = k + JSON.stringify(it); if (!seen.has(sig)) { seen.add(sig); merged[k].push(it); } } }
+                                else if (!(k in merged)) merged[k] = obj[k];
+                            }
+                        }
+                        optional.push([sp.key, merged]); report.found.push(sp.path);
+                        report.notes.push(`${locFiles.length} fichiers de localisation combinés (doublons ignorés).`);
+                    } else { optional.push([sp.key, await read(sp)]); report.found.push(sp.path); }
+                }
                 catch (e) { report.invalid.push({ file: sp.path, message: e.message }); }
             }
 
@@ -1459,9 +1545,9 @@
             const mediaToSave = []; const seenKeys = new Set();
             for (let i = 0; i < files.length; i++) {
                 const file = files[i], path = relPath(file), name = file.name;
-                if (name.match(/\.(mp4|mov|m4a|wav|mp3|aac|jpg|jpeg|png)$/i) && (path.includes('/memories/') || path.includes('/chat_media/'))) {
+                if (name.match(/\.(mp4|mov|m4a|wav|mp3|aac|jpg|jpeg|png)$/i) && (('/' + path).includes('/memories/') || ('/' + path).includes('/chat_media/'))) {
                     let cleanKey = name;
-                    if (path.includes('/chat_media/')) {
+                    if (('/' + path).includes('/chat_media/')) {
                         report.counts.chatMedia++;
                         const extMatch = name.match(/\.([a-z0-9]+)$/i);
                         const ext = extMatch ? extMatch[1].toLowerCase() : '';
@@ -1470,7 +1556,7 @@
                         base = base.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
                         cleanKey = ext ? `${base}.${ext}` : base;
                     } else report.counts.memories++;
-                    const isChat = path.includes('/chat_media/');
+                    const isChat = ('/' + path).includes('/chat_media/');
                     if (seenKeys.has(cleanKey)) report.counts.dupes = (report.counts.dupes || 0) + 1; seenKeys.add(cleanKey);
                     mediaToSave.push({ key: cleanKey, file, chat: isChat });
                 }
@@ -2010,6 +2096,15 @@
             }
         };
 
+        const StubObserver = new IntersectionObserver((entries) => {
+            entries.forEach(en => {
+                if (!en.isIntersecting) return;
+                const t = en.target; StubObserver.unobserve(t);
+                const i = parseInt(t.dataset.stub, 10); delete t.dataset.stub;
+                Memories.fill(t, i);
+                t.querySelectorAll('.lazy-media:not([src])').forEach(el => LazyMediaObserver.observe(el));
+            });
+        }, { rootMargin: '700px' });
         const Memories = {
             // Flèche jaune : inverse l'ordre d'affichage (récent -> ancien / ancien -> récent)
             toggleOrder: () => {
@@ -2019,31 +2114,31 @@
                 MemoOrder.refresh();
                 const area = document.getElementById('memories-scroll-area'); if (area) area.scrollTop = 0;
             },
-            render: () => {
-                const grid = document.getElementById('memories-grid');
-                const limit = Math.min(State.memoriesRendered + 90, State.memories.length);
-
-                for (let i = State.memoriesRendered; i < limit; i++) {
-                    const item = State.memories[i];
-                    const idxMain = State.lazyCount++;
-                    const isVideo = item.mainKey.match(/\.(mp4|mov)$/i);
-                    let overHtml = '';
-                    if (item.overlayKey) {
-                        const idxOver = State.lazyCount++;
-                        overHtml = `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-lazy-idx="${idxOver}" data-thumb="640">`;
-                    }
-                    
-                    const thumb = document.createElement('div');
-                    thumb.className = 'memory-thumb';
-                    thumb.onclick = () => Viewer.open(i, 'memories');
-                    
-                    // Bloque la lecture vidéo en miniature
-                    thumb.innerHTML = `
+            fill: (thumb, i) => {
+                const item = State.memories[i]; if (!item) return;
+                const idxMain = State.lazyCount++;
+                const isVideo = item.mainKey.match(/\.(mp4|mov)$/i);
+                let overHtml = '';
+                if (item.overlayKey) {
+                    const idxOver = State.lazyCount++;
+                    overHtml = `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-lazy-idx="${idxOver}" data-thumb="640">`;
+                }
+                thumb.onclick = () => Viewer.open(i, 'memories');
+                thumb.innerHTML = `
                         <img class="lazy-media" data-media-key="${item.mainKey}" data-lazy-idx="${idxMain}" data-thumb="640" data-is-video="${isVideo ? 'true' : 'false'}">
-                        ${isVideo ? '<div class="video-play-overlay" style="width:30px; height:30px; font-size:12px;">▶</div>' : ''}
                         ${overHtml}
                         <div class="memory-date-badge">${Util.formatDate(item.json.Date, 'short-year')}</div>
                     `;
+            },
+            // stubBelow : les memories d'indice inférieur sont de simples cases vides, remplies seulement quand elles approchent de l'écran
+            render: (stubBelow = 0) => {
+                const grid = document.getElementById('memories-grid');
+                const limit = Math.min(State.memoriesRendered + 90, State.memories.length);
+                for (let i = State.memoriesRendered; i < limit; i++) {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'memory-thumb';
+                    if (i < stubBelow) { thumb.dataset.stub = i; StubObserver.observe(thumb); }
+                    else Memories.fill(thumb, i);
                     grid.appendChild(thumb);
                 }
                 State.memoriesRendered = limit;
@@ -2080,7 +2175,7 @@
             placeThumb(ratio);
             const total = State.memories.length; if (!total) return;
             const target = Math.round(ratio * (total - 1));
-            while (State.memoriesRendered <= target + 30 && State.memoriesRendered < total) Memories.render();
+            while (State.memoriesRendered <= target + 30 && State.memoriesRendered < total) Memories.render(Math.max(0, target - 45));
             const el = document.getElementById('memories-grid').children[Math.min(target, document.getElementById('memories-grid').children.length - 1)];
             if (el) memView.scrollTop = Math.max(0, el.offsetTop - document.getElementById('memories-grid').offsetTop);
         };
@@ -2205,7 +2300,7 @@
         // description et l'image sont ensuite chargés pour les liens visibles via l'API publique microlink.io (l'adresse du lien lui est
         // alors transmise). Pour tout couper : localStorage.setItem('linkPreviewOnline', '0') ou LinkPreview.ONLINE = false.
         const LinkPreview = {
-            ONLINE: (() => { try { return localStorage.getItem('linkPreviewOnline') === '1'; } catch (e) { return true; } })(),
+            ONLINE: (() => { try { return localStorage.getItem('linkPreviewOnline') !== '0'; } catch (e) { return true; } })(),
             mem: new Map(), io: null,
             ICON: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.7-1.7"></path></svg>',
             firstUrl: (text) => {
@@ -2275,7 +2370,8 @@
         const Chat = {
             switchTab: (tab) => { chatActiveTab = tab; document.querySelectorAll('.chat-tab').forEach(e => e.classList.remove('active')); document.getElementById(`tab-${tab}`).classList.add('active'); Chat.renderList(); },
             
-            openSearch: () => { document.getElementById('top-row').classList.add('searching'); setTimeout(() => { const i = document.getElementById('chat-search'); if (i) i.focus(); }, 30); },
+            openSearch: () => { document.getElementById('top-row').classList.add('searching'); const _fs = () => { const i = document.getElementById('chat-search'); if (i) { i.focus({ preventScroll: true }); try { const L = i.value.length; i.setSelectionRange(L, L); } catch (e) {} } };
+                _fs(); setTimeout(_fs, 30); },
             closeSearch: () => { const i = document.getElementById('chat-search'); if (i) { i.value = ''; i.blur(); } document.getElementById('top-row').classList.remove('searching'); Chat.renderList(); },
             onSearchInput: () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => Chat.renderList(), 300); },
 
@@ -3289,8 +3385,7 @@
                 const isVideo = item.mainKey.match(/\.(mp4|mov)$/i);
                 // Si le média est introuvable / illisible : on cache l'élément cassé et la vignette devient une tuile jaune.
                 const fail = `this.style.display='none'; this.parentNode.style.background='#FFFC00';`;
-                const mediaTag = `<img class="lazy-media" data-media-key="${item.mainKey}" data-thumb="260" data-is-video="${isVideo ? 'true' : 'false'}" onerror="${fail}" style="pointer-events:none;">` +
-                                 (isVideo ? '<div class="video-play-overlay" style="width:24px; height:24px; font-size:10px;">▶</div>' : '');
+                const mediaTag = `<img class="lazy-media" data-media-key="${item.mainKey}" data-thumb="260" data-is-video="${isVideo ? 'true' : 'false'}" onerror="${fail}" style="pointer-events:none;">`;
                 // Filtre / texte / stickers par-dessus, comme dans la grille des memories.
                 const overTag = item.overlayKey
                     ? `<img class="grid-overlay lazy-media" data-media-key="${item.overlayKey}" data-thumb="260" onerror="this.style.display='none';">`
@@ -3362,55 +3457,143 @@
 
         // --- RÉGLAGES (bouton engrenage) ---
         const Tools = {
-            buttons: () => `<div class="friend-info-merge-btn" onclick="Tools.stats()">Statistiques</div><div class="friend-info-merge-btn" onclick="Tools.exportAll()">Exporter toutes les conversations (.txt)</div><div class="friend-info-merge-btn" onclick="Tools.exportCurrent()">Exporter la conversation ouverte (.txt)</div><div class="friend-info-merge-btn" onclick="Tools.toggleFx()">Activer / désactiver les effets de flou</div><div class="friend-info-merge-btn" onclick="Tools.toggleLinks()">Aperçus de liens en ligne (microlink.io) : activer / désactiver</div><div class="friend-info-merge-btn" onclick="Tools.clearThumbs()">Vider le cache des miniatures</div><div class="friend-info-merge-btn" onclick="Tools.storage()">État du stockage</div>`,
-            _lines: (c) => {
-                const out = [`=== ${c.name} ===`];
-                (c.messages || []).forEach(m => {
-                    const who = (!m.From || (State.myUsername && m.From.toLowerCase() === State.myUsername)) ? 'Moi' : Util.getDisplayName(m.From);
-                    out.push(`[${Util.formatDate(m.Created)}] ${who} : ${m.Content || (m["Media Type"] ? '[' + m["Media Type"] + ']' : '')}`);
+            _rank: 'friends', _gran: 'year', _d: null,
+
+            // Page « Statistiques » : calculée uniquement à l'ouverture de la page (pas à chaque ouverture des infos du compte)
+            statRows: () => [{ toString: () => Tools.statHTML() }],
+
+            compute: () => {
+                const all = [...State.friendsList, ...State.groups], me = State.myUsername;
+                const friendIds = new Set(State.friendsList.map(c => c.id));
+                const d = { total: 0, sent: 0, types: { text: 0, media: 0, audio: 0, other: 0 }, years: {}, months: {}, moy: new Array(12).fill(0), hours: new Array(24).fill(0), dows: new Array(7).fill(0), days: {}, first: null, last: null, convs: 0, nFriends: 0, nGroups: 0, rank: [] };
+                all.forEach(c => {
+                    let n = 0;
+                    (c.messages || []).forEach(m => {
+                        const t = Util.date(m.Created); if (isNaN(t)) return;
+                        n++; d.total++;
+                        const y = t.getFullYear(), mo = t.getMonth(), mk = y * 12 + mo;
+                        d.years[y] = (d.years[y] || 0) + 1;
+                        d.months[mk] = (d.months[mk] || 0) + 1;
+                        d.moy[mo]++; d.hours[t.getHours()]++; d.dows[(t.getDay() + 6) % 7]++;
+                        const dk = y * 10000 + (mo + 1) * 100 + t.getDate();
+                        d.days[dk] = (d.days[dk] || 0) + 1;
+                        if (d.first === null || t < d.first) d.first = t;
+                        if (d.last === null || t > d.last) d.last = t;
+                        if (!m.From || (me && String(m.From).toLowerCase() === me)) d.sent++;
+                        const mt = String(m['Media Type'] || '').toUpperCase();
+                        if (!mt || mt === 'TEXT') d.types.text++;
+                        else if (/AUDIO|NOTE|VOICE/.test(mt)) d.types.audio++;
+                        else if (/MEDIA|VIDEO|SNAP|IMAGE/.test(mt)) d.types.media++;
+                        else d.types.other++;
+                    });
+                    if (n) { d.convs++; d.rank.push({ name: c.name, n, group: !friendIds.has(c.id) }); }
                 });
-                return out.join('\n');
+                d.rank.sort((x, y) => y.n - x.n);
+                d.nGroups = d.rank.filter(r => r.group).length; d.nFriends = d.convs - d.nGroups;
+                return d;
             },
-            _save: (name, text) => DeviceSave.save(new File([text], name, { type: 'text/plain' })),
-            exportAll: () => Tools._save('conversations.txt', [...State.friendsList, ...State.groups].map(Tools._lines).join('\n\n')),
-            exportCurrent: () => {
-                const c = State.currentChat;
-                if (!c) { alert('Ouvre d\u2019abord une conversation.'); return; }
-                Tools._save(String(c.name || 'conversation').replace(/[^\w\-]+/g, '_') + '.txt', Tools._lines(c));
+
+            fmt: (n) => Number(n).toLocaleString('fr-FR'),
+            monthName: (mk) => new Date(Math.floor(mk / 12), mk % 12, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+            dayName: (k) => new Date(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+
+            // Glyphes (traits) : envoyé, reçu, texte, média, audio, autres
+            GLYPH: {
+                sent: '<path d="M7 17L17 7M8 7h9v9"/>',
+                recv: '<path d="M17 7L7 17M16 17H7V8"/>',
+                text: '<path d="M5 6h14M12 6v13"/>',
+                media: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
+                audio: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+                other: '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>'
             },
-            toggleLinks: () => {
-                const on = !LinkPreview.ONLINE;
-                if (on && !confirm('Activer les aperçus de liens ? Les liens présents dans tes conversations seront envoyés au service microlink.io pour récupérer titre et image.')) return;
-                LinkPreview.ONLINE = on; try { localStorage.setItem('linkPreviewOnline', on ? '1' : '0'); } catch (e) {}
-                alert('Aperçus de liens ' + (on ? 'activés' : 'désactivés') + '. Rouvre la conversation pour voir le changement.');
+
+            // Une seule page : chiffres clés, graphique, répartitions, records, puis classement
+            statHTML: () => {
+                Tools._d = Tools.compute(); Tools._rank = 'friends'; Tools._gran = 'year';
+                return `<div class="st">${Tools.pageHTML(Tools._d)}</div>`;
             },
-            storage: async () => {
-                try {
-                    const est = await navigator.storage.estimate(), per = navigator.storage.persisted ? await navigator.storage.persisted() : false;
-                    const mb = (n) => (n / 1048576).toFixed(0) + ' Mo';
-                    alert(`Stockage utilisé : ${mb(est.usage)} sur ${mb(est.quota)} disponibles.\nProtection contre l\u2019effacement automatique : ${per ? 'active' : 'non accordée par le navigateur'}.`);
-                } catch (e) { alert('Information indisponible sur ce navigateur.'); }
+            pageHTML: (d) => {
+                if (!d || !d.total) return '<div class="st-empty">Aucune donnée : importe tes conversations pour voir les statistiques.</div>';
+                const nDays = Object.keys(d.days).length;
+                const kpi = (v, l) => `<div class="st-kpi"><b>${v}</b><span>${l}</span></div>`;
+                const bestKey = (o) => Object.keys(o).reduce((a, k) => (a === null || o[k] > o[a]) ? k : a, null);
+                const bestDay = bestKey(d.days), bestMonth = Number(bestKey(d.months));
+                const bestH = d.hours.indexOf(Math.max(...d.hours)), bestW = d.dows.indexOf(Math.max(...d.dows));
+                const dow = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+                const sd = (t) => t.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                const Y = 'var(--snap-yellow)', K = '#111';
+                return `<div class="st-kpis">${kpi(Tools.fmt(d.total), 'messages')}${kpi(Tools.fmt(d.convs), 'conversations')}${kpi(Tools.fmt(nDays), 'jours actifs')}</div>`
+                    + `<div id="st-graph" class="st-graph">${Tools.graphInner(d)}</div>`
+                    + Tools.block(Tools.split([{ g: 'sent', l: 'Envoyés', n: d.sent, c: Y, fg: K }, { g: 'recv', l: 'Reçus', n: d.total - d.sent, c: K, fg: Y }], d.total))
+                    + Tools.block(Tools.split([{ g: 'text', l: 'Texte', n: d.types.text, c: Y, fg: K }, { g: 'media', l: 'Médias', n: d.types.media, c: K, fg: Y }, { g: 'audio', l: 'Audio', n: d.types.audio, c: '#8e8e93', fg: '#fff' }, { g: 'other', l: 'Autres', n: d.types.other, c: '#d9d9de', fg: K }], d.total))
+                    + `<div class="st-block">`
+                    + Tools.line('Période', `${sd(d.first)} → ${sd(d.last)}`)
+                    + Tools.line('Conversations', `${d.nFriends} amis · ${d.nGroups} groupes`)
+                    + Tools.line('Mois le plus actif', `${Tools.monthName(bestMonth)} · ${Tools.fmt(d.months[bestMonth])}`)
+                    + Tools.line('Jour le plus actif', `${Tools.dayName(bestDay)} · ${Tools.fmt(d.days[bestDay])}`)
+                    + Tools.line('Jour de semaine', dow[bestW])
+                    + Tools.line('Heure la plus active', `${bestH} h – ${bestH + 1} h`)
+                    + `</div>`
+                    + `<div id="st-rank" class="st-sec">${Tools.rankInner(d)}</div>`;
             },
-            clearThumbs: () => {
-                try { const t = State.db.transaction('thumbs', 'readwrite'); t.objectStore('thumbs').clear(); t.oncomplete = () => { Thumbs.cache.clear(); alert('Miniatures effacées : elles seront recréées à l\u2019affichage.'); }; } catch (e) {}
+
+            statRank: (k) => { Tools._rank = k; const el = document.getElementById('st-rank'); if (el) el.innerHTML = Tools.rankInner(Tools._d); },
+            statGran: (g) => { Tools._gran = g; const el = document.getElementById('st-graph'); if (el) el.innerHTML = Tools.graphInner(Tools._d); },
+            // Appui sur une barre : elle est mise en évidence et sa valeur s'affiche sous le graphique
+            statPick: (el) => {
+                const blk = el.closest('.st-block'); if (!blk) return;
+                blk.querySelectorAll('.st-cell.sel').forEach(x => x.classList.remove('sel'));
+                el.classList.add('sel');
+                const r = blk.querySelector('.st-read'); if (r) r.textContent = (el.dataset.pk ? 'Pic : ' : '') + (el.dataset.t || '');
             },
-            toggleFx: () => { const on = document.documentElement.classList.toggle('low-fx'); try { localStorage.setItem('lowFx', on ? '1' : '0'); } catch (e) {} },
-            stats: () => {
-                const all = [...State.friendsList, ...State.groups], months = {}, hours = new Array(24).fill(0); let total = 0;
-                all.forEach(c => (c.messages || []).forEach(m => {
-                    const d = Util.date(m.Created); if (isNaN(d)) return;
-                    total++; const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-                    months[k] = (months[k] || 0) + 1; hours[d.getHours()]++;
-                }));
-                const mk = Object.keys(months).sort().slice(-24), mx = Math.max(1, ...mk.map(k => months[k])), hx = Math.max(1, ...hours);
-                const bars = (labels, vals, max) => labels.map((l, i) => `<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin:2px 0"><span style="width:58px;flex:none;color:#888">${l}</span><div style="height:10px;border-radius:5px;background:var(--snap-yellow);width:${Math.round(vals[i] / max * 70)}%;min-width:2px"></div><span style="color:#555">${vals[i]}</span></div>`).join('');
-                const top = all.slice().sort((a, b) => (b.messages || []).length - (a.messages || []).length).slice(0, 10)
-                    .map(c => `<div style="display:flex;justify-content:space-between;font-size:13px;margin:3px 0"><span>${Util.escapeHTML(c.name)}</span><b>${(c.messages || []).length}</b></div>`).join('');
-                const old = document.getElementById('stats-overlay'); if (old) old.remove();
-                const el = document.createElement('div'); el.id = 'stats-overlay';
-                el.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(255,255,255,.98);overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 20px 40px;color:#111;';
-                el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Statistiques</h2><div class="friend-info-merge-btn" style="margin:0;padding:8px 16px" onclick="document.getElementById('stats-overlay').remove()">Fermer</div></div><p><b>${total.toLocaleString('fr-FR')}</b> messages</p><h3>Par mois</h3>${bars(mk, mk.map(k => months[k]), mx)}<h3>Par heure</h3>${bars(hours.map((_, h) => h + ' h'), hours, hx)}<h3>Conversations les plus actives</h3>${top}`;
-                document.body.appendChild(el);
+
+            block: (inner, read) => `<div class="st-block">${inner}${read === undefined ? '' : `<div class="st-read">${read}</div>`}</div>`,
+            line: (l, v) => `<div class="st-line"><span>${l}</span><b>${v}</b></div>`,
+            chips: (items, cur, fn) => `<div class="st-chips">${items.map(([k, l]) => `<div class="st-chip${cur === k ? ' on' : ''}" onclick="Tools.${fn}('${k}')">${l}</div>`).join('')}</div>`,
+            split: (parts, total) => {
+                const ps = parts.filter(p => p.n > 0); if (!ps.length) return '';
+                const pct = (n) => { const q = n / total * 100; return q < 1 ? '< 1 %' : Math.round(q) + ' %'; };
+                return `<div class="st-split">${ps.map(p => `<i style="flex:${p.n}; background:${p.c}"></i>`).join('')}</div>`
+                    + `<div class="st-legend">${ps.map(p => `<span title="${p.l}"><span class="st-g" style="background:${p.c}; color:${p.fg}"><svg viewBox="0 0 24 24">${Tools.GLYPH[p.g]}</svg></span><em>${Tools.fmt(p.n)} · ${pct(p.n)}</em></span>`).join('')}</div>`;
+            },
+            // Graphique : la barre du pic est sélectionnée par défaut (mise en évidence, jamais en noir)
+            bars: (vals, labels, texts, sel) => {
+                const mx = Math.max(1, ...vals);
+                return `<div class="st-chart">${vals.map((v, i) => `<div class="st-cell${i === sel ? ' sel' : ''}"${i === sel ? ' data-pk="1"' : ''} data-t="${Util.escapeHTML(texts[i])}" onclick="Tools.statPick(this)"><div class="st-col" style="height:${v ? Math.max(5, Math.round(v / mx * 100)) : 2}%"></div></div>`).join('')}</div>`
+                    + `<div class="st-ax">${labels.map(l => `<span>${l}</span>`).join('')}</div>`;
+            },
+
+            // Graphique unique, regroupé par année / mois / jour / heure
+            series: (d, g) => {
+                const f = Tools.fmt;
+                if (g === 'year') {
+                    const ys = Object.keys(d.years).map(Number), keys = [];
+                    for (let y = Math.min(...ys); y <= Math.max(...ys); y++) keys.push(y);
+                    const vals = keys.map(y => d.years[y] || 0);
+                    return { vals, labels: keys.map(String), texts: vals.map((v, i) => `${keys[i]} · ${f(v)} messages`) };
+                }
+                if (g === 'month') {
+                    const names = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+                    return { vals: d.moy, labels: ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc'], texts: d.moy.map((v, i) => `${names[i]} (toutes années) · ${f(v)} messages`) };
+                }
+                if (g === 'day') {
+                    const names = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+                    return { vals: d.dows, labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], texts: d.dows.map((v, i) => `${names[i]} · ${f(v)} messages`) };
+                }
+                return { vals: d.hours, labels: d.hours.map((n, h) => h % 6 === 0 ? h : ''), texts: d.hours.map((v, h) => `${h} h – ${h + 1} h · ${f(v)} messages`) };
+            },
+            graphInner: (d) => {
+                const sr = Tools.series(d, Tools._gran), pk = sr.vals.indexOf(Math.max(...sr.vals));
+                return Tools.chips([['year', 'Année'], ['month', 'Mois'], ['day', 'Jour'], ['hour', 'Heure']], Tools._gran, 'statGran')
+                    + Tools.block(Tools.bars(sr.vals, sr.labels, sr.texts, pk), `Pic : ${sr.texts[pk]}`);
+            },
+
+            // Classement : conversations les plus actives (Amis / Groupes)
+            rankInner: (d) => {
+                const list = d.rank.filter(r => Tools._rank === 'groups' ? r.group : !r.group).slice(0, 10);
+                const mx = list.length ? list[0].n : 1;
+                const rows = list.map((r, i) => `<div class="st-rk"><span class="st-n">${i + 1}</span><div class="st-rb"><div class="st-rt"><span>${Util.escapeHTML(r.name)}</span><b>${Tools.fmt(r.n)}</b></div><div class="st-bar"><div style="width:${Math.max(3, Math.round(r.n / mx * 100))}%"></div></div></div></div>`).join('');
+                return Tools.chips([['friends', 'Amis'], ['groups', 'Groupes']], Tools._rank, 'statRank') + `<div class="st-block">${rows || '<div class="st-empty">Aucune conversation.</div>'}</div>`;
             }
         };
 
@@ -3606,10 +3789,10 @@ helpRows: () => {
             accordion: (key, label, rows, subText) => {
                 Settings._pages[key] = { label, rows };
                 if (!rows.length && key !== 'mods') {   // rien à afficher : pastille grisée, la page ne s'ouvre pas
-                    const n = subText !== undefined ? (subText ? ` <span class="sub">· ${subText}</span>` : '') : ` <span class="sub">(0)</span>`;
+                    const n = subText !== undefined ? (subText ? ` <span class="sub">· ${subText}</span>` : '') : ` <span class="sub">· 0</span>`;
                     return `<div class="sheet-pill sub disabled"><span>${label}${n}</span></div>`;
                 }
-                const info = subText !== undefined ? (subText ? ` <span class="sub">· ${subText}</span>` : '') : ` <span class="sub">(${rows.length})</span>`;
+                const info = subText !== undefined ? (subText ? ` <span class="sub">· ${subText}</span>` : '') : ` <span class="sub">· ${rows.length}</span>`;
                 return `<div class="sheet-pill sub" onclick="Settings.openPage('${jsq(key)}')"><span>${label}${info}</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
             },
             // Pastille de 1er niveau (Conversations, Données) : ses pastilles n'apparaissent qu'au clic
@@ -3622,6 +3805,7 @@ helpRows: () => {
             render: () => {
                 const body = document.getElementById('settings-body');
                 const prevList = document.getElementById('mods-sec-list'), prevTop = prevList ? prevList.scrollTop : 0;
+                const prevPage = Settings.page, prevSheet = (document.getElementById('settings-sheet') || {}).scrollTop || 0, prevBody = body.scrollTop || 0;
                 Settings._pages = {};
                 const hidF = State.modifications.hiddenFriends, hidG = State.modifications.hiddenGroups;
                 const friends = Settings.sortChats(State.friendsList.filter(c => !hidF.includes(c.id))).map(c => Settings.listRow(c, false, false));
@@ -3700,21 +3884,23 @@ helpRows: () => {
                         ${Settings.accordion('sort', 'Affichage', sortRows, '')}
                         ${Settings.accordion('friends', 'Amis', friends)}
                         ${Settings.accordion('groups', 'Groupes', groups)}
-                        ${Settings.accordion('mods', 'Modifications', modRows, modSub)}
-                        ${Settings.accordion('dissoc', 'Synchronisation', Settings.dissocRows())}`}${`
+                        ${Settings.accordion('dissoc', 'Synchronisation', Settings.dissocRows())}
+                        ${Settings.accordion('mods', 'Modifications', modRows, modSub)}`}${`
                         ${Settings.accordion('importReport', 'Import', importRows, importSub)}
                         <div class="settings-danger" onclick="resetDB()">Supprimer les données</div>`}`;
                 const pg = Settings.page && Settings._pages[Settings.page];
                 if (Settings.page && !pg) Settings.page = null;
                 if (pg && !pg.rows.length && Settings.page !== 'mods') { Settings.page = null; Settings.render(); return; }   // liste devenue vide : retour aux pastilles
-                { const nl = document.getElementById('mods-sec-list'); if (nl && prevTop) nl.scrollTop = prevTop; }
+                const _rs = () => { const nl = document.getElementById('mods-sec-list'); if (nl && prevTop) nl.scrollTop = prevTop; if (prevPage === Settings.page) { const sh = document.getElementById('settings-sheet'); if (sh && prevSheet) sh.scrollTop = prevSheet; if (prevBody) body.scrollTop = prevBody; } };
+                _rs();
                 document.getElementById('settings-sheet').classList.toggle('page-mode', !!pg);
                 document.getElementById('settings-close-btn').textContent = pg ? 'Retour' : 'Fermer';
                 document.getElementById('settings-foot-actions').innerHTML = (pg && Settings.page === 'mods')
-                    ? `<div class="friend-info-merge-btn" onclick="ModsManager.exportJSON()">Exporter modifications.json</div><div class="friend-info-merge-btn" onclick="document.getElementById('mods-import-input').click()">Importer modifications.json</div><input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">` : (!pg ? Tools.buttons() : '');
+                    ? `<div class="friend-info-merge-btn" data-act="ModsManager.exportJSON">Exporter modifications.json</div><div class="friend-info-merge-btn" onclick="document.getElementById('mods-import-input').click()">Importer modifications.json</div><input type="file" id="mods-import-input" accept="application/json" style="display:none;" onchange="ModsManager.importJSON(this)">` : '';
                 if (pg) {
                     document.getElementById('settings-title').innerText = pg.label;
                     body.innerHTML = `<div class="settings-sublist">${pg.rows.join('') || '<div class="settings-row"><span class="sub">Aucun</span></div>'}</div>`;
+                _rs();
                 }
             }
         };
@@ -3923,11 +4109,11 @@ helpRows: () => {
                 document.getElementById('rename-orig').innerText = 'Nom d\'origine : ' + orig;
                 const input = document.getElementById('rename-input');
                 input.value = c.name;
-                document.getElementById('rename-reset').style.display = State.modifications.renames[id] ? 'block' : 'none';
                 document.getElementById('friend-info-overlay').style.display = 'none';
                 document.getElementById('rename-overlay').style.display = 'flex';
                 OverlayFx.slide(document.getElementById('rename-sheet'), 100);
-                setTimeout(() => { input.focus(); input.select(); }, 60);
+                const _end = () => { input.focus({ preventScroll: true }); try { const L = input.value.length; input.setSelectionRange(L, L); } catch (e) {} };
+                _end(); setTimeout(_end, 60);
                 
             },
 
@@ -4055,9 +4241,9 @@ helpRows: () => {
                 const entry = (titleHtml, action, openAct, kind) => `<div class="settings-row sub-row" style="cursor:default; padding-top:9px; padding-bottom:9px;"><div style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;${openAct ? ' cursor:pointer;' : ''}"${openAct ? ` onclick="${openAct}"` : ''}>${titleHtml}</div>${btn(kind, action)}</div>`;
                 const section = (key, label, items, subText) => {
                     const n = items.length;
-                    if (!n) return `<div class="settings-row sub-row" style="cursor:default; opacity:.45;"><span>${label} <span class="sub">(0)</span></span></div>`;
+                    if (!n) return `<div class="settings-row sub-row" style="cursor:default; opacity:.45;"><span>${label} <span class="sub">· 0</span></span></div>`;
                     const open = ModsManager.openSec[key];
-                    return `<div class="settings-row sub-row" onclick="ModsManager.toggleSec('${jsq(key)}')"><span>${label} <span class="sub">(${subText !== undefined ? subText : n})</span></span>${open ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><polyline points="18 15 12 9 6 15"></polyline></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><polyline points="6 9 12 15 18 9"></polyline></svg>'}</div>`
+                    return `<div class="settings-row sub-row" onclick="ModsManager.toggleSec('${jsq(key)}')"><span>${label} <span class="sub">· ${subText !== undefined ? subText : n}</span></span>${open ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><polyline points="18 15 12 9 6 15"></polyline></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><polyline points="6 9 12 15 18 9"></polyline></svg>'}</div>`
                         + (open ? `<div id="mods-sec-list" style="max-height:36vh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:${LIST_BG}; border-radius:14px; margin:var(--pill-gap) 0 0; padding:0 8px;">${items.join('')}</div>` : '');
                 };
 
@@ -4072,7 +4258,7 @@ helpRows: () => {
                 const areas = State.areas.length ? MapView.getAreaStats() : [];
                 const nHid = areas.filter(c => c.hidden).length;
                 const carte = areas.map(c => `<div class="settings-row sub-row" style="cursor:default; padding-top:9px; padding-bottom:9px;${c.hidden ? ' opacity:.6;' : ''}"><div style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc([c.label, c.country].filter(Boolean).join(' · '))} <span class="sub">· ${c.dayCount} j</span></div><span onclick="MapView.togglePostal('${c.geoKey}')" title="${c.hidden ? 'Masqué : afficher' : 'Affiché : masquer'}" style="flex:none; width:28px; height:28px; display:flex; align-items:center; justify-content:center; background:${LIST_BG}; color:${c.hidden ? '#8a8a8e' : 'var(--snap-black)'}; border-radius:50%; cursor:pointer;">${c.hidden ? EYE_OFF : EYE_ON}</span></div>`);
-                if (nHid) carte.unshift(`<div class="settings-row sub-row" style="padding-top:9px; padding-bottom:9px;" onclick="MapView.showAllPostals()"><span>Tout afficher</span></div>`);
+                if (nHid) carte.unshift(`<div class="settings-row sub-row" style="padding-top:9px; padding-bottom:9px;" data-act="MapView.showAllPostals"><span>Tout afficher</span></div>`);
                 const carteSub = nHid ? `${nHid} masqué${nHid > 1 ? 's' : ''} / ${areas.length}` : `${areas.length}`;
                 const renamed = renames.map(id => { const c = find(id); return entry(`${esc(c ? RenameBox.originalName(c) : id)} → ${esc(m.renames[id])}`, `ModsManager.removeRename('${jsq(id)}')`, `Settings.openMod('${jsq(id)}')`, 'del'); });
                 const merged = merges.map(sec => entry(`@${esc(sec)} ↔ @${esc(m.merges[sec])}`, `ModsManager.removeMerge('${jsq(sec)}')`, `Settings.openMod('${m.merges[sec]}', '${jsq(sec)}')`, 'del'));
@@ -4238,7 +4424,7 @@ helpRows: () => {
 
             accordion: (key, label, count, items, subText) => {
                 AccountInfo._pages[key] = { label, items };
-                const info = count === null ? '' : ` <span class="sub">(${count})</span>`;
+                const info = count === null ? '' : ` <span class="sub">· ${count}</span>`;
                 return `<div class="sheet-pill" onclick="AccountInfo.openPage('${key}')"><span>${label}${info}${subText ? ` <span class="sub">· ${subText}</span>` : ''}</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
             },
 
@@ -4258,14 +4444,15 @@ helpRows: () => {
                 if (acc.snapProSince) profileRows.push(row('Profil public depuis', Util.formatDate(acc.snapProSince)));
                 const nameRows = acc.displayNames ? acc.displayNames.map(n => row(n.name, n.date ? Util.formatDate(n.date) : 'Date inconnue')) : [];
                 if (profileRows.length) html += AccountInfo.accordion('profile', 'Profil', null, profileRows);
-                const userRows = [];
-                userRows.push(...nameRows);
-                if (userRows.length) html += AccountInfo.accordion('names', 'Pseudos', userRows.length, userRows);
-
                 if (acc.timeSpent) {
                     html += AccountInfo.accordion('time', 'Répartition du temps', null,
                         acc.timeSpent.map(t => `<div class="settings-row sub-row" style="cursor:default; display:block;"><div style="display:flex; justify-content:space-between;"><span>${Util.escapeHTML(t.label)}</span><span>${t.pct.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} %</span></div><div class="time-bar"><div style="width:${Math.max(t.pct, 1)}%;"></div></div></div>`));
                 }
+                html += AccountInfo.accordion('stats', 'Statistiques', null, Tools.statRows());
+                const userRows = [];
+                userRows.push(...nameRows);
+                if (userRows.length) html += AccountInfo.accordion('names', 'Pseudos', userRows.length, userRows);
+
 
                 if (acc.mapShares) {
                     html += AccountInfo.accordion('places', 'Lieux partagés', acc.mapShares.length,
@@ -4275,7 +4462,7 @@ helpRows: () => {
                     const typeLabel = { VIDEO: 'Vidéo', AUDIO: 'Audio' };
                     const resLabel = { 'Call Succeeded': 'réussi', 'Call Initiated': 'lancé', 'Call Received': 'reçu' };
                     const callsSub = acc.callsCompleted ? `${acc.callsCompleted} terminé${acc.callsCompleted > 1 ? 's' : ''} · ${AccountInfo.duration(acc.callsTotalSec || 0)}` : '';
-                    html += AccountInfo.accordion('calls', 'Appels', null,
+                    html += AccountInfo.accordion('calls', 'Appels', acc.calls.length,
                         acc.calls.map(c => row(
                             `${typeLabel[c.type] || c.type} · ${c.dir}${c.result ? ' (' + (resLabel[c.result] || c.result) + ')' : ''}`,
                             `${c.date ? Util.formatDate(c.date) : ''} · ${AccountInfo.duration(c.sec)}${c.city ? ' · ' + AccountInfo.cap(c.city) : ''}${c.people ? ' · ' + c.people + ' pers.' : ''}`)));
@@ -4601,14 +4788,15 @@ helpRows: () => {
                 const saved = (State.modifications.memoryOrder || {})[d];
                 MemoOrder.order = (Array.isArray(saved) && saved.length === E.length && E.every(e => saved.includes(e.mainKey))) ? saved.slice() : MemoOrder.def.slice();
                 MemoOrder.sel = null;
-                if (!MemoOrder._init) { MemoOrder._init = true; document.getElementById('mo-list').addEventListener('pointerdown', MemoOrder.down); }
+                if (!MemoOrder._init) { MemoOrder._init = true; document.addEventListener('play', (e) => { const o = document.getElementById('memo-order-overlay'); if (o && o.style.display === 'flex' && !MemoOrder._viewing && e.target && e.target.pause) { try { e.target.pause(); } catch (err) {} } }, true); document.getElementById('mo-list').addEventListener('pointerdown', MemoOrder.down); }
                 MemoOrder.render();
-                MemoOrder._paused = [...document.querySelectorAll('#viewer-media video')].filter(v => !v.paused);
+                MemoOrder._paused = [...document.querySelectorAll('#viewer video, #viewer audio')].filter(v => !v.paused);
                 MemoOrder._paused.forEach(v => { try { v.pause(); } catch (err) {} });
                 document.getElementById('memo-order-overlay').style.display = 'flex';
             },
             _paused: [],
             close: (resume = true) => {
+                if (MemoOrder._peeked) { MemoOrder._peeked = false; const vi = State.memories.findIndex(x => x.mainKey === MemoOrder.viewKey); if (vi >= 0) { Viewer.currentIndex = vi; Viewer.contextType = 'memories'; document.getElementById('viewer').style.display = 'flex'; Viewer.renderCurrent(); } }
                 document.getElementById('memo-order-overlay').style.display = 'none';
                 if (resume !== false) MemoOrder._paused.forEach(v => { try { const r = v.play(); if (r && r.catch) r.catch(() => {}); } catch (err) {} });
                 MemoOrder._paused = [];
@@ -4633,8 +4821,9 @@ helpRows: () => {
                 list.innerHTML = asc.map(({ e, j }, rank) => {
                     const js = e._defJson, f = byKey.get(MemoOrder.order[j]);
                     const isVid = /\.(mp4|mov)$/i.test(f.mainKey);
-                    const media = isVid ? `<video class="lazy-media" data-media-key="${f.mainKey}" preload="metadata" muted playsinline onplay="this.pause()" style="pointer-events:none;"></video>` : `<img class="lazy-media" data-media-key="${f.mainKey}" data-thumb="260" style="pointer-events:none;">`;
-                    const over = f.overlayKey ? `<img class="grid-overlay lazy-media" data-media-key="${f.overlayKey}" data-thumb="260" style="pointer-events:none;">` : '';
+                    const kn = (k, v) => Thumbs.known.get(k + (v ? '|v260' : '|260')), ku = kn(f.mainKey, isVid), ko = f.overlayKey ? kn(f.overlayKey, false) : '';
+                     const media = `<img class="lazy-media${ku ? ' is-loaded' : ''}" data-media-key="${f.mainKey}" data-thumb="260" data-is-video="${isVid ? 'true' : 'false'}"${ku ? ` src="${ku}"` : ''} style="pointer-events:none;">`;
+                     const over = f.overlayKey ? `<img class="grid-overlay lazy-media${ko ? ' is-loaded' : ''}" data-media-key="${f.overlayKey}" data-thumb="260"${ko ? ` src="${ko}"` : ''} style="pointer-events:none;">` : '';
                     const hm = (() => { try { const dt = new Date(String(js.Date).replace(' UTC', 'Z').replace(' ', 'T')); return isNaN(dt.getTime()) ? '' : dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (err) { return ''; } })();
                     return `<div class="mo-row" data-slot="${j}"><div class="mo-thumb${MemoOrder.sel === j ? ' sel' : ''}" data-slot="${j}">${media}${over}<div class="mo-tag"><span class="mo-num">${rank + 1}</span><span class="mo-time">${hm}</span></div></div></div>`;
                 }).join('');
@@ -4648,15 +4837,25 @@ helpRows: () => {
                 else return MemoOrder.swap(MemoOrder.sel, j);
                 MemoOrder.render();
             },
+            peek: (d) => {
+                const i = State.memories.findIndex(x => x.mainKey === MemoOrder.order[d.slot]); if (i < 0) return;
+                d.lpDone = true; MemoOrder._viewing = true; MemoOrder._peeked = true;
+                try { if (navigator.vibrate) navigator.vibrate(15); } catch (err) {}
+                document.getElementById('viewer').style.zIndex = '2300';
+                Viewer.open(i, 'memories');
+            },
             down: (e) => {
                 const th = e.target.closest('.mo-thumb'); if (!th) return;
                 MemoOrder._d = { slot: +th.dataset.slot, x: e.clientX, y: e.clientY, id: e.pointerId, th, moved: false, ghost: null, target: null };
                 try { th.setPointerCapture(e.pointerId); } catch (err) {}
                 th.onpointermove = MemoOrder.move; th.onpointerup = MemoOrder.up; th.onpointercancel = MemoOrder.cancel;
+                const _d0 = MemoOrder._d; _d0.lp = setTimeout(() => { if (MemoOrder._d === _d0 && !_d0.moved) MemoOrder.peek(_d0); }, 450);
             },
             move: (e) => {
                 const d = MemoOrder._d; if (!d || e.pointerId !== d.id) return;
+                if (d.lpDone) return;
                 if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
+                clearTimeout(d.lp);
                 const list = document.getElementById('mo-list');
                 if (!d.moved) {
                     d.moved = true;
@@ -4673,6 +4872,7 @@ helpRows: () => {
                 if (e.clientY < lr.top + 60) list.scrollTop -= 10; else if (e.clientY > lr.bottom - 60) list.scrollTop += 10;
             },
             up: () => {
+                { const _d = MemoOrder._d; if (_d) { clearTimeout(_d.lp); if (_d.lpDone) { try { _d.th.onpointermove = _d.th.onpointerup = _d.th.onpointercancel = null; } catch (err) {} MemoOrder._d = null; return; } } }
                 const d = MemoOrder._d; MemoOrder._d = null; if (!d) return;
                 if (d.ghost) d.ghost.remove();
                 document.querySelectorAll('#mo-list .mo-row.over').forEach(x => x.classList.remove('over'));
@@ -4680,6 +4880,7 @@ helpRows: () => {
                 else if (d.target !== null && d.target !== d.slot) MemoOrder.swap(d.slot, d.target);
             },
             cancel: () => {
+                if (MemoOrder._d) clearTimeout(MemoOrder._d.lp);
                 const d = MemoOrder._d; MemoOrder._d = null;
                 if (d && d.ghost) d.ghost.remove();
                 document.querySelectorAll('#mo-list .mo-row.over').forEach(x => x.classList.remove('over'));
@@ -4820,9 +5021,9 @@ helpRows: () => {
                 }
                 
                 document.getElementById('viewer-header-dynamic').innerHTML = `
-                    <button class="viewer-btn" style="position:absolute; left:18px; top:calc(18px + env(safe-area-inset-top, 0px)); pointer-events:auto;" onclick="Viewer.close()">✕</button>
+                    <button class="viewer-btn" style="position:absolute; left:18px; top:calc(18px + env(safe-area-inset-top, 0px)); pointer-events:auto;" data-act="Viewer.close">✕</button>
                     <div class="viewer-date-container" style="position:absolute; left:50%; transform:translateX(-50%); top:calc(18px + env(safe-area-inset-top, 0px)); height:45px; display:flex; justify-content:center; align-items:center; pointer-events:none;">
-                        <div class="viewer-date-bubble"${memChoice ? ' style="pointer-events:auto; cursor:pointer;" onclick="Viewer.dateChoice()"' : ''}>${Util.formatDate(dateStr)}</div>
+                        <div class="viewer-date-bubble"${memChoice ? ' style="pointer-events:auto; cursor:pointer;" data-act="Viewer.dateChoice"' : ''}>${Util.formatDate(dateStr)}</div>
                     </div>
                     <div class="viewer-actions-pill" style="position:absolute; right:18px; top:calc(18px + env(safe-area-inset-top, 0px));">
                         ${mapBtn}
@@ -4845,7 +5046,7 @@ helpRows: () => {
                 const H = z.clientHeight || Math.max(100, z.parentElement.clientHeight - 168);
                 let w = W, h = W * nh / nw;
                 if (h > H * 1.12) { const k = Math.min(W / nw, H / nh); w = nw * k; h = nh * k; }
-                box.style.width = w + 'px'; box.style.height = h + 'px';
+                box.style.width = w + 'px'; box.style.height = h + 'px'; z.classList.add('synced');
             },
             revealVideo: () => {
                 const z = document.getElementById('viewer-zoomable');
@@ -4948,7 +5149,7 @@ helpRows: () => {
                 }
                 if (prevIdx >= 0) { Viewer.currentIndex = prevIdx; Viewer._dir = 'prev'; Viewer.renderCurrent(); } 
             },
-            close: () => { Viewer.cancelMerge(); Viewer.renderToken++; stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; URLManager.revokeScope('viewer'); Viewer.closeMapChoice(); if (State.viewerReturnToSettings) { State.viewerReturnToSettings = false; Settings.open(true); } }
+            close: () => { MemoOrder._viewing = false; document.getElementById('viewer').style.zIndex = ''; Viewer.cancelMerge(); Viewer.renderToken++; stopAllMedia(); ZoomPan.reset(); document.getElementById('viewer').style.display = 'none'; document.getElementById('viewer-media').innerHTML = ''; URLManager.revokeScope('viewer'); Viewer.closeMapChoice(); if (State.viewerReturnToSettings) { State.viewerReturnToSettings = false; Settings.open(true); } }
         };
 
         window.addEventListener('resize', () => Viewer.syncOverlay());
