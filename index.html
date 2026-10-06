@@ -101,7 +101,7 @@
         .chat-tabs { position: relative; }
         .pill-ind { position: absolute; left: 0; top: 0; z-index: 0; border-radius: 999px; background: rgba(255,252,0,0.16); pointer-events: none; will-change: translate, width;
                     transition: translate .5s cubic-bezier(.34,1.56,.64,1), width .5s cubic-bezier(.34,1.56,.64,1); }
-        .has-ind > .nav-item, .has-ind > .chat-tab, .has-ind > .conv-filter { position: relative; z-index: 1; }
+        .has-ind > .nav-item, .has-ind > .chat-tab, .has-ind > .conv-filter, .has-ind > .st-tab { position: relative; z-index: 1; }
         .has-ind > .active { background: transparent !important; }
         .search-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 10px 14px 6px; }
         .search-row .chat-tabs { width: auto; max-width: none; margin: 0; height: 44px; padding: 0 4px; gap: 0; justify-content: flex-start; flex: none; }
@@ -558,34 +558,39 @@
         .st { padding: 6px 4px 12px; }
         .st-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .st-graph { margin-top: 16px; }
-        .st-kpi { background: var(--snap-gray); border-radius: 14px; padding: 9px 8px; min-width: 0; text-align: center; }
-        .st-kpi b { display: block; font-size: 17px; font-weight: 900; line-height: 1.15; }
-        .st-kpi span { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 600; color: #8a8a8e; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .st-kpi { position: relative; overflow: hidden; background: rgba(17,17,17,0.94); color: var(--snap-yellow); border-radius: 14px; padding: 9px 8px; min-width: 0; text-align: center; }
+        .st-kpi b { position: relative; display: block; font-size: 17px; font-weight: 900; line-height: 1.15; }
+        .st-kpi span { position: relative; display: block; margin-top: 2px; font-size: 10.5px; font-weight: 600; color: #8e8e93; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .st-info { margin-top: 12px; }
+        .st-info .st-line:first-child { border-top: none; }
         .st-kpi small { font-size: 11px; font-weight: 600; opacity: .85; }
         .st-block { margin-top: 18px; }
         .st-split { display: flex; height: 11px; border-radius: 7px; overflow: hidden; box-shadow: 0 0 0 1.5px var(--snap-black); }
         .st-split i { display: block; min-width: 3px; }
-        .st-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 7px; font-size: 10.5px; font-weight: 700; }
-        .st-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+        .st-legend { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 4px 8px; margin-top: 8px; font-size: 10.5px; font-weight: 700; }
+        .st-lg { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+        .st-lg.l { justify-self: start; } .st-lg.m { justify-self: center; } .st-lg.r { justify-self: end; justify-content: flex-end; }
+        .st-lg > span { display: inline-flex; align-items: center; gap: 6px; }
         .st-legend em { font-style: normal; color: #555; font-weight: 700; }
         .st-g { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1.5px var(--snap-black); flex: none; }
         .st-g svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-        .st-sec { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--snap-gray); }
+        .st-sec { margin-top: 22px; }
         .st-line { display: flex; justify-content: space-between; gap: 14px; padding: 10px 2px; border-top: 1px solid var(--snap-gray); font-size: 13px; }
         .st-line span { color: #8a8a8e; font-weight: 600; flex: none; }
         .st-line b { font-weight: 800; text-align: right; }
         .st-chart { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 130px; }
-        .st-cell { flex: 1; max-width: 44px; height: 100%; display: flex; align-items: flex-end; cursor: pointer; border-radius: 6px; }
-        .st-col { width: 100%; background: var(--snap-yellow); box-shadow: inset 0 0 0 1.5px rgba(17,17,17,0.35); border-radius: 4px 4px 0 0; }
-        .st-cell.sel { background: var(--snap-yellow-soft); }
-        .st-cell.sel .st-col { box-shadow: inset 0 0 0 2.5px var(--snap-black); }
+        .st-cell { flex: 1; max-width: 44px; height: 100%; display: flex; align-items: flex-end; cursor: pointer; border-radius: 6px; transform-origin: bottom; -webkit-tap-highlight-color: transparent; }
+        .st-col { width: 100%; background: rgba(17,17,17,0.94); box-shadow: inset 0 0 0 2px rgba(17,17,17,0); border-radius: 4px 4px 0 0; transition: background-color .3s ease, box-shadow .3s ease; }
+        .st-cell.sel .st-col { background: var(--snap-yellow); box-shadow: inset 0 0 0 2px var(--snap-black); }
         .st-ax { display: flex; justify-content: center; gap: 3px; margin-top: 5px; }
         .st-ax span { flex: 1; max-width: 44px; text-align: center; font-size: 10px; font-weight: 700; color: #999; white-space: nowrap; overflow: visible; }
         .st-read { margin-top: 10px; min-height: 17px; text-align: center; font-size: 12px; font-weight: 700; color: #555; }
-        .st-chips { display: flex; gap: 6px; margin-bottom: 4px; }
+        /* Pastilles Année / Mois / Jour / Heure et Amis / Groupes : même bandeau noir centré que le reste de l'app, pastille jaune qui glisse avec rebond */
+        .st-tabs { position: relative; display: flex; align-items: center; justify-content: center; width: fit-content; max-width: 100%; height: 44px; padding: 0 4px; margin: 14px auto 0; box-sizing: border-box; background: rgba(17,17,17,0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 999px; box-shadow: 0 6px 22px rgba(0,0,0,0.22); }
+        .st-tab { flex: none; text-align: center; padding: 8px 13px; border-radius: 999px; background: transparent; color: #777; font-size: 12.5px; font-weight: 900; letter-spacing: .8px; text-transform: uppercase; line-height: 1.2; cursor: pointer; transition: color .2s ease; -webkit-tap-highlight-color: transparent; }
+        .st-tab.active { color: var(--snap-yellow); }
+        .st-graph .st-block { margin-top: 12px; }
         .st-kpi.wide { grid-column: 1 / -1; }
-        .st-chip { padding: 7px 14px; border-radius: 16px; background: var(--snap-gray); font-size: 12px; font-weight: 800; color: #777; cursor: pointer; }
-        .st-chip.on { background: var(--snap-black); color: var(--snap-yellow); }
         .st-rk { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--snap-gray); }
         .st-block .st-rk:first-child { border-top: none; }
         .st-n { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--snap-gray); font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
@@ -597,6 +602,23 @@
         .st-bar { height: 6px; border-radius: 3px; background: var(--snap-gray); margin-top: 6px; overflow: hidden; }
         .st-bar div { height: 100%; background: var(--snap-yellow); border-right: 2px solid var(--snap-black); border-radius: 3px; }
         .st-empty { padding: 22px 8px; text-align: center; color: #999; font-size: 13px; font-weight: 600; }
+        @media (prefers-reduced-motion: no-preference) {
+            @keyframes stPop { 0% { opacity: 0; transform: translateY(12px) scale(.8); } 55% { opacity: 1; transform: translateY(0) scale(1.07); } 78% { transform: scale(.98); } 100% { opacity: 1; transform: none; } }
+            @keyframes stWash { 0% { opacity: 0; transform: scale(.3); } 40% { opacity: 1; transform: scale(1.14, 1.28); } 100% { opacity: 0; transform: scale(1); } }
+            @keyframes stGrow { 0% { opacity: 0; transform: scaleY(0); } 65% { opacity: 1; transform: scaleY(1.025); } 100% { opacity: 1; transform: scaleY(1); } }
+            @keyframes stFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+            @keyframes stSlide { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+            .st-tabs { animation: stPop .6s cubic-bezier(.34,1.56,.64,1) backwards; animation-delay: .3s; }
+            .st-info .st-line { animation: stFade .45s ease-out backwards; animation-delay: calc(var(--i, 0) * 60ms + 200ms); }
+            .st-col { transform-origin: bottom; animation: stGrow .5s cubic-bezier(.3,1.15,.5,1) backwards; animation-delay: calc(var(--i, 0) * 22ms + 120ms); }
+            .st-read { animation: stFade .4s ease-out backwards; animation-delay: .35s; }
+            .st-split i { transform-origin: left; animation: stSlide .7s cubic-bezier(.34,1.56,.64,1) backwards; animation-delay: calc(var(--i, 0) * 90ms + 150ms); }
+            .st-lg > span { animation: stFade .45s ease-out backwards; animation-delay: .4s; }
+            .time-row { animation: stFade .45s ease-out backwards; animation-delay: calc(var(--i, 0) * 60ms); }
+            .time-bar div { transform-origin: left; animation: stSlide .8s cubic-bezier(.34,1.56,.64,1) backwards; animation-delay: calc(var(--i, 0) * 60ms + 150ms); }
+            .st-rk { animation: stFade .45s ease-out backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+            .st-bar div { transform-origin: left; animation: stSlide .7s cubic-bezier(.34,1.56,.64,1) backwards; animation-delay: calc(var(--i, 0) * 45ms + 120ms); }
+        }
     </style>
 </head>
 <body>
@@ -959,7 +981,7 @@
 
         // --- Pastilles animées (barre du bas, AMIS/GROUPES, MEMORIES/LOCALISATION, TOUT/MÉDIAS/AUDIOS) ---
         const PillAnim = {
-            ITEM: '.nav-item, .chat-tab, .conv-filter',
+            ITEM: '.nav-item, .chat-tab, .conv-filter, .st-tab',
             setup: (box) => {
                 if (box._pill) return;
                 const ind = document.createElement('div'); ind.className = 'pill-ind';
@@ -1028,8 +1050,23 @@
             // Une seule URL par média (réutilisée par la grille, la carte, le chat...) au lieu d'une nouvelle à chaque affichage.
             forKey: (key, blob) => {
                 let url = URLManager.byKey.get(key);
-                if (!url) { url = URLManager.create(blob); URLManager.byKey.set(key, url); }
+                if (url) { URLManager.byKey.delete(key); URLManager.byKey.set(key, url); }   // la plus récemment utilisée passe en fin
+                else { url = URLManager.create(blob); URLManager.byKey.set(key, url); if (URLManager.byKey.size > URLManager.MAX) URLManager.trim(); }
                 return url;
+            },
+            // Sans plafond, chaque média ouvert dans un gros chat gardait son URL (et son Blob) en mémoire jusqu'au rechargement de la page.
+            MAX: 400,
+            // Libère les URLs les plus anciennes qui ne sont plus affichées nulle part ; force = tout ce qui n'est plus à l'écran
+            trim: (force) => {
+                const target = force ? 0 : Math.floor(URLManager.MAX * 0.75);
+                if (URLManager.byKey.size <= target) return;
+                const used = new Set();
+                document.querySelectorAll('[src^="blob:"]').forEach(e => used.add((e.getAttribute('src') || '').split('#')[0]));
+                for (const [k, u] of URLManager.byKey) {
+                    if (URLManager.byKey.size <= target) break;
+                    if (used.has(u)) continue;
+                    URLManager.byKey.delete(k); URLManager.revoke(u);
+                }
             },
             // URL éphémère rattachée à un "scope" (ex. le lecteur plein écran) : libérée d'un coup avec takeScope/revokeScope.
             scoped: (scope, blob) => {
@@ -1064,14 +1101,11 @@
         };
 
         function getMediaFromDB(key) {
-            return new Promise((resolve) => {
-                try {
-                    const tx = State.db.transaction('media_files', 'readonly');
-                    const req = tx.objectStore('media_files').get(key);
-                    req.onsuccess = () => resolve(req.result);
-                    req.onerror = () => resolve(null);
-                } catch(e) { resolve(null); }
-            });
+            return withDB((db) => new Promise((resolve) => {
+                const req = db.transaction('media_files', 'readonly').objectStore('media_files').get(key);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => resolve(null);
+            })).catch(() => null);
         }
 
         // --- LECTURE DE L'HORODATAGE RÉEL DANS LE FICHIER (vidéo mp4/mov, photo jpg) ---
@@ -1194,7 +1228,7 @@
             })()),
             order: [],
             url: (id, blob) => { const u = URLManager.create(blob); Thumbs.order.push([id, u]); Thumbs.known.set(id, u); if (Thumbs.order.length > 500) { const [oid, ou] = Thumbs.order.shift(); Thumbs.cache.delete(oid); Thumbs.known.delete(oid); URLManager.revoke(ou); } return u; },
-            load: (id) => new Promise(res => { try { const rq = State.db.transaction('thumbs', 'readonly').objectStore('thumbs').get(id); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => res(null); } catch (e) { res(null); } }),
+            load: (id) => withDB((db) => new Promise(res => { const rq = db.transaction('thumbs', 'readonly').objectStore('thumbs').get(id); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => res(null); })).catch(() => null),
             video: (key, size) => {
                 const id = key + '|v' + size; let p = Thumbs.cache.get(id);
                 if (!p) {
@@ -1298,12 +1332,41 @@
             });
         }, { rootMargin: '300px' });
 
+        // --- BASE LOCALE : le navigateur (surtout iOS quand l'app passe en arrière-plan) peut fermer la connexion à tout moment ---
+        // On la rouvre automatiquement au lieu de planter avec « The database connection is closing ».
+        function watchDB(db) {
+            db.onclose = () => { if (State.db === db) State.dbClosed = true; };
+            db.onversionchange = () => { if (State.db === db) State.dbClosed = true; db.close(); };
+        }
+        function ensureDB() {
+            if (State.resetting) return Promise.reject(new Error('Effacement de la base en cours'));
+            if (State.db && !State.dbClosed) return Promise.resolve(State.db);
+            if (State.dbOpening) return State.dbOpening;
+            State.dbOpening = new Promise((res, rej) => {
+                const rq = indexedDB.open('SnapArchiveDB', 3);
+                rq.onsuccess = () => { State.db = rq.result; State.dbClosed = false; watchDB(State.db); State.dbOpening = null; res(State.db); };
+                rq.onerror = () => { State.dbOpening = null; rej(rq.error || new Error('Base locale inaccessible')); };
+                rq.onblocked = () => { State.dbOpening = null; rej(new Error('Base locale bloquée par un autre onglet')); };
+            });
+            return State.dbOpening;
+        }
+        // Exécute fn(db) (qui renvoie une promesse) ; si la connexion se ferme entre-temps, elle est rouverte et l'opération rejouée une fois.
+        async function withDB(fn) {
+            await ensureDB();
+            try { return await fn(State.db); }
+            catch (e) {
+                if (e && e.name === 'InvalidStateError') { State.dbClosed = true; await ensureDB(); return await fn(State.db); }
+                throw e;
+            }
+        }
+
         function resetDB() {
             if(confirm("Veux-tu effacer la base de données actuelle pour importer un nouveau dossier ?\n\nAttention : tes modifications (noms, fusions, masqués) sont aussi effacées. Exporte modifications.json avant si tu veux les garder.")) {
+                State.resetting = true;   // plus aucune opération sur la base pendant l'effacement
                 if (State.db) { State.db.close(); }
                 const req = indexedDB.deleteDatabase("SnapArchiveDB");
                 req.onsuccess = () => { window.location.reload(); };
-                req.onerror = () => alert("Erreur lors de la suppression. Recharge la page manuellement.");
+                req.onerror = () => { State.resetting = false; alert("Erreur lors de la suppression. Recharge la page manuellement."); };
                 req.onblocked = () => { window.location.reload(); };
             }
         }
@@ -1329,13 +1392,13 @@
                 b._t = setTimeout(() => { b.style.display = 'none'; }, 8000);
             };
             window.addEventListener('error', (e) => {
-                if (!e.message || /ResizeObserver|Script error/i.test(e.message)) return;
+                if (!e.message || /ResizeObserver|Script error/i.test(e.message) || State.resetting) return;
                 console.error(e.error || e.message);
                 show('Une erreur est survenue : ' + e.message);
             });
             window.addEventListener('unhandledrejection', (e) => {
                 const r = e.reason, msg = (r && r.message) || (typeof r === 'string' ? r : '');
-                if (!msg) return;
+                if (!msg || State.resetting) return;
                 console.error(r);
                 show('Une erreur est survenue : ' + msg);
             });
@@ -1380,7 +1443,7 @@
         dbReq.onerror = () => showLoadError('Base locale inaccessible', 'Le navigateur refuse d’ouvrir le stockage de l’app (navigation privée ou stockage bloqué ?). Ouvre la page dans un onglet normal.', { retry: true, detail: String(dbReq.error || '') });
         dbReq.onblocked = () => showLoadError('Base locale bloquée', 'Une autre fenêtre de cette page utilise encore la base. Ferme les autres onglets puis réessaie.', { retry: true });
         dbReq.onsuccess = async (e) => {
-            State.db = e.target.result;
+            State.db = e.target.result; State.dbClosed = false; watchDB(State.db);
             
             try {
                 const tx = State.db.transaction('json_data', 'readonly');
@@ -1542,7 +1605,7 @@
             }
 
             // 3) Médias
-            const mediaToSave = []; const seenKeys = new Set();
+            const mediaToSave = []; const seenKeys = new Map();   // clé → { taille, nombre, noms, conflit } : un doublon de même taille est ignoré, une taille différente = conflit réel
             for (let i = 0; i < files.length; i++) {
                 const file = files[i], path = relPath(file), name = file.name;
                 if (name.match(/\.(mp4|mov|m4a|wav|mp3|aac|jpg|jpeg|png)$/i) && (('/' + path).includes('/memories/') || ('/' + path).includes('/chat_media/'))) {
@@ -1557,13 +1620,16 @@
                         cleanKey = ext ? `${base}.${ext}` : base;
                     } else report.counts.memories++;
                     const isChat = ('/' + path).includes('/chat_media/');
-                    if (seenKeys.has(cleanKey)) report.counts.dupes = (report.counts.dupes || 0) + 1; seenKeys.add(cleanKey);
+                    const prevK = seenKeys.get(cleanKey);
+                    if (prevK) { prevK.n++; if (prevK.names.length < 4) prevK.names.push(name); if (prevK.size !== file.size) prevK.conflict = true; prevK.size = file.size; }
+                    else seenKeys.set(cleanKey, { size: file.size, n: 1, names: [name], conflict: false });
                     mediaToSave.push({ key: cleanKey, file, chat: isChat });
                 }
                 if (i % 500 === 0) { log(`Analyse... ${i}/${files.length}`); await new Promise(r => setTimeout(r, 0)); }
             }
             report.counts.total = mediaToSave.length;
-            if (report.counts.dupes) report.notes.push(`${report.counts.dupes} média${report.counts.dupes > 1 ? 's' : ''} ont un nom identique à un autre (le dernier écrase le précédent).`);
+            { const clashes = []; seenKeys.forEach((v, k) => { if (v.conflict) clashes.push({ key: k, n: v.n, names: v.names }); });
+              report.counts.dupes = clashes.length; if (clashes.length) report.clashes = clashes.slice(0, 300); }
             if (!mediaToSave.length) report.notes.push('Aucune photo ni vidéo trouvée (dossiers memories et chat_media absents ou vides) : seuls les textes seront affichés.');
 
             // 4) Écriture
@@ -1571,7 +1637,7 @@
             for (const [key, data] of optional) await saveJSON(key, data);
             if (modsToSave) {
                 // Fusion avec les modifications déjà en base : celles du fichier ont priorité, les autres sont conservées.
-                const prev = (await new Promise((res) => { const rq = State.db.transaction('json_data', 'readonly').objectStore('json_data').get('modifications'); rq.onsuccess = () => res(rq.result); rq.onerror = () => res(null); })) || {};
+                const prev = (await withDB((db) => new Promise((res) => { const rq = db.transaction('json_data', 'readonly').objectStore('json_data').get('modifications'); rq.onsuccess = () => res(rq.result); rq.onerror = () => res(null); }))) || {};
                 const uniq = (a, b) => Array.from(new Set([...(a || []), ...(b || [])]));
                 const merged = { ...prev,
                     merges: { ...(prev.merges || {}), ...(modsToSave.merges || {}) },
@@ -1647,14 +1713,14 @@
         // Écriture IndexedDB. L'erreur d'une requête n'est pas encore sur la transaction quand « error » se déclenche :
         // on la capte sur la requête pour remonter la vraie cause (stockage plein, donnée trop grosse...) au lieu d'un message vague.
         function idbPut(storeName, value, key) {
-            return new Promise((resolve, reject) => {
-                const tx = State.db.transaction(storeName, 'readwrite');
+            return withDB((db) => new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
                 let reqErr = null;
                 const req = tx.objectStore(storeName).put(value, key);
                 req.onerror = () => { reqErr = req.error; };
                 tx.oncomplete = () => resolve();
                 tx.onabort = () => reject(tx.error || reqErr || new Error('écriture annulée par le navigateur (stockage ou mémoire insuffisants ?)'));
-            });
+            }));
         }
         function saveJSON(key, data) { return idbPut('json_data', data, key); }
         // Sauvegarde le journal des modifications (fusions, renommages, masquages) en base, ET le tient à
@@ -1711,11 +1777,11 @@
         }
         function saveMedia(key, file) { return idbPut('media_files', file, key); }
         function saveMediaBatch(items) {
-            return new Promise((resolve, reject) => {
-                const tx = State.db.transaction('media_files', 'readwrite'); const st = tx.objectStore('media_files'); let err = null;
+            return withDB((db) => new Promise((resolve, reject) => {
+                const tx = db.transaction('media_files', 'readwrite'); const st = tx.objectStore('media_files'); let err = null;
                 items.forEach(it => { const r = st.put(it.file, it.key); r.onerror = () => { err = r.error; }; });
                 tx.oncomplete = () => resolve(); tx.onerror = tx.onabort = () => reject(err || tx.error);
-            });
+            }));
         }
 
         async function initApp() {
@@ -1731,11 +1797,11 @@
             const logEl = document.getElementById('init-log');
             logEl.innerText = "Lecture des historiques JSON...";
             
-            const getJSON = (storeName) => new Promise((res, rej) => {
-                const req = State.db.transaction('json_data', 'readonly').objectStore('json_data').get(storeName);
+            const getJSON = (storeName) => withDB((db) => new Promise((res, rej) => {
+                const req = db.transaction('json_data', 'readonly').objectStore('json_data').get(storeName);
                 req.onsuccess = () => res(req.result);
                 req.onerror = () => rej(new Error(`Lecture de « ${storeName} » impossible : ${(req.error && req.error.message) || 'erreur de base'}`));
-            });
+            }));
 
             const [rawFriends, rawChats, rawMemories, rawLocations, rawAccount, rawRanking, rawAccountHistory, rawBitmoji,
                    rawCustomSticker, rawSnapPro, rawTalk, rawMapPlaces, rawUserProfile] = (await Promise.all(
@@ -1814,10 +1880,11 @@
             }
 
             logEl.innerText = "Indexation des médias...";
-            State.allMediaKeys = await new Promise(r => {
-                const req = State.db.transaction('media_files', 'readonly').objectStore('media_files').getAllKeys();
+            State.allMediaKeys = await withDB((db) => new Promise((r, rj) => {
+                const req = db.transaction('media_files', 'readonly').objectStore('media_files').getAllKeys();
                 req.onsuccess = () => r(req.result);
-            });
+                req.onerror = () => rj(req.error || new Error('Lecture des médias impossible'));
+            }));
 
             const memFilesByDate = {};
             State.allMediaKeys.forEach(key => {
@@ -2041,7 +2108,7 @@
 
             const ir = State.importReport;
             if (ir && !ir.seen) {
-                const warn = (ir.invalid || []).length + (ir.notes || []).length + ((State.memoryDiffs && State.memoryDiffs.days.length) ? 1 : 0);
+                const warn = (ir.invalid || []).length + (ir.notes || []).length + ((ir.clashes || []).length ? 1 : 0) + ((State.memoryDiffs && State.memoryDiffs.days.length) ? 1 : 0);
                 ir.seen = true;
                 saveJSON('importReport', ir).catch(() => {});
                 if (warn) setTimeout(() => MergePicker.showToast(`Import terminé avec ${warn} avertissement${warn > 1 ? 's' : ''} - voir Réglages ▸ Dernier import`), 700);
@@ -2394,20 +2461,21 @@
                         if (msgIndex !== -1) {
                             const rawText = c.messages[msgIndex].Content || c.messages[msgIndex].Created;
                             const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            const regex = new RegExp(`(${escapedSearch})`, 'gi');
-                            matchText = `<div style="font-size:13px; color:#666; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">... ${Util.escapeHTML(rawText).replace(regex, '<span style="background:var(--snap-yellow); color:black; font-weight:bold;">$1</span>')} ...</div>`;
+                            const parts = String(rawText).split(new RegExp(`(${escapedSearch})`, 'gi'));   // indices impairs = occurrences trouvées
+                            const hl = parts.map((t, i) => i % 2 ? `<span style="background:var(--snap-yellow); color:black; font-weight:bold;">${Util.escapeHTML(t)}</span>` : Util.escapeHTML(t)).join('');
+                            matchText = `<div style="font-size:13px; color:#666; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">... ${hl} ...</div>`;
                         }
                     }
                     tiers[tier].push(`<div class="chat-item"
-                        onpointerdown="LongPress.start('${c.id}', event)"
+                        onpointerdown="LongPress.start('${jsq(c.id)}', event)"
                         onpointermove="LongPress.move(event)"
-                        onpointerup="LongPress.end(() => Chat.openConv('${c.id}', ${msgIndex}))"
+                        onpointerup="LongPress.end(() => Chat.openConv('${jsq(c.id)}', ${msgIndex}))"
                         onpointercancel="LongPress.cancel()"
                         onpointerleave="LongPress.cancel()"
                         oncontextmenu="return false;">
                         <div class="chat-info" style="display:flex; flex-direction:column; width:100%;">
                             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                                <div class="chat-name">${c.name}</div>
+                                <div class="chat-name">${Util.escapeHTML(c.name)}</div>
                                 <div class="chat-meta stack">${CountStack.html(c)}</div>
                             </div>
                             ${matchText}
@@ -2548,7 +2616,7 @@
                                     // d'un rectangle gris vide.
                                     msgHtml += isVid 
                                         ? `<div class="video-wrapper" onclick="Viewer.open(${ci}, 'chat')"><video class="msg-media" src="${url}#t=0.001" preload="metadata" muted playsinline></video><div class="video-play-overlay">▶</div></div>` 
-                                        : `<img class="msg-media" src="${url}" onclick="Viewer.openDirect(this.src, '${m.Created}', '${m.Location || ''}')">`;
+                                        : `<img class="msg-media" src="${url}" onclick="Viewer.openDirect(this.src, '${jsq(m.Created)}', '${jsq(m.Location || '')}')">`;
                                 }
                             }
                         }
@@ -2604,7 +2672,7 @@
                 }
 
                 if (mode === 'init') {
-                    inner.innerHTML = html;
+                    inner.innerHTML = html; URLManager.trim(true);   // l'ancienne conversation n'est plus à l'écran : ses URLs sont libérées
                     if (targetMsgIndex !== -1) {
                         // Arrivée depuis une recherche : saut INSTANTANÉ (pas de défilement doux) sur le message trouvé, puis on le garde
                         // centré tant que le contenu se met en place. Avant, le défilement doux partait du haut -> déclenchait le
@@ -2665,7 +2733,7 @@
                         scrollArea.scrollTop = 0;
                     }
                 } else {
-                    inner.innerHTML = html;
+                    inner.innerHTML = html; URLManager.trim();
                     if (anchorMsg) {
                         const newAnchor = document.getElementById(anchorMsg);
                         if (newAnchor) scrollArea.scrollTop = newAnchor.offsetTop - anchorOffset;
@@ -3501,7 +3569,7 @@
             GLYPH: {
                 sent: '<path d="M7 17L17 7M8 7h9v9"/>',
                 recv: '<path d="M17 7L7 17M16 17H7V8"/>',
-                text: '<path d="M5 6h14M12 6v13"/>',
+                text: '<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>',
                 media: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
                 audio: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
                 other: '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>'
@@ -3515,51 +3583,62 @@
             pageHTML: (d) => {
                 if (!d || !d.total) return '<div class="st-empty">Aucune donnée : importe tes conversations pour voir les statistiques.</div>';
                 const nDays = Object.keys(d.days).length;
-                const kpi = (v, l) => `<div class="st-kpi"><b>${v}</b><span>${l}</span></div>`;
+                const kpi = (v, l, i) => `<div class="st-kpi"><b>${v}</b><span>${l}</span></div>`;
                 const bestKey = (o) => Object.keys(o).reduce((a, k) => (a === null || o[k] > o[a]) ? k : a, null);
                 const bestDay = bestKey(d.days), bestMonth = Number(bestKey(d.months));
                 const bestH = d.hours.indexOf(Math.max(...d.hours)), bestW = d.dows.indexOf(Math.max(...d.dows));
                 const dow = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
                 const sd = (t) => t.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
                 const Y = 'var(--snap-yellow)', K = '#111';
-                return `<div class="st-kpis">${kpi(Tools.fmt(d.total), 'messages')}${kpi(Tools.fmt(d.convs), 'conversations')}${kpi(Tools.fmt(nDays), 'jours actifs')}</div>`
-                    + `<div id="st-graph" class="st-graph">${Tools.graphInner(d)}</div>`
-                    + Tools.block(Tools.split([{ g: 'sent', l: 'Envoyés', n: d.sent, c: Y, fg: K }, { g: 'recv', l: 'Reçus', n: d.total - d.sent, c: K, fg: Y }], d.total))
-                    + Tools.block(Tools.split([{ g: 'text', l: 'Texte', n: d.types.text, c: Y, fg: K }, { g: 'media', l: 'Médias', n: d.types.media, c: K, fg: Y }, { g: 'audio', l: 'Audio', n: d.types.audio, c: '#8e8e93', fg: '#fff' }, { g: 'other', l: 'Autres', n: d.types.other, c: '#d9d9de', fg: K }], d.total))
-                    + `<div class="st-block">`
-                    + Tools.line('Période', `${sd(d.first)} → ${sd(d.last)}`)
-                    + Tools.line('Conversations', `${d.nFriends} amis · ${d.nGroups} groupes`)
-                    + Tools.line('Mois le plus actif', `${Tools.monthName(bestMonth)} · ${Tools.fmt(d.months[bestMonth])}`)
-                    + Tools.line('Jour le plus actif', `${Tools.dayName(bestDay)} · ${Tools.fmt(d.days[bestDay])}`)
-                    + Tools.line('Jour de semaine', dow[bestW])
-                    + Tools.line('Heure la plus active', `${bestH} h – ${bestH + 1} h`)
+                // Ordre : chiffres clés, infos (Période…), graphique, envoyés/reçus, types de messages, classement
+                return `<div class="st-kpis">${kpi(Tools.fmt(d.total), 'messages', 0)}${kpi(Tools.fmt(d.convs), 'conversations', 1)}${kpi(Tools.fmt(nDays), 'jours actifs', 2)}</div>`
+                    + `<div class="st-block st-info">`
+                    + Tools.line('Période', `${sd(d.first)} → ${sd(d.last)}`, 0)
+                    + Tools.line('Conversations', `${d.nFriends} amis · ${d.nGroups} groupes`, 1)
+                    + Tools.line('Mois le plus actif', `${Tools.monthName(bestMonth)} · ${Tools.fmt(d.months[bestMonth])}`, 2)
+                    + Tools.line('Jour le plus actif', `${Tools.dayName(bestDay)} · ${Tools.fmt(d.days[bestDay])}`, 3)
+                    + Tools.line('Jour de semaine', dow[bestW], 4)
+                    + Tools.line('Heure la plus active', `${bestH} h – ${bestH + 1} h`, 5)
                     + `</div>`
+                    + `<div id="st-graph" class="st-graph">${Tools.graphInner(d)}</div>`
+                    + Tools.block(Tools.split([{ g: 'sent', l: 'Envoyés', n: d.sent, c: Y, fg: K }, { g: 'recv', l: 'Reçus', n: d.total - d.sent, c: K, fg: Y }], d.total, [['sent'], [], ['recv']]))
+                    + Tools.block(Tools.split([{ g: 'text', l: 'Messages', n: d.types.text, c: Y, fg: K }, { g: 'media', l: 'Médias', n: d.types.media, c: K, fg: Y }, { g: 'audio', l: 'Audio', n: d.types.audio, c: '#8e8e93', fg: '#fff' }, { g: 'other', l: 'Autres', n: d.types.other, c: '#d9d9de', fg: K }], d.total, [['text'], ['media'], ['audio', 'other']]))
                     + `<div id="st-rank" class="st-sec">${Tools.rankInner(d)}</div>`;
             },
 
-            statRank: (k) => { Tools._rank = k; const el = document.getElementById('st-rank'); if (el) el.innerHTML = Tools.rankInner(Tools._d); },
-            statGran: (g) => { Tools._gran = g; const el = document.getElementById('st-graph'); if (el) el.innerHTML = Tools.graphInner(Tools._d); },
+            // Les pastilles ne sont pas recréées au changement : seule la partie dessous change, la pastille jaune glisse
+            statRank: (k, el) => { Tools._rank = k; Tools.setActive(el); const l = document.getElementById('st-rank-list'); if (l) l.innerHTML = Tools.rankRows(Tools._d); },
+            statGran: (g, el) => { Tools._gran = g; Tools.setActive(el); const b = document.getElementById('st-bars'); if (b) b.innerHTML = Tools.barsHTML(Tools._d); },
+            setActive: (el) => { if (!el || !el.parentElement) return; el.parentElement.querySelectorAll('.st-tab.active').forEach(x => x.classList.remove('active')); el.classList.add('active'); },
+            // Appelée une fois la page affichée : active l'indicateur glissant des pastilles
+            mount: () => { document.querySelectorAll('#fi-rows .st-tabs').forEach(PillAnim.setup); },
             // Appui sur une barre : elle est mise en évidence et sa valeur s'affiche sous le graphique
             statPick: (el) => {
                 const blk = el.closest('.st-block'); if (!blk) return;
                 blk.querySelectorAll('.st-cell.sel').forEach(x => x.classList.remove('sel'));
                 el.classList.add('sel');
+                if (el.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+                    el.animate([{ transform: 'scale(1,1)' }, { transform: 'scale(.9,.97)', offset: .22 }, { transform: 'scale(1.22,1.05)', offset: .58 }, { transform: 'scale(.97,1)', offset: .8 }, { transform: 'scale(1,1)' }], { duration: 460, easing: 'ease-out' });
                 const r = blk.querySelector('.st-read'); if (r) r.textContent = (el.dataset.pk ? 'Pic : ' : '') + (el.dataset.t || '');
             },
 
             block: (inner, read) => `<div class="st-block">${inner}${read === undefined ? '' : `<div class="st-read">${read}</div>`}</div>`,
-            line: (l, v) => `<div class="st-line"><span>${l}</span><b>${v}</b></div>`,
-            chips: (items, cur, fn) => `<div class="st-chips">${items.map(([k, l]) => `<div class="st-chip${cur === k ? ' on' : ''}" onclick="Tools.${fn}('${k}')">${l}</div>`).join('')}</div>`,
-            split: (parts, total) => {
+            line: (l, v, i) => `<div class="st-line" style="--i:${i || 0}"><span>${l}</span><b>${v}</b></div>`,
+            tabs: (items, cur, fn) => `<div class="st-tabs">${items.map(([k, l]) => `<div class="st-tab${cur === k ? ' active' : ''}" onclick="Tools.${fn}('${k}', this)">${l}</div>`).join('')}</div>`,
+            // Barre de répartition + légende : 1er groupe tout à gauche, 2e au milieu, 3e tout à droite
+            split: (parts, total, cols) => {
                 const ps = parts.filter(p => p.n > 0); if (!ps.length) return '';
                 const pct = (n) => { const q = n / total * 100; return q < 1 ? '< 1 %' : Math.round(q) + ' %'; };
-                return `<div class="st-split">${ps.map(p => `<i style="flex:${p.n}; background:${p.c}"></i>`).join('')}</div>`
-                    + `<div class="st-legend">${ps.map(p => `<span title="${p.l}"><span class="st-g" style="background:${p.c}; color:${p.fg}"><svg viewBox="0 0 24 24">${Tools.GLYPH[p.g]}</svg></span><em>${Tools.fmt(p.n)} · ${pct(p.n)}</em></span>`).join('')}</div>`;
+                const by = {}; ps.forEach(p => { by[p.g] = p; });
+                const item = (p) => `<span title="${p.l}"><span class="st-g" style="background:${p.c}; color:${p.fg}"><svg viewBox="0 0 24 24">${Tools.GLYPH[p.g]}</svg></span><em>${Tools.fmt(p.n)} · ${pct(p.n)}</em></span>`;
+                const cell = (keys, cls) => `<div class="st-lg ${cls}">${keys.filter(k => by[k]).map(k => item(by[k])).join('')}</div>`;
+                return `<div class="st-split">${ps.map((p, i) => `<i style="flex:${p.n}; background:${p.c}; --i:${i}"></i>`).join('')}</div>`
+                    + `<div class="st-legend">${cell(cols[0], 'l')}${cell(cols[1], 'm')}${cell(cols[2], 'r')}</div>`;
             },
             // Graphique : la barre du pic est sélectionnée par défaut (mise en évidence, jamais en noir)
             bars: (vals, labels, texts, sel) => {
                 const mx = Math.max(1, ...vals);
-                return `<div class="st-chart">${vals.map((v, i) => `<div class="st-cell${i === sel ? ' sel' : ''}"${i === sel ? ' data-pk="1"' : ''} data-t="${Util.escapeHTML(texts[i])}" onclick="Tools.statPick(this)"><div class="st-col" style="height:${v ? Math.max(5, Math.round(v / mx * 100)) : 2}%"></div></div>`).join('')}</div>`
+                return `<div class="st-chart">${vals.map((v, i) => `<div class="st-cell${i === sel ? ' sel' : ''}"${i === sel ? ' data-pk="1"' : ''} data-t="${Util.escapeHTML(texts[i])}" onclick="Tools.statPick(this)"><div class="st-col" style="height:${v ? Math.max(5, Math.round(v / mx * 100)) : 2}%; --i:${i}"></div></div>`).join('')}</div>`
                     + `<div class="st-ax">${labels.map(l => `<span>${l}</span>`).join('')}</div>`;
             },
 
@@ -3582,19 +3661,19 @@
                 }
                 return { vals: d.hours, labels: d.hours.map((n, h) => h % 6 === 0 ? h : ''), texts: d.hours.map((v, h) => `${h} h – ${h + 1} h · ${f(v)} messages`) };
             },
-            graphInner: (d) => {
+            barsHTML: (d) => {
                 const sr = Tools.series(d, Tools._gran), pk = sr.vals.indexOf(Math.max(...sr.vals));
-                return Tools.chips([['year', 'Année'], ['month', 'Mois'], ['day', 'Jour'], ['hour', 'Heure']], Tools._gran, 'statGran')
-                    + Tools.block(Tools.bars(sr.vals, sr.labels, sr.texts, pk), `Pic : ${sr.texts[pk]}`);
+                return Tools.block(Tools.bars(sr.vals, sr.labels, sr.texts, pk), `Pic : ${sr.texts[pk]}`);
             },
+            graphInner: (d) => Tools.tabs([['year', 'Année'], ['month', 'Mois'], ['day', 'Jour'], ['hour', 'Heure']], Tools._gran, 'statGran') + `<div id="st-bars">${Tools.barsHTML(d)}</div>`,
 
             // Classement : conversations les plus actives (Amis / Groupes)
-            rankInner: (d) => {
+            rankRows: (d) => {
                 const list = d.rank.filter(r => Tools._rank === 'groups' ? r.group : !r.group).slice(0, 10);
                 const mx = list.length ? list[0].n : 1;
-                const rows = list.map((r, i) => `<div class="st-rk"><span class="st-n">${i + 1}</span><div class="st-rb"><div class="st-rt"><span>${Util.escapeHTML(r.name)}</span><b>${Tools.fmt(r.n)}</b></div><div class="st-bar"><div style="width:${Math.max(3, Math.round(r.n / mx * 100))}%"></div></div></div></div>`).join('');
-                return Tools.chips([['friends', 'Amis'], ['groups', 'Groupes']], Tools._rank, 'statRank') + `<div class="st-block">${rows || '<div class="st-empty">Aucune conversation.</div>'}</div>`;
-            }
+                return list.map((r, i) => `<div class="st-rk" style="--i:${i}"><span class="st-n">${i + 1}</span><div class="st-rb"><div class="st-rt"><span>${Util.escapeHTML(r.name)}</span><b>${Tools.fmt(r.n)}</b></div><div class="st-bar"><div style="width:${Math.max(3, Math.round(r.n / mx * 100))}%; --i:${i}"></div></div></div></div>`).join('') || '<div class="st-empty">Aucune conversation.</div>';
+            },
+            rankInner: (d) => Tools.tabs([['friends', 'Amis'], ['groups', 'Groupes']], Tools._rank, 'statRank') + `<div id="st-rank-list" class="st-block">${Tools.rankRows(d)}</div>`
         };
 
         const Settings = {
@@ -3671,6 +3750,37 @@
                 Chat.openConv(id, -1);
             },
 
+            // Clic sur un média en conflit : ouvre la conversation où il est, puis le média ; un 2e clic passe au message suivant qui le référence
+            _clashPos: {},
+            openClash: (i) => {
+                const cl = ((State.importReport || {}).clashes || [])[i]; if (!cl) return;
+                const base = cl.key.replace(/\.[^.]+$/, '');
+                const hits = [];
+                [[State.friendsList, false], [State.groups, true]].forEach(([list, isG]) => list.forEach(c => (c.messages || []).forEach(m => {
+                    if (m['Media IDs'] && String(m['Media IDs']).split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) === base) hits.push({ c, isG, idx: m.originalIndex });
+                })));
+                if (!hits.length) { MergePicker.showToast('Aucun message ne référence ce média'); return; }
+                const pos = (Settings._clashPos[i] || 0) % hits.length; Settings._clashPos[i] = pos + 1;
+                const h = hits[pos];
+                Settings.close(true);   // garde la position dans Réglages pour le retour
+                State.returnToSettings = true;
+                UI.switchTab('chat');
+                Chat.switchTab(h.isG ? 'groupes' : 'amis');
+                Chat.openConv(h.c.id, h.idx);
+                State.pendingHit = '';
+                // Attend que la conversation soit affichée (pas l'ancienne), puis ouvre le média comme un appui dessus
+                const t0 = Date.now();
+                const tryOpen = () => {
+                    const ov = document.getElementById('chat-loading-overlay');
+                    const row = document.getElementById('msg-' + h.idx);
+                    const el = State.currentChat === h.c && ov && ov.style.display === 'none' && row && row.querySelector('.video-wrapper, img.msg-media');
+                    if (el) { setTimeout(() => el.click(), 350); return; }
+                    if (Date.now() - t0 < 8000) setTimeout(tryOpen, 150);
+                };
+                setTimeout(tryOpen, 400);
+                if (hits.length > 1) setTimeout(() => MergePicker.showToast(`Message ${pos + 1} sur ${hits.length} · touche encore pour le suivant`), 1200);
+            },
+
             // Clic sur une modification : ouvre la conversation de la personne (ou du groupe), sinon sa fiche profil
             openMod: (id, altId) => {
                 const all = [...State.friendsList.map(c => [c, false]), ...State.groups.map(c => [c, true])];
@@ -3700,7 +3810,7 @@
                 const micIc = ic('<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line>');
                 const cell = (icon, n) => `<span class="sc-cell${n ? '' : ' zero'}">${icon}<span>${n || 0}</span></span>`;
                 const counts = `<span class="sc-grid">${cell(msgIc, c.txtCount)}${cell(medIc, c.medCount)}${cell(micIc, c.audCount)}</span>`;
-                return `<div class="settings-row sub-row" onclick="Settings.openConv('${c.id}', ${isGroup})"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${Util.escapeHTML(c.name)}</span><span style="display:flex; align-items:center; gap:10px; flex-shrink:0;"><span class="sub" style="white-space:nowrap;">${counts}</span>${hidden ? `<span title="Afficher" style="color:var(--snap-yellow); background:var(--snap-black); width:30px; height:26px; border-radius:13px; display:flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); ModsManager.toggleHide('${c.id}', ${isGroup}); Settings.render();"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>` : ''}</span></div>`;
+                return `<div class="settings-row sub-row" onclick="Settings.openConv('${jsq(c.id)}', ${isGroup})"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${Util.escapeHTML(c.name)}</span><span style="display:flex; align-items:center; gap:10px; flex-shrink:0;"><span class="sub" style="white-space:nowrap;">${counts}</span>${hidden ? `<span title="Afficher" style="color:var(--snap-yellow); background:var(--snap-black); width:30px; height:26px; border-radius:13px; display:flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); ModsManager.toggleHide('${c.id}', ${isGroup}); Settings.render();"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>` : ''}</span></div>`;
             },
 
 
@@ -3762,8 +3872,8 @@
                 MergePicker.applyMerge(friendId, orphanId).then(() => Settings.render());
             },
             dissocRows: () => Settings.dissocList().map(({ o, sugg }) => {
-                const chips = sugg.length ? sugg.map(({ c, score }) => `<span style="display:inline-block; background:${score >= 60 ? 'var(--snap-black)' : 'var(--snap-gray)'}; color:${score >= 60 ? 'var(--snap-yellow)' : '#555'}; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:700; margin:4px 4px 0 0;" onclick="event.stopPropagation(); Settings.dissocMerge('${o.id}', '${c.id}')">${Util.escapeHTML(c.name)} @${Util.escapeHTML(c.id)}</span>`).join('') : '<span class="sub">Aucune correspondance</span>';
-                return `<div class="settings-row sub-row" style="padding-top:8px; padding-bottom:8px;" onclick="Settings.openConv('${o.id}', false)"><div><div>@${Util.escapeHTML(o.id)}</div><div>${chips}</div></div><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
+                const chips = sugg.length ? sugg.map(({ c, score }) => `<span style="display:inline-block; background:${score >= 60 ? 'var(--snap-black)' : 'var(--snap-gray)'}; color:${score >= 60 ? 'var(--snap-yellow)' : '#555'}; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:700; margin:4px 4px 0 0;" onclick="event.stopPropagation(); Settings.dissocMerge('${jsq(o.id)}', '${jsq(c.id)}')">${Util.escapeHTML(c.name)} @${Util.escapeHTML(c.id)}</span>`).join('') : '<span class="sub">Aucune correspondance</span>';
+                return `<div class="settings-row sub-row" style="padding-top:8px; padding-bottom:8px;" onclick="Settings.openConv('${jsq(o.id)}', false)"><div><div>@${Util.escapeHTML(o.id)}</div><div>${chips}</div></div><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="9 6 15 12 9 18"></polyline></svg></div>`;
             }),
 
 helpRows: () => {
@@ -3875,6 +3985,14 @@ helpRows: () => {
                     (ir.invalid || []).filter(x => !IMPORT_SPEC.some(sp => sp.path === x.file)).forEach(x => { importProblems++; todo.push(row(x.file, x.message, { bad: true })); });
                     (ir.notes || []).forEach(n => { importProblems++; todo.push(row(n, '', { bad: true })); });
                     if (todo.length) importRows.push(head('À vérifier'), ...todo);
+                    // Médias de même nom mais de taille différente : un clic ouvre la conversation et le média concerné
+                    if ((ir.clashes || []).length) {
+                        const chev = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="9 6 15 12 9 18"></polyline></svg>';
+                        importProblems += ir.clashes.length;
+                        importRows.push(head('Médias de même nom, tailles différentes'));
+                        ir.clashes.slice(0, 30).forEach((cl, i) => importRows.push(`<div class="settings-row sub-row" onclick="Settings.openClash(${i})"><div style="min-width:0;"><div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(cl.names[0] || cl.key)}</div><div class="sub" style="color:#c0392b;">${plural(cl.n, 'fichier')} · le dernier écrase les autres · touche pour ouvrir</div></div>${chev}</div>`));
+                        if (ir.clashes.length > 30) importRows.push(row(`+ ${ir.clashes.length - 30} autres`, '', { muted: true }));
+                    }
                 }
                 const importSub = ir ? (importProblems ? `${importProblems} problème${importProblems > 1 ? 's' : ''}` : 'OK') : 'aucun';
                 document.getElementById('settings-title').innerText = 'Réglages';
@@ -4059,7 +4177,7 @@ helpRows: () => {
                         if (!info) status = 'pas dans tes amis';
                         else if (info.category && info.category !== 'Friends') status = (FriendInfo.categoryLabels[info.category] || info.category).toLowerCase();
                     }
-                    const click = isMe ? '' : ` onclick="FriendInfo.openChat('${e.id}', '${g.id}')" style="cursor:pointer;"`;
+                    const click = isMe ? '' : ` onclick="FriendInfo.openChat('${jsq(e.id)}', '${jsq(g.id)}')" style="cursor:pointer;"`;
                     html += `<div class="friend-info-row"${click}><span style="min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span style="font-weight:800;">${esc(name)}</span> <span class="label" style="font-size:12px;">@${esc(e.id)}</span></span><span style="flex:none; padding-left:10px;">${e.n} msg</span></div>`;
                 });
                 html += `<div style="color:#999; font-size:12px; font-weight:500; padding:10px 2px 0;">L'export ne contient pas la liste des membres : seules les personnes qui ont écrit au moins un message apparaissent.</div>`;
@@ -4335,7 +4453,7 @@ helpRows: () => {
                 const el = document.getElementById('merge-picker-list');
                 if (!list.length) { el.innerHTML = '<div style="padding:14px 6px; color:#999; font-weight:600;">Aucun contact trouvé.</div>'; return; }
                 el.innerHTML = list.map(f =>
-                    `<div class="merge-picker-row" onclick="MergePicker.confirm('${f.id}')">${Util.escapeHTML(f.name)} <span style="color:#aaa; font-weight:500;">@${f.id}</span></div>`
+                    `<div class="merge-picker-row" onclick="MergePicker.confirm('${jsq(f.id)}')">${Util.escapeHTML(f.name)} <span style="color:#aaa; font-weight:500;">@${Util.escapeHTML(f.id)}</span></div>`
                 ).join('');
             },
 
@@ -4446,7 +4564,7 @@ helpRows: () => {
                 if (profileRows.length) html += AccountInfo.accordion('profile', 'Profil', null, profileRows);
                 if (acc.timeSpent) {
                     html += AccountInfo.accordion('time', 'Répartition du temps', null,
-                        acc.timeSpent.map(t => `<div class="settings-row sub-row" style="cursor:default; display:block;"><div style="display:flex; justify-content:space-between;"><span>${Util.escapeHTML(t.label)}</span><span>${t.pct.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} %</span></div><div class="time-bar"><div style="width:${Math.max(t.pct, 1)}%;"></div></div></div>`));
+                        acc.timeSpent.map((t, i) => `<div class="settings-row sub-row time-row" style="cursor:default; display:block; --i:${i};"><div style="display:flex; justify-content:space-between;"><span>${Util.escapeHTML(t.label)}</span><span>${t.pct.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} %</span></div><div class="time-bar"><div style="width:${Math.max(t.pct, 1)}%; --i:${i};"></div></div></div>`));
                 }
                 html += AccountInfo.accordion('stats', 'Statistiques', null, Tools.statRows());
                 const userRows = [];
@@ -4503,6 +4621,7 @@ helpRows: () => {
                 document.getElementById('fi-rows').innerHTML = rows;
                 document.getElementById('fi-merge-action').innerHTML = pg ? '' : pills;
                 OverlayFx.show(document.getElementById('friend-info-overlay'));
+                if (pg && AccountInfo.page === 'stats') Tools.mount();
             }
         };
 
